@@ -148,7 +148,7 @@ fun PocketAuditScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "المصاريف العابرة (${uiState.passingExpenses.size}):",
                         style = MaterialTheme.typography.titleMedium,
@@ -162,20 +162,29 @@ fun PocketAuditScreen(
                     )
                 }
 
+                Spacer(modifier = Modifier.width(10.dp))
+
                 Button(
                     onClick = onOpenPassingExpenseClick,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary,
                         contentColor = MaterialTheme.colorScheme.onSecondary
                     ),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .height(44.dp)
                         .testTag("audit_add_passing_expense_button")
                 ) {
                     Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("+ مصروف عابر", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "مصروف عابر",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
             }
         }
@@ -889,7 +898,7 @@ private fun PocketLedgerSummaryCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = if (isOverBudget) "تجاوزت ميزانية الجيب بـ:" else "الباقي المفترض في جيبك الآن:",
                                 style = MaterialTheme.typography.titleSmall,
@@ -904,15 +913,19 @@ private fun PocketLedgerSummaryCard(
                             )
                         }
 
+                        Spacer(modifier = Modifier.width(10.dp))
+
                         Surface(
                             color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
                             shape = RoundedCornerShape(14.dp)
                         ) {
                             Text(
                                 text = CurrencyFormatter.formatDirhams(abs(uiState.netPocketBalanceDirhams)),
-                                style = MaterialTheme.typography.headlineSmall,
+                                style = MaterialTheme.typography.titleLarge,
                                 color = if (isOverBudget) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onTertiary,
                                 fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier = Modifier
                                     .padding(horizontal = 14.dp, vertical = 6.dp)
                                     .testTag("audit_remaining_pocket_text")

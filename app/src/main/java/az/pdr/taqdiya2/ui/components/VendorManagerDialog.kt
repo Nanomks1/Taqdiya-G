@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import az.pdr.taqdiya2.data.local.VendorEntity
 import az.pdr.taqdiya2.ui.viewmodel.UndoAction
 
@@ -65,6 +66,10 @@ fun VendorManagerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier
+            .fillMaxWidth(0.95f)
+            .padding(vertical = 16.dp),
         containerColor = MaterialTheme.colorScheme.background,
         title = {
             Row(
@@ -92,7 +97,7 @@ fun VendorManagerDialog(
                             contentDescription = "إضافة بائع"
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("بائع جديد")
+                        Text("بائع جديد", maxLines = 1, softWrap = false)
                     }
                 }
             }
@@ -209,8 +214,8 @@ fun VendorManagerDialog(
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 340.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .heightIn(max = 390.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         itemsIndexed(vendors, key = { _, v -> v.id }) { index, vendor ->
                             OutlinedCard(
@@ -219,28 +224,29 @@ fun VendorManagerDialog(
                                     containerColor = MaterialTheme.colorScheme.surface
                                 )
                             ) {
-                                Row(
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
+                                    // Top Row: Full width for Vendor Icon + Name + Specialty
                                     Row(
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
                                             imageVector = VendorIconMapper.getIcon(vendor.iconKey),
                                             contentDescription = vendor.name,
                                             tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(24.dp)
                                         )
                                         Spacer(modifier = Modifier.width(10.dp))
-                                        Column {
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = vendor.name,
-                                                style = MaterialTheme.typography.titleSmall,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = MaterialTheme.colorScheme.onSurface,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             if (vendor.specialty.isNotBlank()) {
@@ -253,25 +259,32 @@ fun VendorManagerDialog(
                                         }
                                     }
 
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    // Bottom Row: Action Buttons aligned neatly without squeezing text
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         IconButton(
                                             onClick = { onMoveVendor(vendor.id, true) },
-                                            enabled = index > 0
+                                            enabled = index > 0,
+                                            modifier = Modifier.size(40.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Outlined.ArrowUpward,
                                                 contentDescription = "تحريك للأعلى",
-                                                modifier = Modifier.size(18.dp)
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         }
                                         IconButton(
                                             onClick = { onMoveVendor(vendor.id, false) },
-                                            enabled = index < vendors.lastIndex
+                                            enabled = index < vendors.lastIndex,
+                                            modifier = Modifier.size(40.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Outlined.ArrowDownward,
                                                 contentDescription = "تحريك للأسفل",
-                                                modifier = Modifier.size(18.dp)
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         }
                                         IconButton(
@@ -281,23 +294,26 @@ fun VendorManagerDialog(
                                                 specialtyInput = vendor.specialty
                                                 selectedIconKey = vendor.iconKey
                                                 isAddingNew = false
-                                            }
+                                            },
+                                            modifier = Modifier.size(40.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Outlined.Edit,
                                                 contentDescription = "تعديل البائع",
-                                                modifier = Modifier.size(18.dp)
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         }
                                         IconButton(
                                             onClick = { onDeleteVendor(vendor) },
-                                            enabled = vendors.size > 1
+                                            enabled = vendors.size > 1,
+                                            modifier = Modifier.size(40.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Outlined.DeleteOutline,
                                                 contentDescription = "حذف البائع",
                                                 tint = MaterialTheme.colorScheme.error,
-                                                modifier = Modifier.size(18.dp)
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         }
                                     }

@@ -123,15 +123,20 @@ fun HomePrepScreen(
                     ) {
                         Text(
                             text = "اختر البائع:",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Surface(
                                 modifier = Modifier
-                                    .height(38.dp)
+                                    .height(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable { showSearchBar = !showSearchBar },
                                 color = MaterialTheme.colorScheme.surfaceVariant,
@@ -152,7 +157,7 @@ fun HomePrepScreen(
 
                             Surface(
                                 modifier = Modifier
-                                    .height(38.dp)
+                                    .height(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable(onClick = onOpenPriceTrackerClick)
                                     .testTag("card_open_price_tracker_button"),
@@ -160,13 +165,13 @@ fun HomePrepScreen(
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.QueryStats,
                                         contentDescription = "كناش الأثمنة",
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(15.dp),
                                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -174,14 +179,16 @@ fun HomePrepScreen(
                                         text = "الأثمنة",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
 
                             Surface(
                                 modifier = Modifier
-                                    .height(38.dp)
+                                    .height(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable(onClick = onOpenDictionaryClick)
                                     .testTag("card_open_dictionary_button"),
@@ -189,27 +196,29 @@ fun HomePrepScreen(
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.MenuBook,
                                         contentDescription = "القاموس",
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(15.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = "القاموس",
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
 
                             Surface(
                                 modifier = Modifier
-                                    .height(38.dp)
+                                    .height(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable(onClick = onOpenVendorsClick)
                                     .testTag("card_open_vendors_button"),
@@ -217,20 +226,22 @@ fun HomePrepScreen(
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Storefront,
                                         contentDescription = "البائعون",
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(15.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = "البائعون",
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }

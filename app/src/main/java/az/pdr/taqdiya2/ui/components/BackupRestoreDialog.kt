@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -308,7 +309,7 @@ fun BackupRestoreDialog(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp)
+                                .heightIn(min = 50.dp)
                                 .testTag("export_backup_file_button"),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
@@ -318,9 +319,10 @@ fun BackupRestoreDialog(
                             Icon(imageVector = Icons.Outlined.Download, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "حفظ ملف نسخة احتياطية (.json) في الهاتف",
+                                text = "حفظ ملف النسخة (.json) في الهاتف",
                                 style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
                             )
                         }
 
@@ -339,7 +341,7 @@ fun BackupRestoreDialog(
                                 },
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(48.dp)
+                                    .heightIn(min = 48.dp)
                                     .testTag("copy_backup_json_button"),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
@@ -351,7 +353,9 @@ fun BackupRestoreDialog(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "نسخ الكود",
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
 
@@ -371,7 +375,7 @@ fun BackupRestoreDialog(
                                 },
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(48.dp)
+                                    .heightIn(min = 48.dp)
                                     .testTag("share_backup_json_button"),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
@@ -383,7 +387,9 @@ fun BackupRestoreDialog(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "إرسال واتساب",
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -438,7 +444,7 @@ fun BackupRestoreDialog(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp)
+                                .heightIn(min = 50.dp)
                                 .testTag("import_backup_file_button"),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.secondary
@@ -448,9 +454,10 @@ fun BackupRestoreDialog(
                             Icon(imageVector = Icons.Outlined.FolderOpen, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "اختيار ملف نسخة احتياطية (.json) من الهاتف",
+                                text = "اختيار ملف نسخة (.json) من الهاتف",
                                 style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
                             )
                         }
 
@@ -458,7 +465,7 @@ fun BackupRestoreDialog(
                             onClick = { showPasteRestoreSection = !showPasteRestoreSection },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(46.dp)
+                                .heightIn(min = 48.dp)
                                 .testTag("toggle_paste_backup_section_button"),
                             shape = RoundedCornerShape(12.dp)
                         ) {
@@ -472,9 +479,10 @@ fun BackupRestoreDialog(
                                 text = if (showPasteRestoreSection) {
                                     "إخفاء خانة لصق الكود النصي"
                                 } else {
-                                    "أو استرجاع عبر لصق كود النسخة الاحتياطية"
+                                    "أو استرجاع عبر لصق كود النسخة"
                                 },
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
                             )
                         }
 
@@ -507,11 +515,11 @@ fun BackupRestoreDialog(
                                     },
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(46.dp)
+                                        .heightIn(min = 48.dp)
                                         .testTag("paste_from_clipboard_button"),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
-                                    Text("لصق من الحافظة", fontWeight = FontWeight.Bold)
+                                    Text("لصق من الحافظة", fontWeight = FontWeight.Bold, maxLines = 1)
                                 }
 
                                 Button(
@@ -523,14 +531,14 @@ fun BackupRestoreDialog(
                                     enabled = pastedBackupJson.isNotBlank(),
                                     modifier = Modifier
                                         .weight(1.3f)
-                                        .height(46.dp)
+                                        .heightIn(min = 48.dp)
                                         .testTag("submit_pasted_backup_button"),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = MaterialTheme.colorScheme.tertiary
                                     ),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
-                                    Text("فحص واسترجاع", fontWeight = FontWeight.Bold)
+                                    Text("فحص واسترجاع", fontWeight = FontWeight.Bold, maxLines = 1)
                                 }
                             }
                         }
@@ -594,15 +602,15 @@ fun BackupRestoreDialog(
                                         if (pinned) {
                                             onNotifyMessage("تم إرسال طلب إضافة الودجت للشاشة الرئيسية")
                                         } else {
-                                            onNotifyMessage("اضغط مطولاً على شاشة الهاتف الرئيسية واختر (التطبيقات المصغرة / Widgets) ثم كناش التقدية")
+                                            onNotifyMessage("اضغط مطولاً على شاشة الهاتف الرئيسية واختر (التطبيقات المصغرة / Widgets) ثم التقدية")
                                         }
                                     } else {
-                                        onNotifyMessage("اضغط مطولاً على شاشة الهاتف الرئيسية واختر (Widgets) ثم كناش التقدية")
+                                        onNotifyMessage("اضغط مطولاً على شاشة الهاتف الرئيسية واختر (Widgets) ثم التقدية")
                                     }
                                 },
                                 modifier = Modifier
                                     .weight(1.3f)
-                                    .height(48.dp)
+                                    .heightIn(min = 48.dp)
                                     .testTag("pin_home_widget_button"),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.tertiary
@@ -616,9 +624,11 @@ fun BackupRestoreDialog(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "تثبيت الودجت بالشاشة",
+                                    text = "تثبيت الودجت",
                                     style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
 
@@ -629,7 +639,7 @@ fun BackupRestoreDialog(
                                 },
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(48.dp)
+                                    .heightIn(min = 48.dp)
                                     .testTag("refresh_home_widget_button"),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
@@ -642,7 +652,9 @@ fun BackupRestoreDialog(
                                 Text(
                                     text = "تحديث الآن",
                                     style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }

@@ -164,7 +164,7 @@ fun TopPocketBar(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Oversized Tactile Pocket Balance Card + Privacy Eye Toggle
+            // Oversized Tactile Pocket Balance Card + Privacy Eye Toggle (2-row layout so Rial badge never wraps vertically)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -174,106 +174,122 @@ fun TopPocketBar(
                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(18.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 14.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Row 1: Wallet Icon + Title + Action Icons (Privacy Eye & Edit)
                     Row(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(MaterialTheme.colorScheme.secondary),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Outlined.AccountBalanceWallet,
-                                contentDescription = "ميزانية الجيب",
-                                tint = MaterialTheme.colorScheme.onSecondary,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.secondary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.AccountBalanceWallet,
+                                    contentDescription = "ميزانية الجيب",
+                                    tint = MaterialTheme.colorScheme.onSecondary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = if (privacyMaskAmounts) {
-                                    "الباقي في الجيب (مخفي بعين الخصوصية)"
+                                    "الباقي في الجيب (مخفي)"
                                 } else {
                                     "الباقي في الجيب الآن (اضغط للتعديل)"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1
                             )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(
+                                        if (privacyMaskAmounts) MaterialTheme.colorScheme.secondary
+                                        else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)
+                                    )
+                                    .clickable(onClick = onTogglePrivacyMask)
+                                    .testTag("privacy_eye_toggle_button"),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = CurrencyFormatter.formatDirhams(remainingPocketDirhams),
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontWeight = FontWeight.Bold
+                                Icon(
+                                    imageVector = if (privacyMaskAmounts) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                    contentDescription = if (privacyMaskAmounts) "إظهار المبالغ" else "إخفاء المبالغ بعين الخصوصية",
+                                    tint = if (privacyMaskAmounts) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(19.dp)
                                 )
-                                if (showRial) {
-                                    Surface(
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        shape = RoundedCornerShape(10.dp)
-                                    ) {
-                                        Text(
-                                            text = CurrencyFormatter.formatRials(remainingPocketDirhams),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.onSecondary,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-                                        )
-                                    }
-                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Edit,
+                                    contentDescription = "تعديل ميزانية الجيب",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
                         }
                     }
 
+                    // Row 2: Full-width Dirhams + Rial Badge (Never squeezed or wrapped!)
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    if (privacyMaskAmounts) MaterialTheme.colorScheme.secondary
-                                    else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)
+                        Text(
+                            text = CurrencyFormatter.formatDirhams(remainingPocketDirhams),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        if (showRial) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.secondary,
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                    text = CurrencyFormatter.formatRials(remainingPocketDirhams),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSecondary,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                                 )
-                                .clickable(onClick = onTogglePrivacyMask)
-                                .testTag("privacy_eye_toggle_button"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = if (privacyMaskAmounts) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                                contentDescription = if (privacyMaskAmounts) "إظهار المبالغ" else "إخفاء المبالغ بعين الخصوصية",
-                                tint = if (privacyMaskAmounts) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(21.dp)
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Edit,
-                                contentDescription = "تعديل ميزانية الجيب",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            }
                         }
                     }
                 }

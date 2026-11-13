@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">كناش التقدية</string>
+    <string name="app_name">التقدية</string>
+    <string name="app_full_title">كناش التقدية</string>
     <string name="tab_home_prep">التحضير في البيت</string>
     <string name="tab_at_vendor">عند البائع</string>
     <string name="tab_pocket_audit">جرد الجيب</string>

@@ -470,10 +470,17 @@ fun QuickAddPadSheet(
                 OutlinedTextField(
                     value = itemNameInput,
                     onValueChange = onItemNameChanged,
-                    placeholder = { Text("اسم غرض جديد...") },
+                    placeholder = {
+                        Text(
+                            text = "اسم الغرض...",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
-                        .weight(1.3f)
+                        .weight(1.25f)
                         .testTag("add_item_name_input"),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { onSubmitCustomItem() })
@@ -482,10 +489,17 @@ fun QuickAddPadSheet(
                 OutlinedTextField(
                     value = itemNoteInput,
                     onValueChange = onItemNoteChanged,
-                    placeholder = { Text("ملاحظة...") },
+                    placeholder = {
+                        Text(
+                            text = "ملاحظة...",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(0.95f)
                         .testTag("add_item_note_input"),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { onSubmitCustomItem() })
@@ -497,20 +511,27 @@ fun QuickAddPadSheet(
                         onSubmitCustomItem()
                     },
                     enabled = itemNameInput.trim().isNotEmpty(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                     modifier = Modifier
-                        .height(56.dp)
+                        .height(54.dp)
                         .testTag("submit_add_item_button"),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     ),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Add,
-                        contentDescription = "إضافة"
+                        contentDescription = "إضافة",
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("أضف")
+                    Text(
+                        text = "أضف",
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
             }
         }

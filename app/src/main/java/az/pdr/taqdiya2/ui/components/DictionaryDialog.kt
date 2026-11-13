@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import az.pdr.taqdiya2.data.local.DictionaryItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
 import az.pdr.taqdiya2.ui.viewmodel.UndoAction
@@ -92,6 +93,10 @@ fun DictionaryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier
+            .fillMaxWidth(0.95f)
+            .padding(vertical = 16.dp),
         containerColor = MaterialTheme.colorScheme.background,
         title = {
             Column {
@@ -116,6 +121,7 @@ fun DictionaryDialog(
                             },
                             modifier = Modifier
                                 .weight(1f)
+                                .heightIn(min = 44.dp)
                                 .testTag("dict_add_new_button")
                         ) {
                             Icon(
@@ -124,7 +130,7 @@ fun DictionaryDialog(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("إضافة غرض")
+                            Text("إضافة غرض", maxLines = 1, softWrap = false)
                         }
 
                         OutlinedButton(
@@ -138,6 +144,7 @@ fun DictionaryDialog(
                             enabled = dictionaryItems.size >= 2,
                             modifier = Modifier
                                 .weight(1f)
+                                .heightIn(min = 44.dp)
                                 .testTag("dict_open_merge_button")
                         ) {
                             Icon(
@@ -146,7 +153,7 @@ fun DictionaryDialog(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("دمج اسمين")
+                            Text("دمج اسمين", maxLines = 1, softWrap = false)
                         }
                     }
                 }
@@ -183,7 +190,7 @@ fun DictionaryDialog(
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 320.dp),
+                                .heightIn(max = 360.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(filteredItems, key = { it.id }) { item ->
@@ -194,68 +201,76 @@ fun DictionaryDialog(
                                         containerColor = MaterialTheme.colorScheme.surface
                                     )
                                 ) {
-                                    Row(
+                                    Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
+                                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        Column(modifier = Modifier.weight(1f)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
                                             Text(
                                                 text = item.name,
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Bold
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.weight(1f)
                                             )
-                                            Text(
-                                                text = "البائع التلقائي: $vendorName • التكرار: ${item.usageCount}",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                IconButton(
+                                                    onClick = {
+                                                        mergeSource = item
+                                                        mergeTarget = dictionaryItems.firstOrNull { it.id != item.id }
+                                                        mode = DictDialogMode.MERGE
+                                                    },
+                                                    modifier = Modifier.size(38.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.CallMerge,
+                                                        contentDescription = "دمج مع غرض آخر",
+                                                        tint = MaterialTheme.colorScheme.secondary,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        editingEntry = item
+                                                        nameInput = item.name
+                                                        noteInput = item.defaultNote
+                                                        selectedVendorId = item.defaultVendorId
+                                                        mode = DictDialogMode.ADD_OR_EDIT
+                                                    },
+                                                    modifier = Modifier.size(38.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.Edit,
+                                                        contentDescription = "إعادة تسمية أو تعديل",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                                IconButton(
+                                                    onClick = { onDeleteEntry(item) },
+                                                    modifier = Modifier.size(38.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.DeleteOutline,
+                                                        contentDescription = "حذف من القاموس",
+                                                        tint = MaterialTheme.colorScheme.error,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                            }
                                         }
 
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            IconButton(
-                                                onClick = {
-                                                    mergeSource = item
-                                                    mergeTarget = dictionaryItems.firstOrNull { it.id != item.id }
-                                                    mode = DictDialogMode.MERGE
-                                                }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.CallMerge,
-                                                    contentDescription = "دمج مع غرض آخر",
-                                                    tint = MaterialTheme.colorScheme.secondary,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                            }
-                                            IconButton(
-                                                onClick = {
-                                                    editingEntry = item
-                                                    nameInput = item.name
-                                                    noteInput = item.defaultNote
-                                                    selectedVendorId = item.defaultVendorId
-                                                    mode = DictDialogMode.ADD_OR_EDIT
-                                                }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.Edit,
-                                                    contentDescription = "إعادة تسمية أو تعديل",
-                                                    tint = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                            }
-                                            IconButton(
-                                                onClick = { onDeleteEntry(item) }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.DeleteOutline,
-                                                    contentDescription = "حذف من القاموس",
-                                                    tint = MaterialTheme.colorScheme.error,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                            }
-                                        }
+                                        Text(
+                                            text = "البائع التلقائي: $vendorName • التكرار: ${item.usageCount}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
                             }
