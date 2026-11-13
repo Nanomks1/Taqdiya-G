@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">كناش التقدية</string>
+    <string name="tab_home_prep">التحضير في البيت</string>
+    <string name="tab_at_vendor">عند البائع</string>
+    <string name="tab_pocket_audit">جرد الجيب</string>
+    <string name="remaining_in_pocket">الباقي في الجيب الآن</string>
+    <string name="initial_pocket_budget">ميزانية الجيب قبل الخروج</string>
+    <string name="currency_dirham">درهم</string>
+    <string name="currency_rial">ريال</string>
+    <string name="add_missing_item_title">إضافة غرض لقائمة النواقص</string>
+    <string name="item_name_hint">اسم الغرض (مثال: مطيشة، لوبيا، زيت...)</string>
+    <string name="item_note_hint">ملاحظة اختيارية (مثال: نص كيلو، تكون طايبة...)</string>
+    <string name="add_item_button">إضافة للقائمة</string>
+    <string name="smart_dictionary_title">إدارة قاموس الأغراض الذكي</string>
+    <string name="share_list_title">مشاركة قائمة النواقص نصياً</string>
+    <string name="manage_vendors_title">إدارة قائمة البائعين</string>
+    <string name="double_back_exit_message">اضغط رجوع مرة أخرى للخروج من التطبيق</string>
+    <string name="undo_action">تراجع</string>
+</resources>

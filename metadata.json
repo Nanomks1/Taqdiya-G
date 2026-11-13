@@ -1,0 +1,8 @@
+{
+  "name": "كناش التقدية",
+  "description": "تطبيق أندرويد شخصي باللغة العربية لإدارة التسوق الواقعي من البائعين والأسواق الأسبوعية ومطابقة الجيب بالدرهم والريال بدون إنترنت.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
