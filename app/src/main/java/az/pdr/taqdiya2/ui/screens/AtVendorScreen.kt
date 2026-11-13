@@ -24,8 +24,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Handshake
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Replay
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material.icons.outlined.Storefront
@@ -58,10 +63,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
+import az.pdr.taqdiya2.ui.components.ConfirmVendorPaymentSheet
+import az.pdr.taqdiya2.ui.components.PriceTrendBadge
 import az.pdr.taqdiya2.ui.components.VendorIconMapper
 import az.pdr.taqdiya2.ui.components.VendorItemPricingSheet
+import az.pdr.taqdiya2.ui.components.VendorPendingBalanceSheet
 import az.pdr.taqdiya2.ui.viewmodel.HomePrepUiState
 import az.pdr.taqdiya2.util.CurrencyFormatter
+import az.pdr.taqdiya2.util.PriceEvaluation
+import az.pdr.taqdiya2.util.PriceTrendAnalyzer
+import kotlin.math.abs
 
 @Composable
 fun AtVendorScreen(
@@ -77,6 +88,17 @@ fun AtVendorScreen(
         totalDirhams: Double
     ) -> Unit,
     onUnmarkItemPurchased: (ShoppingItemEntity) -> Unit,
+    onDeleteItemClick: (ShoppingItemEntity) -> Unit,
+    onConfirmVendorPayment: (
+        vendor: VendorEntity,
+        calculatedTotalDirhams: Double,
+        actualPaidDirhams: Double,
+        forgivenDiscountDirhams: Double,
+        newVendorPendingBalanceDirhams: Double
+    ) -> Unit,
+    onUpdateVendorPendingBalance: (VendorEntity, Double) -> Unit,
+    onOpenPassingExpenseClick: () -> Unit,
+    onOpenItemPriceHistory: (itemName: String, vendorId: Long, fallbackPriceDh: Double) -> Unit,
     onOpenQuickPadForVendor: (Long?) -> Unit,
     onReturnToHomePrep: () -> Unit,
     modifier: Modifier = Modifier
@@ -93,6 +115,8 @@ fun AtVendorScreen(
     }
 
     var pricingItem by remember { mutableStateOf<ShoppingItemEntity?>(null) }
+    var showConfirmVendorPayment by remember { mutableStateOf(false) }
+    var showVendorPendingBalanceSheet by remember { mutableStateOf(false) }
 
     // Filter only vendors who have items in today's round
     val activeRoundItems = remember(uiState.shoppingItems) {
@@ -122,8 +146,13 @@ fun AtVendorScreen(
         currentVendorItems.filter { it.isPurchased }
     }
 
-    val currentVendorTotalDirhams = remember(purchasedItems) {
+    val currentVendorCalculatedTotalDirhams = remember(purchasedItems) {
         purchasedItems.sumOf { it.totalDirhams }
+    }
+
+    val currentVendorConfirmedPayment = remember(uiState.vendorPayments, selectedVendor) {
+        if (selectedVendor == null) null
+        else uiState.vendorPayments.firstOrNull { it.vendorId == selectedVendor.id }
     }
 
     if (vendorsWithItems.isEmpty()) {
@@ -193,6 +222,21 @@ fun AtVendorScreen(
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
+                        onClick = onOpenPassingExpenseClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Outlined.ReceiptLong, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("+ تسجيل مصروف عابر (خبز، طاكسي...)", style = MaterialTheme.typography.labelLarge)
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
                         onClick = onReturnToHomePrep,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -216,9 +260,9 @@ fun AtVendorScreen(
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // 1. Top Market Header: Active Vendors Strip + Keep Screen Awake Toggle
+                // 1. Top Market Header: Active Vendors Strip + Passing Expense + Keep Screen Awake Toggle
                 item(key = "market_vendor_selector") {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
@@ -233,43 +277,79 @@ fun AtVendorScreen(
                                 fontWeight = FontWeight.Bold
                             )
 
-                            Surface(
-                                modifier = Modifier
-                                    .height(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable(onClick = onToggleKeepScreenAwake)
-                                    .testTag("toggle_keep_screen_awake_button"),
-                                color = if (uiState.keepScreenAwakeInMarket) {
-                                    MaterialTheme.colorScheme.tertiaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                },
-                                shape = RoundedCornerShape(10.dp)
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                // Quick "+ مصروف عابر" Button
+                                Surface(
+                                    modifier = Modifier
+                                        .height(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable(onClick = onOpenPassingExpenseClick)
+                                        .testTag("market_passing_expense_button"),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.LightMode,
-                                        contentDescription = "إضاءة الشاشة",
-                                        tint = if (uiState.keepScreenAwakeInMarket) {
-                                            MaterialTheme.colorScheme.onTertiaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = if (uiState.keepScreenAwakeInMarket) "الشاشة مضاءة للسوق" else "إضاءة عادية",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = if (uiState.keepScreenAwakeInMarket) {
-                                            MaterialTheme.colorScheme.onTertiaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        }
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.ReceiptLong,
+                                            contentDescription = "مصروف عابر",
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "+ مصروف عابر",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
+                                // Keep Screen Awake Toggle
+                                Surface(
+                                    modifier = Modifier
+                                        .height(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable(onClick = onToggleKeepScreenAwake)
+                                        .testTag("toggle_keep_screen_awake_button"),
+                                    color = if (uiState.keepScreenAwakeInMarket) {
+                                        MaterialTheme.colorScheme.tertiaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    },
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.LightMode,
+                                            contentDescription = "إضاءة الشاشة",
+                                            tint = if (uiState.keepScreenAwakeInMarket) {
+                                                MaterialTheme.colorScheme.onTertiaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = if (uiState.keepScreenAwakeInMarket) "مضاءة" else "عادية",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = if (uiState.keepScreenAwakeInMarket) {
+                                                MaterialTheme.colorScheme.onTertiaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -289,11 +369,12 @@ fun AtVendorScreen(
                                 val vBought = vItems.count { it.isPurchased }
                                 val vTotalCount = vItems.size
                                 val vAllDone = vBought == vTotalCount && vTotalCount > 0
+                                val hasPendingChange = abs(vendor.pendingBalanceDirhams) > 0.009
 
                                 Surface(
                                     modifier = Modifier
-                                        .width(168.dp)
-                                        .height(82.dp)
+                                        .width(172.dp)
+                                        .height(84.dp)
                                         .clip(RoundedCornerShape(18.dp))
                                         .clickable {
                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -307,7 +388,11 @@ fun AtVendorScreen(
                                     },
                                     border = BorderStroke(
                                         width = if (isSelected) 0.dp else 1.5.dp,
-                                        color = if (vAllDone) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
+                                        color = when {
+                                            hasPendingChange -> MaterialTheme.colorScheme.secondary
+                                            vAllDone -> MaterialTheme.colorScheme.tertiary
+                                            else -> MaterialTheme.colorScheme.outline
+                                        }
                                     ),
                                     shape = RoundedCornerShape(18.dp),
                                     shadowElevation = if (isSelected) 4.dp else 1.dp
@@ -374,7 +459,95 @@ fun AtVendorScreen(
                     }
                 }
 
-                // 2. Waiting (Unpurchased) Items Section for Current Vendor
+                // 2. Pending Change Reminder Banner ("بقا ليا عندو / بقا ليه عندي") if non-zero
+                if (selectedVendor != null && abs(selectedVendor.pendingBalanceDirhams) > 0.009) {
+                    item(key = "vendor_pending_balance_banner") {
+                        val isVendorOwingMe = selectedVendor.pendingBalanceDirhams > 0.0
+                        val absPending = abs(selectedVendor.pendingBalanceDirhams)
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable { showVendorPendingBalanceSheet = true }
+                                .testTag("vendor_pending_balance_banner"),
+                            color = if (isVendorOwingMe) {
+                                MaterialTheme.colorScheme.tertiaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.errorContainer
+                            },
+                            border = BorderStroke(
+                                width = 1.5.dp,
+                                color = if (isVendorOwingMe) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Handshake,
+                                        contentDescription = null,
+                                        tint = if (isVendorOwingMe) {
+                                            MaterialTheme.colorScheme.onTertiaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onErrorContainer
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = if (isVendorOwingMe) {
+                                                "تذكير: بقا ليا عندو ${CurrencyFormatter.formatDirhams(absPending)} (${CurrencyFormatter.formatRials(absPending)})"
+                                            } else {
+                                                "تذكير: بقا ليه عندي ${CurrencyFormatter.formatDirhams(absPending)} (${CurrencyFormatter.formatRials(absPending)})"
+                                            },
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = if (isVendorOwingMe) {
+                                                MaterialTheme.colorScheme.onTertiaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.onErrorContainer
+                                            },
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "اضغط هنا لتصفية الصرف أو تعديله",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (isVendorOwingMe) {
+                                                MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                                            } else {
+                                                MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
+                                            }
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text(
+                                        text = "تصفية / تعديل",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 3. Waiting (Unpurchased) Items Section for Current Vendor
                 if (selectedVendor != null) {
                     item(key = "vendor_waiting_header") {
                         Row(
@@ -397,47 +570,96 @@ fun AtVendorScreen(
                                 fontWeight = FontWeight.Bold
                             )
 
-                            Surface(
-                                modifier = Modifier
-                                    .height(38.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable { onOpenQuickPadForVendor(selectedVendor.id) }
-                                    .testTag("market_add_extra_item_button"),
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                // Button to record pending change ("صرف عالق") anytime
+                                Surface(
+                                    modifier = Modifier
+                                        .height(38.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { showVendorPendingBalanceSheet = true }
+                                        .testTag("market_vendor_pending_balance_button"),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = RoundedCornerShape(12.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Add,
-                                        contentDescription = "إضافة غرض",
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "غرض إضافي",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Handshake,
+                                            contentDescription = "الصرف العالق",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "صرف عالق",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    modifier = Modifier
+                                        .height(38.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { onOpenQuickPadForVendor(selectedVendor.id) }
+                                        .testTag("market_add_extra_item_button"),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Add,
+                                            contentDescription = "إضافة غرض",
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "غرض إضافي",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
 
                     items(waitingItems, key = { "waiting_${it.id}" }) { item ->
+                        val normalized = CurrencyFormatter.normalizeArabicName(item.name)
+                        val itemHistory = uiState.priceHistory.filter { it.normalizedName == normalized }
+                        val usualEval = PriceTrendAnalyzer.evaluateItemPrice(
+                            currentUnitPriceDirhams = 0.0,
+                            purchaseMode = item.purchaseMode,
+                            itemHistory = itemHistory,
+                            fallbackLastPriceDirhams = item.unitPriceDirhams
+                        )
                         WaitingMarketItemCard(
                             item = item,
+                            usualPriceEvaluation = usualEval,
                             onOpenPricing = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 pricingItem = item
+                            },
+                            onOpenPriceHistory = {
+                                onOpenItemPriceHistory(item.name, item.vendorId, item.unitPriceDirhams)
+                            },
+                            onDeleteItem = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onDeleteItemClick(item)
                             }
                         )
                     }
 
-                    // 3. Purchased Items (In the Basket) Section
+                    // 4. Purchased Items (In the Basket) Section
                     if (purchasedItems.isNotEmpty()) {
                         item(key = "vendor_purchased_header") {
                             Spacer(modifier = Modifier.height(4.dp))
@@ -450,11 +672,25 @@ fun AtVendorScreen(
                         }
 
                         items(purchasedItems, key = { "purchased_${it.id}" }) { item ->
+                            val normalized = CurrencyFormatter.normalizeArabicName(item.name)
+                            val itemHistory = uiState.priceHistory.filter { it.normalizedName == normalized }
+                            val paidCompareUnit = if (item.purchaseMode == "FIXED") item.totalDirhams else item.unitPriceDirhams
+                            val paidEvaluation = PriceTrendAnalyzer.evaluateItemPrice(
+                                currentUnitPriceDirhams = paidCompareUnit,
+                                purchaseMode = item.purchaseMode,
+                                itemHistory = itemHistory,
+                                excludeShoppingItemId = item.id,
+                                fallbackLastPriceDirhams = 0.0
+                            )
                             PurchasedMarketItemCard(
                                 item = item,
+                                priceEvaluation = paidEvaluation,
                                 onEditPricing = {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     pricingItem = item
+                                },
+                                onOpenPriceHistory = {
+                                    onOpenItemPriceHistory(item.name, item.vendorId, paidCompareUnit)
                                 },
                                 onUnmarkPurchased = {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -466,85 +702,146 @@ fun AtVendorScreen(
                 }
             }
 
-            // 4. Pinned Bottom Vendor Review Bar (Total + Item Counter)
+            // 5. Pinned Bottom Vendor Review & Payment Bar (Basket Counter + Total + Confirm Payment)
             if (selectedVendor != null) {
+                val displayedTotalDirhams = currentVendorConfirmedPayment?.actualPaidDirhams
+                    ?: currentVendorCalculatedTotalDirhams
+
                 Surface(
                     color = MaterialTheme.colorScheme.primary,
                     shadowElevation = 12.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Right side: Purchased Items Counter (Never forget a bag on the scale!)
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(MaterialTheme.colorScheme.tertiary),
-                                contentAlignment = Alignment.Center
+                            // Right side: Purchased Items Counter (Never forget a bag on the scale!)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.ShoppingBag,
-                                    contentDescription = "عداد القفة",
-                                    tint = MaterialTheme.colorScheme.onTertiary,
-                                    modifier = Modifier.size(26.dp)
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.tertiary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.ShoppingBag,
+                                        contentDescription = "عداد القفة",
+                                        tint = MaterialTheme.colorScheme.onTertiary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "في القفة: ${purchasedItems.size} من ${currentVendorItems.size} أغراض",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.testTag("vendor_basket_counter_text")
+                                    )
+                                    Text(
+                                        text = if (currentVendorConfirmedPayment != null) {
+                                            if (currentVendorConfirmedPayment.forgivenDiscountDirhams > 0.0) {
+                                                "تم تأكيد الدفع (وفّرت ${CurrencyFormatter.formatDirhams(currentVendorConfirmedPayment.forgivenDiscountDirhams)})"
+                                            } else {
+                                                "تم تأكيد الدفع لهذا البائع"
+                                            }
+                                        } else if (waitingItems.isEmpty()) {
+                                            "تأكد من أخذ جميع أكياسك (${purchasedItems.size})"
+                                        } else {
+                                            "بقي ${waitingItems.size} أغراض لم تُوزن بعد"
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                                    )
+                                }
                             }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = "في القفة: ${purchasedItems.size} من ${currentVendorItems.size} أغراض",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.testTag("vendor_basket_counter_text")
-                                )
-                                Text(
-                                    text = if (waitingItems.isEmpty()) {
-                                        "تأكد من أخذ جميع أكياسك (${purchasedItems.size})"
-                                    } else {
-                                        "بقي ${waitingItems.size} أغراض لم تُوزن بعد"
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
-                                )
+
+                            // Left side: Current Vendor Total in Dirhams & Rials
+                            Surface(
+                                color = MaterialTheme.colorScheme.secondary,
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    horizontalAlignment = Alignment.End
+                                ) {
+                                    Text(
+                                        text = if (currentVendorConfirmedPayment != null) "المدفوع فعلياً" else "مجموع البائع",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.9f)
+                                    )
+                                    Text(
+                                        text = CurrencyFormatter.formatDirhams(displayedTotalDirhams),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onSecondary,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.testTag("vendor_total_dirhams_text")
+                                    )
+                                    Text(
+                                        text = CurrencyFormatter.formatRials(displayedTotalDirhams),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.95f)
+                                    )
+                                }
                             }
                         }
 
-                        // Left side: Current Vendor Total in Dirhams & Rials
-                        Surface(
-                            color = MaterialTheme.colorScheme.secondary,
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                horizontalAlignment = Alignment.End
+                        // Confirm Vendor Payment Button (shown whenever vendor has purchased items or pending change)
+                        if (purchasedItems.isNotEmpty() || abs(selectedVendor.pendingBalanceDirhams) > 0.009) {
+                            Button(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    showConfirmVendorPayment = true
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .testTag("open_confirm_vendor_payment_button"),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (currentVendorConfirmedPayment != null) {
+                                        MaterialTheme.colorScheme.tertiaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.tertiary
+                                    },
+                                    contentColor = if (currentVendorConfirmedPayment != null) {
+                                        MaterialTheme.colorScheme.onTertiaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onTertiary
+                                    }
+                                ),
+                                shape = RoundedCornerShape(14.dp)
                             ) {
-                                Text(
-                                    text = "مجموع هذا البائع",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.9f)
+                                Icon(
+                                    imageVector = if (currentVendorConfirmedPayment != null) {
+                                        Icons.Filled.CheckCircle
+                                    } else {
+                                        Icons.Outlined.Payments
+                                    },
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
                                 )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = CurrencyFormatter.formatDirhams(currentVendorTotalDirhams),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    color = MaterialTheme.colorScheme.onSecondary,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.testTag("vendor_total_dirhams_text")
-                                )
-                                Text(
-                                    text = CurrencyFormatter.formatRials(currentVendorTotalDirhams),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.95f)
+                                    text = if (currentVendorConfirmedPayment != null) {
+                                        "تم الدفع (${CurrencyFormatter.formatDirhams(currentVendorConfirmedPayment.actualPaidDirhams)}) — اضغط لتعديل الحساب"
+                                    } else {
+                                        "تأكيد الدفع للبائع وتعديل الصرف"
+                                    },
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
@@ -556,9 +853,20 @@ fun AtVendorScreen(
 
     val activePricingItem = pricingItem
     if (activePricingItem != null && selectedVendor != null) {
+        val normalized = CurrencyFormatter.normalizeArabicName(activePricingItem.name)
+        val itemHistory = uiState.priceHistory.filter { it.normalizedName == normalized }
         VendorItemPricingSheet(
             item = activePricingItem,
             vendorName = selectedVendor.name,
+            itemPriceHistory = itemHistory,
+            fallbackLastPriceDirhams = activePricingItem.unitPriceDirhams,
+            onOpenPriceHistory = {
+                onOpenItemPriceHistory(
+                    activePricingItem.name,
+                    activePricingItem.vendorId,
+                    activePricingItem.unitPriceDirhams
+                )
+            },
             onConfirmPurchase = { mode, unitPriceDh, qty, cleaningDh, totalDh ->
                 onConfirmItemPurchase(
                     activePricingItem,
@@ -572,12 +880,43 @@ fun AtVendorScreen(
             onDismiss = { pricingItem = null }
         )
     }
+
+    if (showConfirmVendorPayment && selectedVendor != null) {
+        ConfirmVendorPaymentSheet(
+            vendor = selectedVendor,
+            calculatedItemsTotalDirhams = currentVendorCalculatedTotalDirhams,
+            existingPayment = currentVendorConfirmedPayment,
+            onConfirmPayment = { calcTotal, actualPaid, forgiven, newPending ->
+                onConfirmVendorPayment(
+                    selectedVendor,
+                    calcTotal,
+                    actualPaid,
+                    forgiven,
+                    newPending
+                )
+            },
+            onDismiss = { showConfirmVendorPayment = false }
+        )
+    }
+
+    if (showVendorPendingBalanceSheet && selectedVendor != null) {
+        VendorPendingBalanceSheet(
+            vendor = selectedVendor,
+            onSavePendingBalance = { newPending ->
+                onUpdateVendorPendingBalance(selectedVendor, newPending)
+            },
+            onDismiss = { showVendorPendingBalanceSheet = false }
+        )
+    }
 }
 
 @Composable
 private fun WaitingMarketItemCard(
     item: ShoppingItemEntity,
-    onOpenPricing: () -> Unit
+    usualPriceEvaluation: PriceEvaluation,
+    onOpenPricing: () -> Unit,
+    onOpenPriceHistory: () -> Unit,
+    onDeleteItem: () -> Unit
 ) {
     ElevatedCard(
         modifier = Modifier
@@ -623,39 +962,89 @@ private fun WaitingMarketItemCard(
                     }
                 }
 
-                if (item.unitPriceDirhams > 0.0) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "آخر ثمن مسجل: ${CurrencyFormatter.formatDirhams(item.unitPriceDirhams)} (${CurrencyFormatter.formatRials(item.unitPriceDirhams)})",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                if (usualPriceEvaluation.referenceUsualDirhams > 0.0) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "المعتاد: ${CurrencyFormatter.formatDirhams(usualPriceEvaluation.referenceUsualDirhams)} (${CurrencyFormatter.formatRials(usualPriceEvaluation.referenceUsualDirhams)})",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Surface(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable(onClick = onOpenPriceHistory)
+                                .testTag("open_item_price_history_${item.id}"),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.History,
+                                    contentDescription = "سجل الأثمنة",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "سجل الأثمنة",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-            Surface(
-                color = MaterialTheme.colorScheme.secondary,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.height(50.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondary,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.height(50.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Calculate,
+                            contentDescription = "احسب الثمن",
+                            tint = MaterialTheme.colorScheme.onSecondary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "احسب الثمن",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
+                IconButton(
+                    onClick = onDeleteItem,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("market_delete_waiting_item_${item.id}")
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Calculate,
-                        contentDescription = "احسب الثمن",
-                        tint = MaterialTheme.colorScheme.onSecondary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "احسب الثمن",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSecondary,
-                        fontWeight = FontWeight.Bold
+                        imageVector = Icons.Outlined.DeleteOutline,
+                        contentDescription = "حذف ${item.name}",
+                        tint = MaterialTheme.colorScheme.error
                     )
                 }
             }
@@ -666,7 +1055,9 @@ private fun WaitingMarketItemCard(
 @Composable
 private fun PurchasedMarketItemCard(
     item: ShoppingItemEntity,
+    priceEvaluation: PriceEvaluation,
     onEditPricing: () -> Unit,
+    onOpenPriceHistory: () -> Unit,
     onUnmarkPurchased: () -> Unit
 ) {
     Surface(
@@ -701,13 +1092,22 @@ private fun PurchasedMarketItemCard(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
-                        Text(
-                            text = item.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            fontWeight = FontWeight.Bold,
-                            textDecoration = TextDecoration.Underline
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = item.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                fontWeight = FontWeight.Bold,
+                                textDecoration = TextDecoration.Underline
+                            )
+                            PriceTrendBadge(
+                                evaluation = priceEvaluation,
+                                onClick = onOpenPriceHistory
+                            )
+                        }
                         Text(
                             text = CurrencyFormatter.formatPurchaseDetails(item),
                             style = MaterialTheme.typography.bodySmall,
@@ -741,6 +1141,35 @@ private fun PurchasedMarketItemCard(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Surface(
+                    modifier = Modifier
+                        .height(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(onClick = onOpenPriceHistory),
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.History,
+                            contentDescription = "سجل الأثمنة",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "سجل الأثمنة",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
                 Surface(
                     modifier = Modifier
                         .height(36.dp)

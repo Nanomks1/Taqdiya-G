@@ -1,5 +1,8 @@
 package az.pdr.taqdiya2.util
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
 import java.util.Locale
@@ -8,6 +11,9 @@ import kotlin.math.roundToLong
 
 object CurrencyFormatter {
     const val RIALS_PER_DIRHAM = 20.0
+
+    var showRialState by mutableStateOf(true)
+    var privacyMaskState by mutableStateOf(false)
 
     fun dirhamsToRials(dirhams: Double): Long {
         return (dirhams * RIALS_PER_DIRHAM).roundToLong()
@@ -30,11 +36,24 @@ object CurrencyFormatter {
         }
     }
 
-    fun formatDirhams(dirhams: Double): String {
+    fun formatPlainNumber(amount: Double): String {
+        return formatAmountPlain(amount)
+    }
+
+    fun formatDirhams(dirhams: Double, allowMask: Boolean = true): String {
+        if (allowMask && privacyMaskState) {
+            return "*** درهم"
+        }
         return "${formatAmountPlain(dirhams)} درهم"
     }
 
-    fun formatRials(dirhams: Double): String {
+    fun formatRials(dirhams: Double, allowMask: Boolean = true): String {
+        if (!showRialState) {
+            return if (allowMask && privacyMaskState) "*** د.م" else "${formatAmountPlain(dirhams)} د.م"
+        }
+        if (allowMask && privacyMaskState) {
+            return "*** ريال"
+        }
         val rials = dirhamsToRials(dirhams)
         return "$rials ريال"
     }

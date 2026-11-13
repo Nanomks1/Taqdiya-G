@@ -17,8 +17,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,6 +40,10 @@ fun TopPocketBar(
     remainingPocketDirhams: Double,
     initialPocketDirhams: Double,
     totalMissingItemsCount: Int,
+    privacyMaskAmounts: Boolean = CurrencyFormatter.privacyMaskState,
+    showRial: Boolean = CurrencyFormatter.showRialState,
+    onTogglePrivacyMask: () -> Unit = {},
+    onOpenSettingsClick: () -> Unit = {},
     onEditBudgetClick: () -> Unit,
     onOpenToolsSheetClick: () -> Unit,
     onShareListClick: () -> Unit
@@ -52,7 +59,7 @@ fun TopPocketBar(
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
-            // Top Row: App Title + Two Large Tactile Action Pills (WhatsApp Share & Tools)
+            // Top Row: App Title + Tactile Action Pills (WhatsApp Share, Tools, Settings)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -86,7 +93,7 @@ fun TopPocketBar(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
@@ -95,7 +102,7 @@ fun TopPocketBar(
                                 tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = "واتساب",
                                 style = MaterialTheme.typography.labelMedium,
@@ -115,7 +122,7 @@ fun TopPocketBar(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
@@ -124,12 +131,31 @@ fun TopPocketBar(
                                 tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = "القاموس والبائعين",
+                                text = "الأدوات",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(onClick = onOpenSettingsClick)
+                            .testTag("open_settings_button"),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = "الإعدادات والخصوصية",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
@@ -138,7 +164,7 @@ fun TopPocketBar(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Oversized Tactile Pocket Balance Card (Entire card is clickable!)
+            // Oversized Tactile Pocket Balance Card + Privacy Eye Toggle
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -151,11 +177,14 @@ fun TopPocketBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
@@ -170,10 +199,14 @@ fun TopPocketBar(
                                 modifier = Modifier.size(26.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(14.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "الباقي في الجيب الآن (اضغط للتعديل)",
+                                text = if (privacyMaskAmounts) {
+                                    "الباقي في الجيب (مخفي بعين الخصوصية)"
+                                } else {
+                                    "الباقي في الجيب الآن (اضغط للتعديل)"
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                             )
@@ -187,37 +220,65 @@ fun TopPocketBar(
                                     color = MaterialTheme.colorScheme.onPrimary,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Surface(
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Text(
-                                        text = CurrencyFormatter.formatRials(remainingPocketDirhams),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onSecondary,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-                                    )
+                                if (showRial) {
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        Text(
+                                            text = CurrencyFormatter.formatRials(remainingPocketDirhams),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.onSecondary,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Edit,
-                            contentDescription = "تعديل ميزانية الجيب",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (privacyMaskAmounts) MaterialTheme.colorScheme.secondary
+                                    else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)
+                                )
+                                .clickable(onClick = onTogglePrivacyMask)
+                                .testTag("privacy_eye_toggle_button"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (privacyMaskAmounts) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                contentDescription = if (privacyMaskAmounts) "إظهار المبالغ" else "إخفاء المبالغ بعين الخصوصية",
+                                tint = if (privacyMaskAmounts) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(21.dp)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "تعديل ميزانية الجيب",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+

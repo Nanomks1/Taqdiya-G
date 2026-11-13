@@ -8,7 +8,9 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
@@ -64,12 +66,33 @@ val AppShapes = Shapes(
 
 @Composable
 fun TaqdiyaTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: String = "LIGHT",
+    uiScaleMode: String = "NORMAL",
     content: @Composable () -> Unit
 ) {
+    val systemDark = isSystemInDarkTheme()
+    val darkTheme = when (themeMode) {
+        "DARK" -> true
+        "SYSTEM" -> systemDark
+        else -> false
+    }
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+    val baseDensity = LocalDensity.current
+    val (densityScale, fontScaleMultiplier) = when (uiScaleMode) {
+        "LARGE" -> 1.06f to 1.12f
+        "EXTRA_LARGE" -> 1.10f to 1.22f
+        else -> 1.0f to 1.0f
+    }
+    val scaledDensity = Density(
+        density = baseDensity.density * densityScale,
+        fontScale = baseDensity.fontScale * fontScaleMultiplier
+    )
+
+    CompositionLocalProvider(
+        LocalLayoutDirection provides LayoutDirection.Rtl,
+        LocalDensity provides scaledDensity
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = AppTypography,
@@ -78,3 +101,4 @@ fun TaqdiyaTheme(
         )
     }
 }
+

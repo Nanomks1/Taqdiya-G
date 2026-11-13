@@ -11,6 +11,8 @@ data class VendorEntity(
     val specialty: String = "",
     val iconKey: String = "store",
     val sortOrder: Int = 0,
+    // Positive (> 0): "بقا ليا عندو" (Vendor owes me change)
+    // Negative (< 0): "بقا ليه عندي" (I owe the vendor money/change)
     val pendingBalanceDirhams: Double = 0.0,
     val isDeleted: Boolean = false,
     val deletedAt: Long? = null
@@ -24,7 +26,10 @@ data class ShoppingRoundEntity(
     val createdAt: Long = System.currentTimeMillis(),
     val isActive: Boolean = true,
     val isArchived: Boolean = false,
-    val completedAt: Long? = null
+    val completedAt: Long? = null,
+    val archivedTotalSpentDirhams: Double = 0.0,
+    val archivedSavingsDirhams: Double = 0.0,
+    val archivedItemsCount: Int = 0
 )
 
 @Entity(
@@ -49,6 +54,35 @@ data class ShoppingItemEntity(
 )
 
 @Entity(
+    tableName = "vendor_payments",
+    indices = [Index(value = ["roundId", "vendorId"], unique = true)]
+)
+data class VendorPaymentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val roundId: Long,
+    val vendorId: Long,
+    val calculatedTotalDirhams: Double,
+    val actualPaidDirhams: Double,
+    val forgivenDiscountDirhams: Double = 0.0,
+    val recordedPendingChangeDirhams: Double = 0.0,
+    val paidAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "passing_expenses",
+    indices = [Index("roundId")]
+)
+data class PassingExpenseEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val roundId: Long,
+    val title: String,
+    val amountDirhams: Double,
+    val createdAt: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false,
+    val deletedAt: Long? = null
+)
+
+@Entity(
     tableName = "dictionary_items",
     indices = [Index(value = ["normalizedName"], unique = true)]
 )
@@ -62,3 +96,37 @@ data class DictionaryItemEntity(
     val lastPriceDirhams: Double = 0.0,
     val lastUpdated: Long = System.currentTimeMillis()
 )
+
+@Entity(
+    tableName = "price_history",
+    indices = [Index("normalizedName"), Index("shoppingItemId")]
+)
+data class PriceHistoryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val itemName: String,
+    val normalizedName: String,
+    val vendorId: Long,
+    val vendorName: String,
+    val purchaseMode: String = "WEIGHT",
+    val unitPriceDirhams: Double,
+    val quantity: Double = 1.0,
+    val totalPaidDirhams: Double,
+    val shoppingItemId: Long? = null,
+    val recordedAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "app_settings")
+data class AppSettingsEntity(
+    @PrimaryKey val id: Int = 1,
+    // "LIGHT" (نهاري ساطع للسوق), "DARK" (ليلي مريح), "SYSTEM" (تلقائي)
+    val themeMode: String = "LIGHT",
+    // إظهار الريال بجانب الدرهم (1 درهم = 20 ريال)
+    val showRial: Boolean = true,
+    // "NORMAL" (100%), "LARGE" (110%), "EXTRA_LARGE" (120%)
+    val uiScaleMode: String = "NORMAL",
+    // عين الخصوصية: إخفاء المبالغ المالية برمز (***)
+    val privacyMaskAmounts: Boolean = false,
+    // رمز قفل التطبيق السري (4 أرقام، فارغ يعني بدون قفل)
+    val pinCode: String = ""
+)
+

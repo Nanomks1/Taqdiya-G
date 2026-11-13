@@ -51,8 +51,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.pdr.taqdiya2.data.local.PriceHistoryEntity
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.util.CurrencyFormatter
+import az.pdr.taqdiya2.util.PriceTrendAnalyzer
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -67,6 +69,9 @@ private enum class ActiveNumpadField {
 fun VendorItemPricingSheet(
     item: ShoppingItemEntity,
     vendorName: String,
+    itemPriceHistory: List<PriceHistoryEntity>,
+    fallbackLastPriceDirhams: Double,
+    onOpenPriceHistory: () -> Unit,
     onConfirmPurchase: (
         purchaseMode: String,
         unitPriceDirhams: Double,
@@ -847,7 +852,31 @@ fun VendorItemPricingSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 3.5 Live Price Trend Indicator Banner (مؤشر الغلاء والرخاء: أخضر / أصفر / أحمر)
+            val livePriceEvaluation = remember(
+                unitOrFixedPriceDirhams,
+                selectedMode,
+                itemPriceHistory,
+                item.id,
+                fallbackLastPriceDirhams
+            ) {
+                PriceTrendAnalyzer.evaluateItemPrice(
+                    currentUnitPriceDirhams = unitOrFixedPriceDirhams,
+                    purchaseMode = selectedMode,
+                    itemHistory = itemPriceHistory,
+                    excludeShoppingItemId = if (item.isPurchased) item.id else null,
+                    fallbackLastPriceDirhams = fallbackLastPriceDirhams
+                )
+            }
+
+            PriceIndicatorBanner(
+                evaluation = livePriceEvaluation,
+                onOpenHistoryClick = onOpenPriceHistory
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // 4. Built-in Oversized Tactile Numpad
             val numpadRows = listOf(

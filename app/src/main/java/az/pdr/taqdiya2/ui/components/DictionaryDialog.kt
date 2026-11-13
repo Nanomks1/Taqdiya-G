@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.DictionaryItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
+import az.pdr.taqdiya2.ui.viewmodel.UndoAction
 
 private enum class DictDialogMode {
     LIST,
@@ -56,6 +57,9 @@ private enum class DictDialogMode {
 fun DictionaryDialog(
     dictionaryItems: List<DictionaryItemEntity>,
     vendors: List<VendorEntity>,
+    activeUndo: UndoAction?,
+    onPerformUndo: (UndoAction) -> Unit,
+    onDismissUndo: () -> Unit,
     onAddEntry: (String, Long, String) -> Unit,
     onRenameEntry: (Long, String, Long, String) -> Unit,
     onMergeEntries: (DictionaryItemEntity, DictionaryItemEntity) -> Unit,
@@ -65,7 +69,6 @@ fun DictionaryDialog(
     var mode by remember { mutableStateOf(DictDialogMode.LIST) }
     var searchQuery by remember { mutableStateOf("") }
 
-    // Add / Edit state
     var editingEntry by remember { mutableStateOf<DictionaryItemEntity?>(null) }
     var nameInput by remember { mutableStateOf("") }
     var noteInput by remember { mutableStateOf("") }
@@ -73,7 +76,6 @@ fun DictionaryDialog(
         mutableStateOf(vendors.firstOrNull()?.id ?: 1L)
     }
 
-    // Merge state
     var mergeSource by remember { mutableStateOf<DictionaryItemEntity?>(null) }
     var mergeTarget by remember { mutableStateOf<DictionaryItemEntity?>(null) }
 
@@ -90,6 +92,7 @@ fun DictionaryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.background,
         title = {
             Column {
                 Text(
@@ -151,6 +154,12 @@ fun DictionaryDialog(
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
+                InlineUndoBanner(
+                    activeUndo = activeUndo,
+                    onPerformUndo = onPerformUndo,
+                    onDismiss = onDismissUndo
+                )
+
                 when (mode) {
                     DictDialogMode.LIST -> {
                         OutlinedTextField(
@@ -174,7 +183,7 @@ fun DictionaryDialog(
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 330.dp),
+                                .heightIn(max = 320.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(filteredItems, key = { it.id }) { item ->

@@ -17,4 +17,6 @@
     <string name="manage_vendors_title">إدارة قائمة البائعين</string>
     <string name="double_back_exit_message">اضغط رجوع مرة أخرى للخروج من التطبيق</string>
     <string name="undo_action">تراجع</string>
+    <string name="widget_description">يعرض الباقي في الجيب بالدرهم والريال وقائمة النواقص المطلوبة مباشرة على شاشة الهاتف</string>
 </resources>
+

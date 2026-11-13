@@ -10,9 +10,13 @@ import androidx.room.RoomDatabase
         VendorEntity::class,
         ShoppingRoundEntity::class,
         ShoppingItemEntity::class,
-        DictionaryItemEntity::class
+        VendorPaymentEntity::class,
+        PassingExpenseEntity::class,
+        DictionaryItemEntity::class,
+        PriceHistoryEntity::class,
+        AppSettingsEntity::class
     ],
-    version = 1,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

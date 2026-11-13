@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.DictionaryItemEntity
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
+import az.pdr.taqdiya2.ui.viewmodel.UndoAction
 import az.pdr.taqdiya2.util.CurrencyFormatter
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -71,6 +72,9 @@ fun QuickAddPadSheet(
     itemNameInput: String,
     itemNoteInput: String,
     autoMatchedVendorName: String?,
+    activeUndo: UndoAction?,
+    onPerformUndo: (UndoAction) -> Unit,
+    onDismissUndo: () -> Unit,
     onSelectVendor: (Long) -> Unit,
     onToggleTile: (DictionaryItemEntity, Long?) -> Unit,
     onApplyQuickNote: (String) -> Unit,
@@ -159,7 +163,14 @@ fun QuickAddPadSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // Inline Global Undo Banner inside Quick Pad
+            InlineUndoBanner(
+                activeUndo = activeUndo,
+                onPerformUndo = onPerformUndo,
+                onDismiss = onDismissUndo
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             // 2. Oversized Vendor Selector Strip
             Row(
@@ -246,7 +257,7 @@ fun QuickAddPadSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // 3. 3-Column Oversized Tactile Item Grid (68.dp tall tiles!)
             Text(
@@ -262,7 +273,7 @@ fun QuickAddPadSheet(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 150.dp, max = 230.dp),
+                    .heightIn(min = 140.dp, max = 210.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(vertical = 2.dp)
@@ -358,7 +369,7 @@ fun QuickAddPadSheet(
 
             // 4. 1-Tap Ready Notes Bar for the Active Item
             if (activeTargetItem != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(16.dp),
@@ -379,7 +390,7 @@ fun QuickAddPadSheet(
                                 val isNoteSelected = activeTargetItem.note == noteOption
                                 Surface(
                                     modifier = Modifier
-                                        .height(42.dp)
+                                        .height(40.dp)
                                         .clip(RoundedCornerShape(12.dp))
                                         .clickable {
                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -417,11 +428,11 @@ fun QuickAddPadSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(10.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // 5. Custom New Item Input Row (for new items not yet in grid)
+            // 5. Custom New Item Input Row
             Text(
                 text = "أو اكتب غرضاً جديداً (يتعلمه القاموس تلقائياً):",
                 style = MaterialTheme.typography.labelLarge,
@@ -449,7 +460,7 @@ fun QuickAddPadSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

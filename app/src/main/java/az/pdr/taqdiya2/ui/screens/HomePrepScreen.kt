@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.QueryStats
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.Button
@@ -75,6 +76,7 @@ fun HomePrepScreen(
     onDeleteItemClick: (ShoppingItemEntity) -> Unit,
     onOpenDictionaryClick: () -> Unit,
     onOpenVendorsClick: () -> Unit,
+    onOpenPriceTrackerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
@@ -120,7 +122,7 @@ fun HomePrepScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "اختر البائع للإضافة باللمس:",
+                            text = "اختر البائع:",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
@@ -136,7 +138,7 @@ fun HomePrepScreen(
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -145,11 +147,34 @@ fun HomePrepScreen(
                                         modifier = Modifier.size(16.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
+                                }
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .height(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable(onClick = onOpenPriceTrackerClick)
+                                    .testTag("card_open_price_tracker_button"),
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.QueryStats,
+                                        contentDescription = "كناش الأثمنة",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "بحث",
+                                        text = "الأثمنة",
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
@@ -518,6 +543,35 @@ private fun OversizedVendorCard(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (kotlin.math.abs(vendor.pendingBalanceDirhams) > 0.009) {
+                            val isVendorOwingMe = vendor.pendingBalanceDirhams > 0.0
+                            val absPending = kotlin.math.abs(vendor.pendingBalanceDirhams)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Surface(
+                                color = if (isVendorOwingMe) {
+                                    MaterialTheme.colorScheme.tertiaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.errorContainer
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = if (isVendorOwingMe) {
+                                        "بقا ليا عندو: ${az.pdr.taqdiya2.util.CurrencyFormatter.formatDirhams(absPending)}"
+                                    } else {
+                                        "بقا ليه عندي: ${az.pdr.taqdiya2.util.CurrencyFormatter.formatDirhams(absPending)}"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isVendorOwingMe) {
+                                        MaterialTheme.colorScheme.onTertiaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    },
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                     }
                 }
 

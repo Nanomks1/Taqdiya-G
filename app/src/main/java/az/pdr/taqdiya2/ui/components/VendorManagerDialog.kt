@@ -42,10 +42,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.VendorEntity
+import az.pdr.taqdiya2.ui.viewmodel.UndoAction
 
 @Composable
 fun VendorManagerDialog(
     vendors: List<VendorEntity>,
+    activeUndo: UndoAction?,
+    onPerformUndo: (UndoAction) -> Unit,
+    onDismissUndo: () -> Unit,
     onAddVendor: (String, String, String) -> Unit,
     onUpdateVendor: (VendorEntity, String, String, String) -> Unit,
     onMoveVendor: (Long, Boolean) -> Unit,
@@ -61,6 +65,7 @@ fun VendorManagerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.background,
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -94,6 +99,12 @@ fun VendorManagerDialog(
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
+                InlineUndoBanner(
+                    activeUndo = activeUndo,
+                    onPerformUndo = onPerformUndo,
+                    onDismiss = onDismissUndo
+                )
+
                 if (isAddingNew || editingVendor != null) {
                     Text(
                         text = if (isAddingNew) "إضافة بائع جديد" else "تعديل بيانات البائع",
@@ -198,7 +209,7 @@ fun VendorManagerDialog(
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 360.dp),
+                            .heightIn(max = 340.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         itemsIndexed(vendors, key = { _, v -> v.id }) { index, vendor ->
