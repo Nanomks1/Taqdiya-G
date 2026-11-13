@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="22"
+        android:translateY="22">
+        <!-- Monochrome Ledger Silhouette with Cutout Lines for Material You Themed Icon -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M14,6h36c3.31,0 6,2.69 6,6v40c0,3.31 -2.69,6 -6,6H14c-3.31,0 -6,-2.69 -6,-6V12c0,-3.31 2.69,-6 6,-6zM18,10v44h4V10h-4zM28,18v4h20v-4H28zM28,28v4h20v-4H28zM28,38v4h14v-4H28z" />
+    </group>
+</vector>

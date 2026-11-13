@@ -8,12 +8,20 @@ android {
     namespace = "az.pdr.taqdiya2"
     compileSdk = 36
 
+    // Semantic Decimal Versioning based on GITHUB_RUN_NUMBER (fallback to 1 locally in AI Studio)
+    val githubRunNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+    val totalVersion = 100 + githubRunNumber
+    val verMajor = totalVersion / 100
+    val verMinor = (totalVersion % 100) / 10
+    val verPatch = totalVersion % 10
+    val computedVersionName = "$verMajor.$verMinor.$verPatch"
+
     defaultConfig {
         applicationId = "az.pdr.taqdiya2"
-        minSdk = 24
+        minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = githubRunNumber
+        versionName = computedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -33,6 +41,7 @@ android {
         }
         release {
             isMinifyEnabled = false
+            isShrinkResources = false
             signingConfig = signingConfigs.getByName("debugConfig")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

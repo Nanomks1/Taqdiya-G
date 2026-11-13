@@ -7,15 +7,15 @@
     <group
         android:translateX="22"
         android:translateY="22">
-        <!-- Ledger Notebook & Basket Silhouette -->
+        <!-- Warm Limestone Ledger Notebook & Moroccan Terracotta Spine -->
         <path
-            android:fillColor="#FFF7F9F8"
+            android:fillColor="#FFF4EFE6"
             android:pathData="M14,6h36c3.31,0 6,2.69 6,6v40c0,3.31 -2.69,6 -6,6H14c-3.31,0 -6,-2.69 -6,-6V12c0,-3.31 2.69,-6 6,-6z" />
         <path
-            android:fillColor="#FFD56E0C"
+            android:fillColor="#FFC84B31"
             android:pathData="M18,6h6v52h-6z" />
         <path
-            android:fillColor="#FF0F5238"
+            android:fillColor="#FF141E27"
             android:pathData="M30,18h18v4h-18zM30,28h18v4h-18zM30,38h12v4h-12z" />
     </group>
 </vector>
