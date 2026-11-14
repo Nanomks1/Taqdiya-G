@@ -14,6 +14,7 @@ object CurrencyFormatter {
 
     var showRialState by mutableStateOf(true)
     var privacyMaskState by mutableStateOf(false)
+    var privacyMaskPocketOnlyState by mutableStateOf(false)
 
     fun dirhamsToRials(dirhams: Double): Long {
         return (dirhams * RIALS_PER_DIRHAM).roundToLong()
@@ -41,13 +42,33 @@ object CurrencyFormatter {
     }
 
     fun formatDirhams(dirhams: Double, allowMask: Boolean = true): String {
-        if (allowMask && privacyMaskState) {
+        val shouldMask = allowMask && privacyMaskState && !privacyMaskPocketOnlyState
+        if (shouldMask) {
             return "*** درهم"
         }
         return "${formatAmountPlain(dirhams)} درهم"
     }
 
     fun formatRials(dirhams: Double, allowMask: Boolean = true): String {
+        val shouldMask = allowMask && privacyMaskState && !privacyMaskPocketOnlyState
+        if (!showRialState) {
+            return if (shouldMask) "*** د.م" else "${formatAmountPlain(dirhams)} د.م"
+        }
+        if (shouldMask) {
+            return "*** ريال"
+        }
+        val rials = dirhamsToRials(dirhams)
+        return "$rials ريال"
+    }
+
+    fun formatPocketDirhams(dirhams: Double, allowMask: Boolean = true): String {
+        if (allowMask && privacyMaskState) {
+            return "*** درهم"
+        }
+        return "${formatAmountPlain(dirhams)} درهم"
+    }
+
+    fun formatPocketRials(dirhams: Double, allowMask: Boolean = true): String {
         if (!showRialState) {
             return if (allowMask && privacyMaskState) "*** د.م" else "${formatAmountPlain(dirhams)} د.م"
         }
@@ -57,6 +78,7 @@ object CurrencyFormatter {
         val rials = dirhamsToRials(dirhams)
         return "$rials ريال"
     }
+
 
     fun formatMoroccanWeightLabel(kg: Double): String {
         return when {

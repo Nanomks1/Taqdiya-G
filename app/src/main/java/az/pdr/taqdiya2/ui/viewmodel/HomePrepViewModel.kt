@@ -208,7 +208,8 @@ private data class SettingsAndTrashStreams(
 )
 
 class HomePrepViewModel(
-    private val repository: TaqdiyaRepository
+    private val repository: TaqdiyaRepository,
+    initialSettings: AppSettingsEntity = AppSettingsEntity()
 ) : ViewModel() {
 
     private val draftState = MutableStateFlow(InputDraftState())
@@ -243,9 +244,10 @@ class HomePrepViewModel(
         repository.deletedPassingExpenses,
         repository.deletedVendors
     ) { settings, delItems, delExpenses, delVendors ->
-        val resolvedSettings = settings ?: AppSettingsEntity()
+        val resolvedSettings = settings ?: initialSettings
         CurrencyFormatter.showRialState = resolvedSettings.showRial
         CurrencyFormatter.privacyMaskState = resolvedSettings.privacyMaskAmounts
+        CurrencyFormatter.privacyMaskPocketOnlyState = resolvedSettings.privacyMaskPocketOnly
         SettingsAndTrashStreams(
             appSettings = resolvedSettings,
             deletedShoppingItems = delItems,
@@ -357,7 +359,7 @@ class HomePrepViewModel(
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = HomePrepUiState()
+        initialValue = HomePrepUiState(appSettings = initialSettings)
     )
 
     init {
@@ -1088,9 +1090,34 @@ class HomePrepViewModel(
         viewModelScope.launch {
             val updated = repository.updateAppSettings { it.copy(privacyMaskAmounts = !it.privacyMaskAmounts) }
             CurrencyFormatter.privacyMaskState = updated.privacyMaskAmounts
+            CurrencyFormatter.privacyMaskPocketOnlyState = updated.privacyMaskPocketOnly
             _statusMessages.tryEmit(
-                if (updated.privacyMaskAmounts) "عين الخصوصية مفعلة: تم إخفاء المبالغ بـ (***)"
-                else "تم إظهار المبالغ المالية"
+                if (updated.privacyMaskAmounts) {
+                    if (updated.privacyMaskPocketOnly) {
+                        "عين الخصوصية مفعلة: تم إخفاء المبلغ في الجيب فقط بـ (***)"
+                    } else {
+                        "عين الخصوصية مفعلة: تم إخفاء كل المبالغ بـ (***)"
+                    }
+                } else {
+                    "تم إظهار المبالغ المالية"
+                }
+            )
+        }
+    }
+
+    fun updatePrivacyMaskPocketOnly(pocketOnly: Boolean) {
+        viewModelScope.launch {
+            val updated = repository.updateAppSettings {
+                it.copy(
+                    privacyMaskPocketOnly = pocketOnly,
+                    privacyMaskAmounts = true
+                )
+            }
+            CurrencyFormatter.privacyMaskState = updated.privacyMaskAmounts
+            CurrencyFormatter.privacyMaskPocketOnlyState = updated.privacyMaskPocketOnly
+            _statusMessages.tryEmit(
+                if (pocketOnly) "تم ضبط عين الخصوصية على: إخفاء المبلغ في الجيب فقط"
+                else "تم ضبط عين الخصوصية على: إخفاء كل المبالغ (الجيب والسلع)"
             )
         }
     }
@@ -1201,6 +1228,7 @@ class HomePrepViewModel(
         return result.map { payload ->
             CurrencyFormatter.showRialState = payload.appSettings.showRial
             CurrencyFormatter.privacyMaskState = payload.appSettings.privacyMaskAmounts
+            CurrencyFormatter.privacyMaskPocketOnlyState = payload.appSettings.privacyMaskPocketOnly
             "تم استرجاع النسخة الاحتياطية بنجاح (${payload.vendors.size} بائعين، ${payload.dictionaryItems.size} سلعة في القاموس، ${payload.shoppingItems.size} أغراض)"
         }
     }
@@ -1209,10 +1237,13 @@ class HomePrepViewModel(
         _statusMessages.tryEmit(message)
     }
 
-    class Factory(private val repository: TaqdiyaRepository) : ViewModelProvider.Factory {
+    class Factory(
+        private val repository: TaqdiyaRepository,
+        private val initialSettings: AppSettingsEntity = AppSettingsEntity()
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return HomePrepViewModel(repository) as T
+            return HomePrepViewModel(repository, initialSettings) as T
         }
     }
 }

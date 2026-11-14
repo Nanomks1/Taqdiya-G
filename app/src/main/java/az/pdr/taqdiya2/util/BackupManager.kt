@@ -37,6 +37,7 @@ object BackupManager {
             put("showRial", payload.appSettings.showRial)
             put("uiScaleMode", payload.appSettings.uiScaleMode)
             put("privacyMaskAmounts", payload.appSettings.privacyMaskAmounts)
+            put("privacyMaskPocketOnly", payload.appSettings.privacyMaskPocketOnly)
             put("pinCode", payload.appSettings.pinCode)
         }
         root.put("appSettings", settingsObj)
@@ -205,6 +206,7 @@ object BackupManager {
                     showRial = settingsObj.optBoolean("showRial", true),
                     uiScaleMode = settingsObj.optString("uiScaleMode", "NORMAL"),
                     privacyMaskAmounts = settingsObj.optBoolean("privacyMaskAmounts", false),
+                    privacyMaskPocketOnly = settingsObj.optBoolean("privacyMaskPocketOnly", false),
                     pinCode = settingsObj.optString("pinCode", "")
                 )
             } else {

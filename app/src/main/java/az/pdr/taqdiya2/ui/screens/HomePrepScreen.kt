@@ -482,8 +482,9 @@ fun HomePrepScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(58.dp)
+                        .heightIn(min = 54.dp)
                         .testTag("open_quick_pad_main_button"),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     ),
@@ -492,13 +493,15 @@ fun HomePrepScreen(
                     Icon(
                         imageVector = Icons.Outlined.GridView,
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = "لوحة الإضافة السريعة باللمس (+)",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -506,6 +509,7 @@ fun HomePrepScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun OversizedVendorCard(
     vendor: VendorEntity,
@@ -644,31 +648,38 @@ private fun OversizedVendorCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onEditItem(item) }
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
+                    FlowRow(
                         modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .clip(RoundedCornerShape(5.dp))
-                                .background(MaterialTheme.colorScheme.secondary)
-                        )
+                        Row(
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(RoundedCornerShape(5.dp))
+                                    .background(MaterialTheme.colorScheme.secondary)
+                            )
 
-                        Text(
-                            text = item.name,
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold
-                        )
+                            Text(
+                                text = item.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
 
                         if (item.note.isNotBlank()) {
                             Surface(
+                                modifier = Modifier.align(Alignment.CenterVertically),
                                 color = MaterialTheme.colorScheme.tertiaryContainer,
                                 shape = RoundedCornerShape(10.dp)
                             ) {
@@ -676,6 +687,10 @@ private fun OversizedVendorCard(
                                     text = item.note,
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                 )
                             }
@@ -686,27 +701,27 @@ private fun OversizedVendorCard(
                         IconButton(
                             onClick = { onEditItem(item) },
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(44.dp)
                                 .testTag("edit_item_${item.id}")
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Edit,
                                 contentDescription = "تعديل الغرض",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(21.dp)
                             )
                         }
                         IconButton(
                             onClick = { onDeleteItem(item) },
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(44.dp)
                                 .testTag("delete_item_${item.id}")
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.DeleteOutline,
                                 contentDescription = "حذف الغرض",
                                 tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }

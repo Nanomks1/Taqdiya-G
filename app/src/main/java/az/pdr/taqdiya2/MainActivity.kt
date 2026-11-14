@@ -95,17 +95,61 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        val bootPrefs = getSharedPreferences("taqdiya_boot_prefs", MODE_PRIVATE)
+        val isSystemDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val defaultTheme = if (isSystemDark) "DARK" else "LIGHT"
+        val cachedThemeMode = bootPrefs.getString("themeMode", defaultTheme) ?: defaultTheme
+        val cachedUiScaleMode = bootPrefs.getString("uiScaleMode", "NORMAL") ?: "NORMAL"
+        val cachedShowRial = bootPrefs.getBoolean("showRial", true)
+        val cachedPrivacyMask = bootPrefs.getBoolean("privacyMaskAmounts", false)
+        val cachedPrivacyPocketOnly = bootPrefs.getBoolean("privacyMaskPocketOnly", false)
+
+        val initialDark = when (cachedThemeMode) {
+            "DARK" -> true
+            "SYSTEM" -> isSystemDark
+            else -> false
+        }
+        window.decorView.setBackgroundColor(
+            if (initialDark) android.graphics.Color.parseColor("#121618")
+            else android.graphics.Color.parseColor("#F4EFE6")
+        )
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val initialSettings = az.pdr.taqdiya2.data.local.AppSettingsEntity(
+            id = 1,
+            themeMode = cachedThemeMode,
+            showRial = cachedShowRial,
+            uiScaleMode = cachedUiScaleMode,
+            privacyMaskAmounts = cachedPrivacyMask,
+            privacyMaskPocketOnly = cachedPrivacyPocketOnly
+        )
+        az.pdr.taqdiya2.util.CurrencyFormatter.showRialState = cachedShowRial
+        az.pdr.taqdiya2.util.CurrencyFormatter.privacyMaskState = cachedPrivacyMask
+        az.pdr.taqdiya2.util.CurrencyFormatter.privacyMaskPocketOnlyState = cachedPrivacyPocketOnly
 
         val database = AppDatabase.getInstance(applicationContext)
         val repository = TaqdiyaRepository(database.taqdiyaDao())
 
         setContent {
             val viewModel: HomePrepViewModel = viewModel(
-                factory = HomePrepViewModel.Factory(repository)
+                factory = HomePrepViewModel.Factory(repository, initialSettings)
             )
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            LaunchedEffect(uiState.isLoading, uiState.appSettings) {
+                if (!uiState.isLoading) {
+                    bootPrefs.edit()
+                        .putString("themeMode", uiState.appSettings.themeMode)
+                        .putString("uiScaleMode", uiState.appSettings.uiScaleMode)
+                        .putBoolean("showRial", uiState.appSettings.showRial)
+                        .putBoolean("privacyMaskAmounts", uiState.appSettings.privacyMaskAmounts)
+                        .putBoolean("privacyMaskPocketOnly", uiState.appSettings.privacyMaskPocketOnly)
+                        .apply()
+                }
+            }
 
             TaqdiyaTheme(
                 themeMode = uiState.appSettings.themeMode,
@@ -179,6 +223,7 @@ fun TaqdiyaApp(
         uiState.shoppingItems.size,
         uiState.appSettings.showRial,
         uiState.appSettings.privacyMaskAmounts,
+        uiState.appSettings.privacyMaskPocketOnly,
         uiState.appSettings.themeMode
     ) {
         if (!uiState.isLoading) {
@@ -930,6 +975,7 @@ fun TaqdiyaApp(
             onUpdateUiScaleMode = viewModel::updateUiScaleMode,
             onToggleShowRial = viewModel::toggleShowRial,
             onTogglePrivacyMask = viewModel::togglePrivacyMask,
+            onUpdatePrivacyMaskPocketOnly = viewModel::updatePrivacyMaskPocketOnly,
             onSetPinCode = viewModel::setOrUpdatePinCode,
             onRemovePinCode = viewModel::removePinCode,
             onLockAppNow = viewModel::lockAppNow,

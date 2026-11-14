@@ -87,6 +87,10 @@ fun TaqdiyaTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
+                window.decorView.setBackgroundColor(
+                    if (darkTheme) android.graphics.Color.parseColor("#121618")
+                    else android.graphics.Color.parseColor("#F4EFE6")
+                )
                 val insetsController = WindowCompat.getInsetsController(window, view)
                 insetsController.isAppearanceLightStatusBars = !darkTheme
                 insetsController.isAppearanceLightNavigationBars = !darkTheme
@@ -95,14 +99,19 @@ fun TaqdiyaTheme(
     }
 
     val baseDensity = LocalDensity.current
-    val (densityScale, fontScaleMultiplier) = when (uiScaleMode) {
-        "LARGE" -> 1.04f to 1.10f
-        "EXTRA_LARGE" -> 1.07f to 1.18f
-        else -> 1.0f to 1.0f
+    val fontScaleMultiplier = when (uiScaleMode) {
+        "LARGE" -> 1.08f
+        "EXTRA_LARGE" -> 1.16f
+        else -> 1.0f
+    }
+    val effectiveFontScale = if (uiScaleMode == "NORMAL") {
+        baseDensity.fontScale
+    } else {
+        (baseDensity.fontScale * fontScaleMultiplier).coerceAtMost(1.26f)
     }
     val scaledDensity = Density(
-        density = baseDensity.density * densityScale,
-        fontScale = baseDensity.fontScale * fontScaleMultiplier
+        density = baseDensity.density,
+        fontScale = effectiveFontScale
     )
 
     CompositionLocalProvider(

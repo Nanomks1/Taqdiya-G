@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -354,7 +355,7 @@ fun VendorItemPricingSheet(
                     Surface(
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp)
+                            .heightIn(min = 46.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .clickable {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -364,26 +365,31 @@ fun VendorItemPricingSheet(
                             }
                             .testTag("mode_tab_$modeKey"),
                         color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.secondaryContainer
                         } else {
                             MaterialTheme.colorScheme.surface
                         },
                         border = BorderStroke(
-                            width = if (isSelected) 0.dp else 1.dp,
-                            color = MaterialTheme.colorScheme.outline
+                            width = if (isSelected) 2.dp else 1.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
                         ),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
                                 text = label,
                                 style = MaterialTheme.typography.labelLarge,
                                 color = if (isSelected) {
-                                    MaterialTheme.colorScheme.onPrimary
+                                    MaterialTheme.colorScheme.onSecondaryContainer
                                 } else {
                                     MaterialTheme.colorScheme.onSurface
                                 },
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -436,15 +442,24 @@ fun VendorItemPricingSheet(
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Text(
-                                    text = if (inputInRials) {
-                                        "= ${CurrencyFormatter.formatDirhams(unitOrFixedPriceDirhams)}"
-                                    } else {
-                                        "= ${CurrencyFormatter.formatRials(unitOrFixedPriceDirhams)}"
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
+                                if (inputInRials || CurrencyFormatter.showRialState) {
+                                    Text(
+                                        text = if (inputInRials) {
+                                            "= ${CurrencyFormatter.formatDirhams(unitOrFixedPriceDirhams)}"
+                                        } else {
+                                            "= ${CurrencyFormatter.formatRials(unitOrFixedPriceDirhams)}"
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Text(
+                                        text = "اضغط لتعديل الثمن",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
 
@@ -932,24 +947,30 @@ fun VendorItemPricingSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 5. Instant Total Display + Big Confirm Button
+            // 5. Instant Total Display + Big Confirm Button (Harmonious in both Dark & Light Modes)
             Surface(
-                color = MaterialTheme.colorScheme.primary,
-                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.tertiary),
+                shape = RoundedCornerShape(20.dp),
+                shadowElevation = 4.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
                         Text(
                             text = "الثمن المحسوب فوراً:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                            fontWeight = FontWeight.Bold
                         )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -957,23 +978,33 @@ fun VendorItemPricingSheet(
                         ) {
                             Text(
                                 text = CurrencyFormatter.formatDirhams(calculatedTotalDirhams),
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
-                            Surface(
-                                color = MaterialTheme.colorScheme.secondary,
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = CurrencyFormatter.formatRials(calculatedTotalDirhams),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onSecondary,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                )
+                            if (CurrencyFormatter.showRialState || inputInRials) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = CurrencyFormatter.formatRials(calculatedTotalDirhams),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.width(10.dp))
 
                     Button(
                         onClick = {
@@ -988,22 +1019,26 @@ fun VendorItemPricingSheet(
                             onDismiss()
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary
                         ),
                         modifier = Modifier
-                            .height(50.dp)
+                            .heightIn(min = 50.dp)
                             .testTag("confirm_item_purchase_button"),
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Check,
-                            contentDescription = "تأكيد الشراء"
+                            contentDescription = "تأكيد الشراء",
+                            modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "وضع في القفة",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }

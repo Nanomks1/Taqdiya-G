@@ -7,6 +7,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -262,8 +264,8 @@ fun AtVendorScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // 1. Top Market Header: Active Vendors Strip + Passing Expense + Keep Screen Awake Toggle
                 item(key = "market_vendor_selector") {
@@ -294,7 +296,7 @@ fun AtVendorScreen(
                                 // Quick "+ مصروف عابر" Button
                                 Surface(
                                     modifier = Modifier
-                                        .heightIn(min = 36.dp)
+                                        .heightIn(min = 34.dp)
                                         .clip(RoundedCornerShape(10.dp))
                                         .clickable(onClick = onOpenPassingExpenseClick)
                                         .testTag("market_passing_expense_button"),
@@ -302,14 +304,14 @@ fun AtVendorScreen(
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
                                             imageVector = Icons.Outlined.ReceiptLong,
                                             contentDescription = "مصروف عابر",
                                             tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            modifier = Modifier.size(16.dp)
+                                            modifier = Modifier.size(15.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
@@ -326,7 +328,7 @@ fun AtVendorScreen(
                                 // Keep Screen Awake Toggle
                                 Surface(
                                     modifier = Modifier
-                                        .heightIn(min = 36.dp)
+                                        .heightIn(min = 34.dp)
                                         .clip(RoundedCornerShape(10.dp))
                                         .clickable(onClick = onToggleKeepScreenAwake)
                                         .testTag("toggle_keep_screen_awake_button"),
@@ -342,7 +344,7 @@ fun AtVendorScreen(
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
@@ -353,7 +355,7 @@ fun AtVendorScreen(
                                             } else {
                                                 MaterialTheme.colorScheme.onSurfaceVariant
                                             },
-                                            modifier = Modifier.size(16.dp)
+                                            modifier = Modifier.size(15.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
@@ -373,14 +375,14 @@ fun AtVendorScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                        // Oversized Tactile Vendor Selector Cards (Adaptive height so text never clips on Large/Extra-Large fonts!)
+                        // Compact Tactile Vendor Selector Cards (leaves plenty of vertical space for the shopping list!)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             vendorsWithItems.forEach { vendor ->
                                 val isSelected = selectedVendor?.id == vendor.id
@@ -392,9 +394,9 @@ fun AtVendorScreen(
 
                                 Surface(
                                     modifier = Modifier
-                                        .widthIn(min = 160.dp, max = 225.dp)
-                                        .heightIn(min = 86.dp)
-                                        .clip(RoundedCornerShape(18.dp))
+                                        .widthIn(min = 148.dp, max = 215.dp)
+                                        .heightIn(min = 68.dp)
+                                        .clip(RoundedCornerShape(16.dp))
                                         .clickable {
                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                             onSelectMarketVendor(vendor.id)
@@ -406,7 +408,7 @@ fun AtVendorScreen(
                                         else -> MaterialTheme.colorScheme.surface
                                     },
                                     border = BorderStroke(
-                                        width = if (isSelected) 2.dp else 1.5.dp,
+                                        width = if (isSelected) 2.dp else 1.dp,
                                         color = when {
                                             isSelected -> MaterialTheme.colorScheme.secondary
                                             hasPendingChange -> MaterialTheme.colorScheme.secondary
@@ -414,17 +416,17 @@ fun AtVendorScreen(
                                             else -> MaterialTheme.colorScheme.outline
                                         }
                                     ),
-                                    shape = RoundedCornerShape(18.dp),
-                                    shadowElevation = if (isSelected) 3.dp else 1.dp
+                                    shape = RoundedCornerShape(16.dp),
+                                    shadowElevation = if (isSelected) 2.dp else 1.dp
                                 ) {
                                     Column(
                                         modifier = Modifier
-                                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
@@ -435,7 +437,7 @@ fun AtVendorScreen(
                                                 } else {
                                                     MaterialTheme.colorScheme.primary
                                                 },
-                                                modifier = Modifier.size(22.dp)
+                                                modifier = Modifier.size(20.dp)
                                             )
 
                                             Surface(
@@ -448,7 +450,7 @@ fun AtVendorScreen(
                                             ) {
                                                 Text(
                                                     text = "$vBought من $vTotalCount",
-                                                    style = MaterialTheme.typography.labelMedium,
+                                                    style = MaterialTheme.typography.labelSmall,
                                                     color = when {
                                                         vAllDone -> MaterialTheme.colorScheme.onTertiary
                                                         isSelected -> MaterialTheme.colorScheme.onSecondary
@@ -457,7 +459,7 @@ fun AtVendorScreen(
                                                     fontWeight = FontWeight.Bold,
                                                     maxLines = 1,
                                                     softWrap = false,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                                 )
                                             }
                                         }
@@ -486,10 +488,15 @@ fun AtVendorScreen(
                     item(key = "vendor_pending_balance_banner") {
                         val isVendorOwingMe = selectedVendor.pendingBalanceDirhams > 0.0
                         val absPending = abs(selectedVendor.pendingBalanceDirhams)
+                        val rialPendingSuffix = if (uiState.appSettings.showRial) {
+                            " (${CurrencyFormatter.formatRials(absPending)})"
+                        } else {
+                            ""
+                        }
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(14.dp))
                                 .clickable { showVendorPendingBalanceSheet = true }
                                 .testTag("vendor_pending_balance_banner"),
                             color = if (isVendorOwingMe) {
@@ -501,12 +508,12 @@ fun AtVendorScreen(
                                 width = 1.5.dp,
                                 color = if (isVendorOwingMe) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
                             ),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -522,15 +529,15 @@ fun AtVendorScreen(
                                         } else {
                                             MaterialTheme.colorScheme.onErrorContainer
                                         },
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(22.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Column {
                                         Text(
                                             text = if (isVendorOwingMe) {
-                                                "تذكير: بقا ليا عندو ${CurrencyFormatter.formatDirhams(absPending)} (${CurrencyFormatter.formatRials(absPending)})"
+                                                "تذكير: بقا ليا عندو ${CurrencyFormatter.formatDirhams(absPending)}$rialPendingSuffix"
                                             } else {
-                                                "تذكير: بقا ليه عندي ${CurrencyFormatter.formatDirhams(absPending)} (${CurrencyFormatter.formatRials(absPending)})"
+                                                "تذكير: بقا ليه عندي ${CurrencyFormatter.formatDirhams(absPending)}$rialPendingSuffix"
                                             },
                                             style = MaterialTheme.typography.titleSmall,
                                             color = if (isVendorOwingMe) {
@@ -561,6 +568,8 @@ fun AtVendorScreen(
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false,
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                     )
                                 }
@@ -572,51 +581,54 @@ fun AtVendorScreen(
                 // 3. Waiting (Unpurchased) Items Section for Current Vendor
                 if (selectedVendor != null) {
                     item(key = "vendor_waiting_header") {
-                        Column(
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
                                 text = if (waitingItems.isNotEmpty()) {
-                                    "مطلوب الآن عند ${selectedVendor.name} (${waitingItems.size}):"
+                                    "مطلوب عند ${selectedVendor.name} (${waitingItems.size}):"
                                 } else {
-                                    "اكتملت جميع أغراض ${selectedVendor.name}!"
+                                    "اكتملت أغراض ${selectedVendor.name}!"
                                 },
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 color = if (waitingItems.isNotEmpty()) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
                                     MaterialTheme.colorScheme.tertiary
                                 },
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             )
 
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.align(Alignment.CenterVertically),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Button to record pending change ("صرف عالق") anytime
                                 Surface(
                                     modifier = Modifier
-                                        .height(38.dp)
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .heightIn(min = 34.dp)
+                                        .clip(RoundedCornerShape(10.dp))
                                         .clickable { showVendorPendingBalanceSheet = true }
                                         .testTag("market_vendor_pending_balance_button"),
                                     color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(10.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
                                             imageVector = Icons.Outlined.Handshake,
                                             contentDescription = "الصرف العالق",
                                             tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(16.dp)
+                                            modifier = Modifier.size(15.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
                                         Text(
                                             text = "صرف عالق",
                                             style = MaterialTheme.typography.labelMedium,
@@ -630,24 +642,24 @@ fun AtVendorScreen(
 
                                 Surface(
                                     modifier = Modifier
-                                        .height(38.dp)
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .heightIn(min = 34.dp)
+                                        .clip(RoundedCornerShape(10.dp))
                                         .clickable { onOpenQuickPadForVendor(selectedVendor.id) }
                                         .testTag("market_add_extra_item_button"),
                                     color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(10.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
                                             imageVector = Icons.Outlined.Add,
                                             contentDescription = "إضافة غرض",
                                             tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            modifier = Modifier.size(16.dp)
+                                            modifier = Modifier.size(15.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
                                         Text(
                                             text = "أضف غرضاً",
                                             style = MaterialTheme.typography.labelMedium,
@@ -674,6 +686,7 @@ fun AtVendorScreen(
                         WaitingMarketItemCard(
                             item = item,
                             usualPriceEvaluation = usualEval,
+                            showRial = uiState.appSettings.showRial,
                             onOpenPricing = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 pricingItem = item
@@ -691,10 +704,10 @@ fun AtVendorScreen(
                     // 4. Purchased Items (In the Basket) Section
                     if (purchasedItems.isNotEmpty()) {
                         item(key = "vendor_purchased_header") {
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "في القفة عند ${selectedVendor.name} (${purchasedItems.size} أغراض):",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.tertiary,
                                 fontWeight = FontWeight.Bold
                             )
@@ -714,6 +727,7 @@ fun AtVendorScreen(
                             PurchasedMarketItemCard(
                                 item = item,
                                 priceEvaluation = paidEvaluation,
+                                showRial = uiState.appSettings.showRial,
                                 onEditPricing = {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     pricingItem = item
@@ -745,8 +759,8 @@ fun AtVendorScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -760,8 +774,8 @@ fun AtVendorScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(RoundedCornerShape(10.dp))
+                                        .size(32.dp)
+                                        .clip(RoundedCornerShape(9.dp))
                                         .background(MaterialTheme.colorScheme.tertiaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -769,7 +783,7 @@ fun AtVendorScreen(
                                         imageVector = Icons.Outlined.ShoppingBag,
                                         contentDescription = "عداد القفة",
                                         tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -779,6 +793,8 @@ fun AtVendorScreen(
                                         style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.testTag("vendor_basket_counter_text")
                                     )
                                     Text(
@@ -793,8 +809,10 @@ fun AtVendorScreen(
                                         } else {
                                             "بقي ${waitingItems.size} أغراض لم تُوزن بعد"
                                         },
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -805,7 +823,7 @@ fun AtVendorScreen(
                             Surface(
                                 color = MaterialTheme.colorScheme.secondaryContainer,
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(10.dp)
                             ) {
                                 Column(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -813,7 +831,7 @@ fun AtVendorScreen(
                                 ) {
                                     Text(
                                         text = CurrencyFormatter.formatDirhams(displayedTotalDirhams),
-                                        style = MaterialTheme.typography.titleMedium,
+                                        style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1,
@@ -847,7 +865,7 @@ fun AtVendorScreen(
                                 },
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(44.dp)
+                                    .height(40.dp)
                                     .testTag("open_confirm_vendor_payment_button"),
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -862,7 +880,7 @@ fun AtVendorScreen(
                                         MaterialTheme.colorScheme.onTertiary
                                     }
                                 ),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(10.dp)
                             ) {
                                 Icon(
                                     imageVector = if (currentVendorConfirmedPayment != null) {
@@ -871,7 +889,7 @@ fun AtVendorScreen(
                                         Icons.Outlined.Payments
                                     },
                                     contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
@@ -890,8 +908,8 @@ fun AtVendorScreen(
 
                             Surface(
                                 modifier = Modifier
-                                    .height(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .height(40.dp)
+                                    .clip(RoundedCornerShape(10.dp))
                                     .clickable {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         onResetVendorPaymentAndBasket(selectedVendor, true)
@@ -899,10 +917,10 @@ fun AtVendorScreen(
                                     .testTag("reset_vendor_payment_bar_button"),
                                 color = MaterialTheme.colorScheme.errorContainer,
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp),
+                                    modifier = Modifier.padding(horizontal = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
@@ -910,7 +928,7 @@ fun AtVendorScreen(
                                         imageVector = Icons.Outlined.Replay,
                                         contentDescription = "إلغاء وتصفير الدفع",
                                         tint = MaterialTheme.colorScheme.onErrorContainer,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(15.dp)
                                     )
                                     Text(
                                         text = "إلغاء / تصفير",
@@ -991,10 +1009,12 @@ fun AtVendorScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WaitingMarketItemCard(
     item: ShoppingItemEntity,
     usualPriceEvaluation: PriceEvaluation,
+    showRial: Boolean = true,
     onOpenPricing: () -> Unit,
     onOpenPriceHistory: () -> Unit,
     onDeleteItem: () -> Unit
@@ -1013,7 +1033,7 @@ private fun WaitingMarketItemCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
@@ -1021,19 +1041,21 @@ private fun WaitingMarketItemCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
+                FlowRow(
                     modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
                         text = item.name,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.CenterVertically)
                     )
                     if (item.note.isNotBlank()) {
                         Surface(
+                            modifier = Modifier.align(Alignment.CenterVertically),
                             color = MaterialTheme.colorScheme.secondaryContainer,
                             shape = RoundedCornerShape(10.dp)
                         ) {
@@ -1041,7 +1063,10 @@ private fun WaitingMarketItemCard(
                                 text = item.note,
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Bold,
                                 maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
@@ -1054,17 +1079,17 @@ private fun WaitingMarketItemCard(
                     Surface(
                         color = MaterialTheme.colorScheme.secondary,
                         shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.height(48.dp)
+                        modifier = Modifier.height(44.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 14.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Calculate,
                                 contentDescription = "احسب الثمن",
                                 tint = MaterialTheme.colorScheme.onSecondary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
@@ -1083,7 +1108,7 @@ private fun WaitingMarketItemCard(
                     IconButton(
                         onClick = onDeleteItem,
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(42.dp)
                             .testTag("market_delete_waiting_item_${item.id}")
                     ) {
                         Icon(
@@ -1096,13 +1121,18 @@ private fun WaitingMarketItemCard(
             }
 
             if (usualPriceEvaluation.referenceUsualDirhams > 0.0) {
+                val rialUsualSuffix = if (showRial) {
+                    " (${CurrencyFormatter.formatRials(usualPriceEvaluation.referenceUsualDirhams)})"
+                } else {
+                    ""
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "المعتاد: ${CurrencyFormatter.formatDirhams(usualPriceEvaluation.referenceUsualDirhams)} (${CurrencyFormatter.formatRials(usualPriceEvaluation.referenceUsualDirhams)})",
+                        text = "المعتاد: ${CurrencyFormatter.formatDirhams(usualPriceEvaluation.referenceUsualDirhams)}$rialUsualSuffix",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
@@ -1146,6 +1176,7 @@ private fun WaitingMarketItemCard(
 private fun PurchasedMarketItemCard(
     item: ShoppingItemEntity,
     priceEvaluation: PriceEvaluation,
+    showRial: Boolean = true,
     onEditPricing: () -> Unit,
     onOpenPriceHistory: () -> Unit,
     onUnmarkPurchased: () -> Unit
@@ -1210,15 +1241,21 @@ private fun PurchasedMarketItemCard(
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = CurrencyFormatter.formatDirhams(item.totalDirhams),
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.tertiary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
                     )
-                    Text(
-                        text = CurrencyFormatter.formatRials(item.totalDirhams),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
+                    if (showRial) {
+                        Text(
+                            text = CurrencyFormatter.formatRials(item.totalDirhams),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
                 }
             }
 

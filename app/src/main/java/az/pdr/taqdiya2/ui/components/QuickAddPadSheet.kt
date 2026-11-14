@@ -57,11 +57,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import android.content.Context
+import android.view.inputmethod.InputMethodManager
+import androidx.compose.material.icons.outlined.KeyboardHide
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -99,6 +105,8 @@ fun QuickAddPadSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
+    val view = LocalView.current
     val haptic = LocalHapticFeedback.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -109,18 +117,34 @@ fun QuickAddPadSheet(
     var showAddCustomUnitForTarget by remember { mutableStateOf(false) }
     var newCustomUnitText by remember { mutableStateOf("") }
     val isImeOpen = WindowInsets.isImeVisible
+    var wasImeOpen by remember { mutableStateOf(false) }
     val isTypingMode = isNameFieldFocused || isNoteFieldFocused || isImeOpen
 
-    // When typing with keyboard open, pressing Back dismisses keyboard/focus first instead of closing the sheet
-    BackHandler(enabled = isTypingMode) {
+    fun hideKeyboardAndExitTyping() {
+        isNameFieldFocused = false
+        isNoteFieldFocused = false
+        focusManager.clearFocus(force = true)
         keyboardController?.hide()
-        focusManager.clearFocus()
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
-    LaunchedEffect(isTypingMode) {
-        if (isTypingMode) {
+    // When the OS keyboard closes via the system bottom-left down arrow, automatically clear focus so the items grid reappears
+    LaunchedEffect(isImeOpen) {
+        if (isImeOpen) {
+            wasImeOpen = true
             scrollState.animateScrollTo(scrollState.maxValue)
+        } else if (wasImeOpen) {
+            wasImeOpen = false
+            isNameFieldFocused = false
+            isNoteFieldFocused = false
+            focusManager.clearFocus(force = true)
         }
+    }
+
+    // When typing or focused in an input field, pressing Back exits typing mode instead of closing the sheet
+    BackHandler(enabled = isTypingMode) {
+        hideKeyboardAndExitTyping()
     }
 
     val activeVendorId = selectedVendorId ?: vendors.firstOrNull()?.id
@@ -182,8 +206,17 @@ fun QuickAddPadSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (isTypingMode) {
+                hideKeyboardAndExitTyping()
+            } else {
+                onDismiss()
+            }
+        },
         sheetState = sheetState,
+        properties = ModalBottomSheetProperties(
+            shouldDismissOnBackPress = !isTypingMode
+        ),
         containerColor = MaterialTheme.colorScheme.background,
         dragHandle = null
     ) {
@@ -638,22 +671,45 @@ fun QuickAddPadSheet(
                             text = "أو اكتب غرضاً جديداً (يتعلمه القاموس تلقائياً):",
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
                         )
                         if (isTypingMode) {
-                            Text(
-                                text = "إخفاء الكيبورد",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.secondary,
-                                fontWeight = FontWeight.Bold,
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .heightIn(min = 34.dp)
+                                    .clip(RoundedCornerShape(10.dp))
                                     .clickable {
-                                        keyboardController?.hide()
-                                        focusManager.clearFocus()
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        hideKeyboardAndExitTyping()
                                     }
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
+                                    .testTag("hide_keyboard_button"),
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.KeyboardHide,
+                                        contentDescription = "إخفاء الكيبورد",
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "إخفاء الكيبورد",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -731,8 +787,7 @@ fun QuickAddPadSheet(
                             keyboardActions = KeyboardActions(
                                 onDone = {
                                     onSubmitCustomItem()
-                                    keyboardController?.hide()
-                                    focusManager.clearFocus()
+                                    hideKeyboardAndExitTyping()
                                 }
                             )
                         )
@@ -741,8 +796,7 @@ fun QuickAddPadSheet(
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onSubmitCustomItem()
-                                keyboardController?.hide()
-                                focusManager.clearFocus()
+                                hideKeyboardAndExitTyping()
                             },
                             enabled = itemNameInput.trim().isNotEmpty(),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),

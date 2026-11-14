@@ -67,6 +67,7 @@ fun AppSettingsSheet(
     onUpdateUiScaleMode: (String) -> Unit,
     onToggleShowRial: () -> Unit,
     onTogglePrivacyMask: () -> Unit,
+    onUpdatePrivacyMaskPocketOnly: (Boolean) -> Unit = {},
     onSetPinCode: (String) -> Unit,
     onRemovePinCode: () -> Unit,
     onLockAppNow: () -> Unit,
@@ -281,61 +282,176 @@ fun AppSettingsSheet(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable(onClick = onTogglePrivacyMask)
                     .testTag("toggle_privacy_mask_card"),
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 14.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(onClick = onTogglePrivacyMask),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.tertiaryContainer),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = if (settings.privacyMaskAmounts) {
-                                    Icons.Outlined.VisibilityOff
-                                } else {
-                                    Icons.Outlined.Visibility
-                                },
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.tertiary,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (settings.privacyMaskAmounts) {
+                                        Icons.Outlined.VisibilityOff
+                                    } else {
+                                        Icons.Outlined.Visibility
+                                    },
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "عين الخصوصية (إخفاء المبالغ بـ ***)",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "إخفاء الرصيد والمصاريف عن أعين المتطفلين في السوق بضغطة واحدة",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "عين الخصوصية (إخفاء المبالغ بـ ***)",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "إخفاء الرصيد والمصاريف عن أعين المتطفلين في السوق بضغطة واحدة",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Switch(
+                            checked = settings.privacyMaskAmounts,
+                            onCheckedChange = { onTogglePrivacyMask() }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+
+                    Text(
+                        text = "نطاق الإخفاء عند تفعيل عين الخصوصية:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val isAllSelected = !settings.privacyMaskPocketOnly
+                        val isPocketOnlySelected = settings.privacyMaskPocketOnly
+
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onUpdatePrivacyMaskPocketOnly(false) }
+                                .testTag("privacy_scope_all_button"),
+                            color = if (isAllSelected) {
+                                MaterialTheme.colorScheme.tertiaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                            },
+                            border = BorderStroke(
+                                width = if (isAllSelected) 1.5.dp else 1.dp,
+                                color = if (isAllSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = "إخفاء المبالغ كلها",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = if (isAllSelected) {
+                                        MaterialTheme.colorScheme.onTertiaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "الجيب + أثمنة السلع",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isAllSelected) {
+                                        MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onUpdatePrivacyMaskPocketOnly(true) }
+                                .testTag("privacy_scope_pocket_only_button"),
+                            color = if (isPocketOnlySelected) {
+                                MaterialTheme.colorScheme.tertiaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                            },
+                            border = BorderStroke(
+                                width = if (isPocketOnlySelected) 1.5.dp else 1.dp,
+                                color = if (isPocketOnlySelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = "إخفاء المبلغ في الجيب فقط",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = if (isPocketOnlySelected) {
+                                        MaterialTheme.colorScheme.onTertiaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "تبقى أثمنة السلع ظاهرة",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isPocketOnlySelected) {
+                                        MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
-                    Switch(
-                        checked = settings.privacyMaskAmounts,
-                        onCheckedChange = { onTogglePrivacyMask() }
-                    )
                 }
             }
 

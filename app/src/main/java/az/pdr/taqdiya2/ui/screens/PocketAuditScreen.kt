@@ -254,11 +254,13 @@ fun PocketAuditScreen(
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Text(
-                                    text = CurrencyFormatter.formatRials(expense.amountDirhams),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                if (uiState.appSettings.showRial) {
+                                    Text(
+                                        text = CurrencyFormatter.formatRials(expense.amountDirhams),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
 
@@ -359,18 +361,35 @@ fun PocketAuditScreen(
                                 }
                             }
 
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = CurrencyFormatter.formatDirhams(vActualPaid),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = CurrencyFormatter.formatRials(vActualPaid),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    horizontalAlignment = Alignment.End
+                                ) {
+                                    Text(
+                                        text = CurrencyFormatter.formatDirhams(vActualPaid),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                    if (uiState.appSettings.showRial) {
+                                        Text(
+                                            text = CurrencyFormatter.formatRials(vActualPaid),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.secondary,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -392,6 +411,11 @@ fun PocketAuditScreen(
                         if (hasPending) {
                             val isVendorOwingMe = vendor.pendingBalanceDirhams > 0.0
                             val absPending = abs(vendor.pendingBalanceDirhams)
+                            val rialSuffix = if (uiState.appSettings.showRial) {
+                                " (${CurrencyFormatter.formatRials(absPending)})"
+                            } else {
+                                ""
+                            }
                             Surface(
                                 color = if (isVendorOwingMe) {
                                     MaterialTheme.colorScheme.tertiaryContainer
@@ -409,9 +433,9 @@ fun PocketAuditScreen(
                                 ) {
                                     Text(
                                         text = if (isVendorOwingMe) {
-                                            "بقا ليا عندو: ${CurrencyFormatter.formatDirhams(absPending)} (${CurrencyFormatter.formatRials(absPending)})"
+                                            "بقا ليا عندو: ${CurrencyFormatter.formatDirhams(absPending)}$rialSuffix"
                                         } else {
-                                            "بقا ليه عندي: ${CurrencyFormatter.formatDirhams(absPending)} (${CurrencyFormatter.formatRials(absPending)})"
+                                            "بقا ليه عندي: ${CurrencyFormatter.formatDirhams(absPending)}$rialSuffix"
                                         },
                                         style = MaterialTheme.typography.labelLarge,
                                         color = if (isVendorOwingMe) {
@@ -456,7 +480,9 @@ fun PocketAuditScreen(
                                         text = if (vPayment != null) "تعديل الدفع" else "تأكيد الدفع",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -486,7 +512,9 @@ fun PocketAuditScreen(
                                         text = if (hasPending) "تصفية الصرف" else "صرف عالق",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -569,7 +597,7 @@ fun PocketAuditScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "خرجت بـ ${CurrencyFormatter.formatDirhams(round.initialPocketDirhams)} | صرفت ${CurrencyFormatter.formatDirhams(round.archivedTotalSpentDirhams)}",
+                                text = "خرجت بـ ${CurrencyFormatter.formatPocketDirhams(round.initialPocketDirhams)} | صرفت ${CurrencyFormatter.formatDirhams(round.archivedTotalSpentDirhams)}",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Bold
@@ -636,6 +664,7 @@ fun PocketAuditScreen(
             waitingItemsCount = waitingItems.size,
             purchasedItemsCount = purchasedItems.size,
             totalActualSpentDirhams = uiState.totalActualSpentDirhams,
+            showRial = uiState.appSettings.showRial,
             onConfirmFinishRound = { newPocketDh, newTitle, rollover ->
                 onFinishAndArchiveRound(newPocketDh, newTitle, rollover)
             },
@@ -678,12 +707,17 @@ fun PocketAuditScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "ميزانية البداية: ${CurrencyFormatter.formatDirhams(roundToView.initialPocketDirhams)}",
+                                text = "ميزانية البداية: ${CurrencyFormatter.formatPocketDirhams(roundToView.initialPocketDirhams)}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
+                            val rialSpentSuffix = if (uiState.appSettings.showRial) {
+                                " (${CurrencyFormatter.formatRials(roundToView.archivedTotalSpentDirhams)})"
+                            } else {
+                                ""
+                            }
                             Text(
-                                text = "مجموع ما صُرف: ${CurrencyFormatter.formatDirhams(roundToView.archivedTotalSpentDirhams)} (${CurrencyFormatter.formatRials(roundToView.archivedTotalSpentDirhams)})",
+                                text = "مجموع ما صُرف: ${CurrencyFormatter.formatDirhams(roundToView.archivedTotalSpentDirhams)}$rialSpentSuffix",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Bold
@@ -751,6 +785,7 @@ private fun PocketLedgerSummaryCard(
     onOpenFinishRound: () -> Unit
 ) {
     val isOverBudget = uiState.netPocketBalanceDirhams < -0.009
+    val showRial = uiState.appSettings.showRial
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -802,138 +837,220 @@ private fun PocketLedgerSummaryCard(
                 }
             }
 
-            // 3 Financial Rows: Initial Pocket -> Total Spent -> Remaining in Pocket
+            // Harmonious Financial Breakdown Box
             Surface(
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(18.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(14.dp),
+                        .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Row 1: Initial Pocket
+                    // Two balanced side-by-side stat tiles: Initial Pocket vs Total Spent
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(
-                            text = "خرجت من البيت بـ:",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "${CurrencyFormatter.formatDirhams(uiState.initialPocketDirhams)} (${CurrencyFormatter.formatRials(uiState.initialPocketDirhams)})",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    // Row 2: Total Actual Spent
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "مجموع ما صرفته فعلياً:",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (uiState.totalPassingExpensesDirhams > 0.0) {
+                        // Tile 1: Initial Pocket
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
                                 Text(
-                                    text = "البائعين: ${CurrencyFormatter.formatDirhams(uiState.totalActualVendorPaidDirhams)} + عابر: ${CurrencyFormatter.formatDirhams(uiState.totalPassingExpensesDirhams)}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                    text = "خرجت من البيت بـ",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
                                 )
+                                Text(
+                                    text = CurrencyFormatter.formatPocketDirhams(uiState.initialPocketDirhams),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                                if (showRial) {
+                                    Text(
+                                        text = CurrencyFormatter.formatPocketRials(uiState.initialPocketDirhams),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
                             }
                         }
+
+                        // Tile 2: Total Actual Spent
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f)),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "مجموع ما صرفته فعلياً",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f),
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = CurrencyFormatter.formatDirhams(uiState.totalActualSpentDirhams),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.testTag("audit_total_spent_text")
+                                )
+                                if (showRial) {
+                                    Text(
+                                        text = CurrencyFormatter.formatRials(uiState.totalActualSpentDirhams),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (uiState.totalPassingExpensesDirhams > 0.0) {
                         Text(
-                            text = "${CurrencyFormatter.formatDirhams(uiState.totalActualSpentDirhams)} (${CurrencyFormatter.formatRials(uiState.totalActualSpentDirhams)})",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.secondary,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.testTag("audit_total_spent_text")
+                            text = "تفصيل المصروف: عند البائعين ${CurrencyFormatter.formatDirhams(uiState.totalActualVendorPaidDirhams)} + مصاريف عابرة ${CurrencyFormatter.formatDirhams(uiState.totalPassingExpensesDirhams)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 4.dp)
                         )
                     }
 
                     // Optional Row: Savings from Forgiven Small Change
                     if (uiState.totalForgivenSavingsDirhams > 0.0) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Savings,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Savings,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.tertiary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "توفير المسامحة في الصرف:",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                                 Text(
-                                    text = "توفير المسامحة في الصرف:",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    text = "+ ${CurrencyFormatter.formatDirhams(uiState.totalForgivenSavingsDirhams)}" +
+                                        if (showRial) " (${CurrencyFormatter.formatRials(uiState.totalForgivenSavingsDirhams)})" else "",
+                                    style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.tertiary,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
-                            Text(
-                                text = "+ ${CurrencyFormatter.formatDirhams(uiState.totalForgivenSavingsDirhams)} (${CurrencyFormatter.formatRials(uiState.totalForgivenSavingsDirhams)})",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.tertiary,
-                                fontWeight = FontWeight.Bold
-                            )
                         }
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
-
-                    // Row 3: Expected Remaining in Pocket
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    // Highlighted Remaining in Pocket Banner
+                    Surface(
+                        color = if (isOverBudget) {
+                            MaterialTheme.colorScheme.errorContainer
+                        } else {
+                            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.65f)
+                        },
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary
+                        ),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (isOverBudget) "تجاوزت ميزانية الجيب بـ:" else "الباقي المفترض في جيبك الآن:",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = CurrencyFormatter.formatRials(abs(uiState.netPocketBalanceDirhams)),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.secondary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Surface(
-                            color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
-                            shape = RoundedCornerShape(14.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = CurrencyFormatter.formatDirhams(abs(uiState.netPocketBalanceDirhams)),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = if (isOverBudget) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onTertiary,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false,
-                                modifier = Modifier
-                                    .padding(horizontal = 14.dp, vertical = 6.dp)
-                                    .testTag("audit_remaining_pocket_text")
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (isOverBudget) "تجاوزت ميزانية الجيب بـ:" else "الباقي المفترض في جيبك الآن:",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = if (isOverBudget) {
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onTertiaryContainer
+                                    },
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (showRial) {
+                                    Text(
+                                        text = CurrencyFormatter.formatPocketRials(abs(uiState.netPocketBalanceDirhams)),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Surface(
+                                color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = CurrencyFormatter.formatPocketDirhams(abs(uiState.netPocketBalanceDirhams)),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = if (isOverBudget) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onTertiary,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier
+                                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                                        .testTag("audit_remaining_pocket_text")
+                                )
+                            }
                         }
                     }
                 }
@@ -957,7 +1074,8 @@ private fun PocketLedgerSummaryCard(
                 Text(
                     text = "إنهاء الجولة وحفظها في الأرشيف",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
                 )
             }
         }
@@ -971,6 +1089,7 @@ private fun FinishRoundSheet(
     waitingItemsCount: Int,
     purchasedItemsCount: Int,
     totalActualSpentDirhams: Double,
+    showRial: Boolean = true,
     onConfirmFinishRound: (
         newPocketDirhams: Double,
         newRoundTitle: String,
@@ -1037,8 +1156,13 @@ private fun FinishRoundSheet(
                         text = "• عدد الأغراض المشتراة: $purchasedItemsCount أغراض",
                         style = MaterialTheme.typography.bodyMedium
                     )
+                    val spentRialSuffix = if (showRial) {
+                        " (${CurrencyFormatter.formatRials(totalActualSpentDirhams)})"
+                    } else {
+                        ""
+                    }
                     Text(
-                        text = "• مجموع المصروف الفعلي: ${CurrencyFormatter.formatDirhams(totalActualSpentDirhams)} (${CurrencyFormatter.formatRials(totalActualSpentDirhams)})",
+                        text = "• مجموع المصروف الفعلي: ${CurrencyFormatter.formatDirhams(totalActualSpentDirhams)}$spentRialSuffix",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )

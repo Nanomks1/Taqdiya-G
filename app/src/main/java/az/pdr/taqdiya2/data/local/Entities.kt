@@ -127,7 +127,10 @@ data class AppSettingsEntity(
     val uiScaleMode: String = "NORMAL",
     // عين الخصوصية: إخفاء المبالغ المالية برمز (***)
     val privacyMaskAmounts: Boolean = false,
+    // نطاق عين الخصوصية: true = إخفاء المبلغ في الجيب فقط، false = إخفاء كل المبالغ
+    val privacyMaskPocketOnly: Boolean = false,
     // رمز قفل التطبيق السري (4 أرقام، فارغ يعني بدون قفل)
     val pinCode: String = ""
 )
+
 

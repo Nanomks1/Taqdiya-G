@@ -17,7 +17,7 @@ android {
     val computedVersionName = "$verMajor.$verMinor.$verPatch"
 
     defaultConfig {
-        applicationId = "az.pdr.taqdiya2"
+        applicationId = "com.aistudio.applet.oxkjmj"
         minSdk = 29
         targetSdk = 36
         versionCode = githubRunNumber

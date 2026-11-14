@@ -1,6 +1,6 @@
 {
-  "name": "التقدية",
-  "description": "تطبيق أندرويد شخصي باللغة العربية لإدارة التسوق الواقعي من البائعين والأسواق الأسبوعية ومطابقة الجيب بالدرهم والريال بدون إنترنت.",
+  "name": "Remix Taqdiya-G",
+  "description": "Imported from GitHub: Nanomks1/Taqdiya-G",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

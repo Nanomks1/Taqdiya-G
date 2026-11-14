@@ -71,23 +71,26 @@ fun TopPocketBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier.weight(1f, fill = false),
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
                         text = "كناش التقدية",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         softWrap = false,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
 
                     Surface(
                         color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = RoundedCornerShape(10.dp)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.testTag("top_bar_missing_count_badge")
                     ) {
                         Text(
                             text = "$totalMissingItemsCount أغراض",
@@ -104,29 +107,28 @@ fun TopPocketBar(
                 Spacer(modifier = Modifier.width(6.dp))
 
                 Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
                         modifier = Modifier
-                            .heightIn(min = 38.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .heightIn(min = 36.dp)
+                            .clip(RoundedCornerShape(11.dp))
                             .clickable(onClick = onShareListClick)
                             .testTag("share_list_button"),
                         color = MaterialTheme.colorScheme.surfaceVariant,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(11.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Share,
                                 contentDescription = "مشاركة القائمة",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
@@ -142,23 +144,23 @@ fun TopPocketBar(
 
                     Surface(
                         modifier = Modifier
-                            .heightIn(min = 38.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .heightIn(min = 36.dp)
+                            .clip(RoundedCornerShape(11.dp))
                             .clickable(onClick = onOpenToolsSheetClick)
                             .testTag("open_tools_button"),
                         color = MaterialTheme.colorScheme.surfaceVariant,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(11.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Tune,
                                 contentDescription = "أدوات الكناش",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
@@ -174,27 +176,27 @@ fun TopPocketBar(
 
                     Surface(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(11.dp))
                             .clickable(onClick = onOpenSettingsClick)
                             .testTag("open_settings_button"),
                         color = MaterialTheme.colorScheme.surfaceVariant,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(11.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Outlined.Settings,
                                 contentDescription = "الإعدادات والخصوصية",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(17.dp)
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Warm Cohesive Compact Pocket Balance Card (Blends harmoniously in Day & Night!)
             Surface(
@@ -210,7 +212,7 @@ fun TopPocketBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp, vertical = 9.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -221,8 +223,8 @@ fun TopPocketBar(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(11.dp))
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(MaterialTheme.colorScheme.secondary),
                             contentAlignment = Alignment.Center
                         ) {
@@ -230,7 +232,7 @@ fun TopPocketBar(
                                 imageVector = Icons.Outlined.AccountBalanceWallet,
                                 contentDescription = "ميزانية الجيب",
                                 tint = MaterialTheme.colorScheme.onSecondary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         }
 
@@ -254,7 +256,7 @@ fun TopPocketBar(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    text = CurrencyFormatter.formatDirhams(remainingPocketDirhams),
+                                    text = CurrencyFormatter.formatPocketDirhams(remainingPocketDirhams),
                                     style = MaterialTheme.typography.titleLarge,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     fontWeight = FontWeight.Bold,
@@ -269,7 +271,7 @@ fun TopPocketBar(
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
                                         Text(
-                                            text = CurrencyFormatter.formatRials(remainingPocketDirhams),
+                                            text = CurrencyFormatter.formatPocketRials(remainingPocketDirhams),
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                                             fontWeight = FontWeight.Bold,
