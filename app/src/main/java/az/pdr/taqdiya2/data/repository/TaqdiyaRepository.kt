@@ -344,6 +344,27 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
                     isArchived = false
                 )
             )
+        } else {
+            // Clean up any existing duplicate unpurchased items in the active round (e.g. duplicate "لوبيا")
+            val activeRoundItems = dao.getItemsForRoundOnce(currentRound.id)
+            val seenUnpurchasedByNorm = mutableMapOf<String, ShoppingItemEntity>()
+            for (item in activeRoundItems) {
+                if (!item.isPurchased && !item.isDeleted) {
+                    val norm = CurrencyFormatter.normalizeArabicName(item.name)
+                    val firstSeen = seenUnpurchasedByNorm[norm]
+                    if (firstSeen == null) {
+                        seenUnpurchasedByNorm[norm] = item
+                    } else {
+                        // Merge note if firstSeen had no note and duplicate had a note, then remove duplicate row
+                        if (firstSeen.note.isBlank() && item.note.isNotBlank()) {
+                            val updatedFirst = firstSeen.copy(note = item.note)
+                            dao.updateShoppingItem(updatedFirst)
+                            seenUnpurchasedByNorm[norm] = updatedFirst
+                        }
+                        dao.permanentlyDeleteShoppingItem(item.id)
+                    }
+                }
+            }
         }
     }
 
@@ -383,6 +404,25 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
             )
         }
 
+        // Prevent duplicate unpurchased items with the same normalized name in the active round
+        val existingUnpurchased = dao.getItemsForRoundOnce(roundId).firstOrNull {
+            !it.isDeleted && !it.isPurchased &&
+                CurrencyFormatter.normalizeArabicName(it.name) == normalized
+        }
+        if (existingUnpurchased != null) {
+            val updatedExisting = existingUnpurchased.copy(
+                vendorId = vendorId,
+                note = if (cleanNote.isNotBlank()) cleanNote else existingUnpurchased.note,
+                unitPriceDirhams = if (existingUnpurchased.unitPriceDirhams > 0.0) {
+                    existingUnpurchased.unitPriceDirhams
+                } else {
+                    existingDict?.lastPriceDirhams ?: 0.0
+                }
+            )
+            dao.updateShoppingItem(updatedExisting)
+            return updatedExisting
+        }
+
         val item = ShoppingItemEntity(
             roundId = roundId,
             vendorId = vendorId,
@@ -392,6 +432,10 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
         )
         val newId = dao.insertShoppingItem(item)
         return item.copy(id = newId)
+    }
+
+    suspend fun reinsertShoppingItem(item: ShoppingItemEntity): Long {
+        return dao.insertShoppingItem(item.copy(isDeleted = false, deletedAt = null))
     }
 
     suspend fun confirmItemPurchase(

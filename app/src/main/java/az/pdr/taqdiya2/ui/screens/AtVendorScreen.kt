@@ -28,13 +28,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Calculate
-import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Replay
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material.icons.outlined.Storefront
@@ -1112,9 +1112,9 @@ private fun WaitingMarketItemCard(
                             .testTag("market_delete_waiting_item_${item.id}")
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.DeleteOutline,
-                            contentDescription = "حذف ${item.name}",
-                            tint = MaterialTheme.colorScheme.error
+                            imageVector = Icons.Outlined.RemoveCircleOutline,
+                            contentDescription = "إزالة ${item.name} من القائمة",
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }

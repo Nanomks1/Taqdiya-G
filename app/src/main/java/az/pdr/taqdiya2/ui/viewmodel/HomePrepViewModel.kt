@@ -26,6 +26,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed class UndoAction(val message: String) {
+    data class RemovedFromRoundList(val removedItem: ShoppingItemEntity) :
+        UndoAction("تمت إزالة «${removedItem.name}» من قائمة اليوم")
+
     data class DeletedShoppingItem(val itemId: Long, val itemName: String) :
         UndoAction("تم نقل الغرض «$itemName» إلى سلة المحذوفات")
 
@@ -713,18 +716,20 @@ class HomePrepViewModel(
     fun toggleQuickDictionaryTile(dictItem: DictionaryItemEntity, overrideVendorId: Long? = null) {
         val state = uiState.value
         val roundId = state.activeRound?.id ?: return
-        val existingItem = state.shoppingItems.firstOrNull {
+        val matchingItems = state.shoppingItems.filter {
             !it.isDeleted && !it.isPurchased &&
                 CurrencyFormatter.normalizeArabicName(it.name) == dictItem.normalizedName
         }
 
         viewModelScope.launch {
-            if (existingItem != null) {
-                repository.softDeleteShoppingItem(existingItem.id)
-                if (draftState.value.lastTouchedItemId == existingItem.id) {
+            if (matchingItems.isNotEmpty()) {
+                val removedIds = matchingItems.map { it.id }.toSet()
+                matchingItems.forEach { item ->
+                    repository.permanentlyDeleteShoppingItem(item.id)
+                }
+                if (draftState.value.lastTouchedItemId in removedIds) {
                     draftState.value = draftState.value.copy(lastTouchedItemId = null)
                 }
-                pushUndoAction(UndoAction.DeletedShoppingItem(existingItem.id, existingItem.name))
             } else {
                 val targetVendorId = overrideVendorId
                     ?: state.vendors.firstOrNull { it.id == dictItem.defaultVendorId }?.id
@@ -815,8 +820,17 @@ class HomePrepViewModel(
 
     fun deleteShoppingItem(item: ShoppingItemEntity) {
         viewModelScope.launch {
-            repository.softDeleteShoppingItem(item.id)
-            pushUndoAction(UndoAction.DeletedShoppingItem(item.id, item.name))
+            if (!item.isPurchased) {
+                val snapshot = item.copy()
+                repository.permanentlyDeleteShoppingItem(item.id)
+                if (draftState.value.lastTouchedItemId == item.id) {
+                    draftState.value = draftState.value.copy(lastTouchedItemId = null)
+                }
+                pushUndoAction(UndoAction.RemovedFromRoundList(snapshot))
+            } else {
+                repository.softDeleteShoppingItem(item.id)
+                pushUndoAction(UndoAction.DeletedShoppingItem(item.id, item.name))
+            }
         }
     }
 
@@ -921,6 +935,11 @@ class HomePrepViewModel(
 
         viewModelScope.launch {
             when (action) {
+                is UndoAction.RemovedFromRoundList -> {
+                    repository.reinsertShoppingItem(action.removedItem)
+                    _statusMessages.tryEmit("تمت إعادة «${action.removedItem.name}» إلى قائمة اليوم")
+                }
+
                 is UndoAction.DeletedShoppingItem -> {
                     repository.restoreShoppingItem(action.itemId)
                     _statusMessages.tryEmit("تم استرجاع الغرض «${action.itemName}» بنجاح")

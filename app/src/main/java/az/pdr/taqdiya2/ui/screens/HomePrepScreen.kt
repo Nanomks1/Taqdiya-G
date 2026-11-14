@@ -27,11 +27,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Clear
-import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.QueryStats
+import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.Button
@@ -718,9 +718,9 @@ private fun OversizedVendorCard(
                                 .testTag("delete_item_${item.id}")
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.DeleteOutline,
-                                contentDescription = "حذف الغرض",
-                                tint = MaterialTheme.colorScheme.error,
+                                imageVector = Icons.Outlined.RemoveCircleOutline,
+                                contentDescription = "إزالة من القائمة",
+                                tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
