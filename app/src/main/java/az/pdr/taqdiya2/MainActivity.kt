@@ -145,14 +145,41 @@ fun TaqdiyaApp(
     var editingShoppingItem by remember { mutableStateOf<ShoppingItemEntity?>(null) }
     var priceHistoryTarget by remember { mutableStateOf<Triple<String, Long, Double>?>(null) }
 
+    // Parent menu stack tracking so pressing Back or Close inside a nested tool/setting returns to its parent menu
+    var returnMenuAfterSubDialog by rememberSaveable { mutableStateOf<String?>(null) }
+    var didOpenSettingsFromTools by rememberSaveable { mutableStateOf(false) }
+
+    fun closeSubDialogAndRestoreParent(closeAction: () -> Unit) {
+        closeAction()
+        when (returnMenuAfterSubDialog) {
+            "SETTINGS" -> {
+                returnMenuAfterSubDialog = null
+                showSettingsSheet = true
+            }
+            "TOOLS" -> {
+                returnMenuAfterSubDialog = null
+                showToolsMenuDialog = true
+            }
+        }
+    }
+
+    fun closeSettingsAndRestoreParent() {
+        showSettingsSheet = false
+        if (didOpenSettingsFromTools) {
+            didOpenSettingsFromTools = false
+            showToolsMenuDialog = true
+        }
+    }
+
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
-    // Keep Home Screen AppWidget automatically synchronized with live pocket balance & missing items
+    // Keep Home Screen AppWidget automatically synchronized with live pocket balance, missing items, and Day/Night theme
     LaunchedEffect(
         uiState.remainingPocketDirhams,
         uiState.shoppingItems.size,
         uiState.appSettings.showRial,
-        uiState.appSettings.privacyMaskAmounts
+        uiState.appSettings.privacyMaskAmounts,
+        uiState.appSettings.themeMode
     ) {
         if (!uiState.isLoading) {
             TaqdiyaWidgetProvider.requestWidgetUpdate(context)
@@ -193,22 +220,22 @@ fun TaqdiyaApp(
         }
     }
 
-    // Double-Back to Exit & Secondary Sheet/Tab Back Navigation
+    // Double-Back to Exit & Hierarchical Sub-Menu Back Navigation
     BackHandler {
         when {
             uiState.isPinLocked -> onExitApp()
             priceHistoryTarget != null -> priceHistoryTarget = null
             editingShoppingItem != null -> editingShoppingItem = null
-            showBackupRestoreDialog -> showBackupRestoreDialog = false
-            showSettingsSheet -> showSettingsSheet = false
-            showTrashBinDialog -> showTrashBinDialog = false
-            showPassingExpenseSheet -> showPassingExpenseSheet = false
+            showBackupRestoreDialog -> closeSubDialogAndRestoreParent { showBackupRestoreDialog = false }
+            showTrashBinDialog -> closeSubDialogAndRestoreParent { showTrashBinDialog = false }
+            showPassingExpenseSheet -> closeSubDialogAndRestoreParent { showPassingExpenseSheet = false }
+            showPriceTrackerDialog -> closeSubDialogAndRestoreParent { showPriceTrackerDialog = false }
+            showDictionaryDialog -> closeSubDialogAndRestoreParent { showDictionaryDialog = false }
+            showVendorManagerDialog -> closeSubDialogAndRestoreParent { showVendorManagerDialog = false }
+            showShareDialog -> closeSubDialogAndRestoreParent { showShareDialog = false }
+            showSettingsSheet -> closeSettingsAndRestoreParent()
             showQuickAddPad -> showQuickAddPad = false
             showBudgetDialog -> showBudgetDialog = false
-            showPriceTrackerDialog -> showPriceTrackerDialog = false
-            showDictionaryDialog -> showDictionaryDialog = false
-            showVendorManagerDialog -> showVendorManagerDialog = false
-            showShareDialog -> showShareDialog = false
             showToolsMenuDialog -> showToolsMenuDialog = false
             selectedTab != 0 -> selectedTab = 0
             else -> {
@@ -250,10 +277,16 @@ fun TaqdiyaApp(
                 privacyMaskAmounts = uiState.appSettings.privacyMaskAmounts,
                 showRial = uiState.appSettings.showRial,
                 onTogglePrivacyMask = viewModel::togglePrivacyMask,
-                onOpenSettingsClick = { showSettingsSheet = true },
+                onOpenSettingsClick = {
+                    didOpenSettingsFromTools = false
+                    showSettingsSheet = true
+                },
                 onEditBudgetClick = { showBudgetDialog = true },
                 onOpenToolsSheetClick = { showToolsMenuDialog = true },
-                onShareListClick = { showShareDialog = true }
+                onShareListClick = {
+                    returnMenuAfterSubDialog = null
+                    showShareDialog = true
+                }
             )
         },
         snackbarHost = {
@@ -347,6 +380,7 @@ fun TaqdiyaApp(
                 HomePrepScreen(
                     uiState = uiState,
                     onOpenQuickPadForVendor = { vendorId ->
+                        viewModel.clearLastTouchedItem()
                         if (vendorId != null) {
                             viewModel.onVendorSelectedForInput(vendorId)
                         }
@@ -357,9 +391,18 @@ fun TaqdiyaApp(
                     onFilterVendorChanged = viewModel::onFilterVendorChanged,
                     onEditItemClick = { editingShoppingItem = it },
                     onDeleteItemClick = viewModel::deleteShoppingItem,
-                    onOpenDictionaryClick = { showDictionaryDialog = true },
-                    onOpenPriceTrackerClick = { showPriceTrackerDialog = true },
-                    onOpenVendorsClick = { showVendorManagerDialog = true },
+                    onOpenDictionaryClick = {
+                        returnMenuAfterSubDialog = null
+                        showDictionaryDialog = true
+                    },
+                    onOpenPriceTrackerClick = {
+                        returnMenuAfterSubDialog = null
+                        showPriceTrackerDialog = true
+                    },
+                    onOpenVendorsClick = {
+                        returnMenuAfterSubDialog = null
+                        showVendorManagerDialog = true
+                    },
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -373,12 +416,17 @@ fun TaqdiyaApp(
                     onUnmarkItemPurchased = viewModel::unmarkItemPurchased,
                     onDeleteItemClick = viewModel::deleteShoppingItem,
                     onConfirmVendorPayment = viewModel::confirmVendorPayment,
+                    onResetVendorPaymentAndBasket = viewModel::resetVendorPaymentAndBasket,
                     onUpdateVendorPendingBalance = viewModel::updateVendorPendingBalance,
-                    onOpenPassingExpenseClick = { showPassingExpenseSheet = true },
+                    onOpenPassingExpenseClick = {
+                        returnMenuAfterSubDialog = null
+                        showPassingExpenseSheet = true
+                    },
                     onOpenItemPriceHistory = { itemName, vendorId, fallbackDh ->
                         priceHistoryTarget = Triple(itemName, vendorId, fallbackDh)
                     },
                     onOpenQuickPadForVendor = { vendorId ->
+                        viewModel.clearLastTouchedItem()
                         if (vendorId != null) {
                             viewModel.onVendorSelectedForInput(vendorId)
                         }
@@ -392,9 +440,13 @@ fun TaqdiyaApp(
             2 -> {
                 PocketAuditScreen(
                     uiState = uiState,
-                    onOpenPassingExpenseClick = { showPassingExpenseSheet = true },
+                    onOpenPassingExpenseClick = {
+                        returnMenuAfterSubDialog = null
+                        showPassingExpenseSheet = true
+                    },
                     onDeletePassingExpense = viewModel::deletePassingExpense,
                     onConfirmVendorPayment = viewModel::confirmVendorPayment,
+                    onResetVendorPaymentAndBasket = viewModel::resetVendorPaymentAndBasket,
                     onUpdateVendorPendingBalance = viewModel::updateVendorPendingBalance,
                     onFinishAndArchiveRound = viewModel::finishAndArchiveCurrentRound,
                     onLoadArchivedRoundItems = viewModel::loadArchivedRoundItems,
@@ -427,6 +479,9 @@ fun TaqdiyaApp(
             onSelectVendor = viewModel::onVendorSelectedForInput,
             onToggleTile = viewModel::toggleQuickDictionaryTile,
             onApplyQuickNote = viewModel::applyQuickNoteToActiveItem,
+            onClearTargetItem = viewModel::clearLastTouchedItem,
+            onAddCustomUnit = viewModel::addCustomUnitForItem,
+            onRemoveCustomUnit = viewModel::removeCustomUnitForItem,
             onItemNameChanged = viewModel::onItemNameChanged,
             onItemNoteChanged = viewModel::onItemNoteChanged,
             onSubmitCustomItem = viewModel::addItemFromInput,
@@ -437,7 +492,7 @@ fun TaqdiyaApp(
     if (showPassingExpenseSheet) {
         PassingExpenseSheet(
             onAddExpense = viewModel::addPassingExpense,
-            onDismiss = { showPassingExpenseSheet = false }
+            onDismiss = { closeSubDialogAndRestoreParent { showPassingExpenseSheet = false } }
         )
     }
 
@@ -466,6 +521,7 @@ fun TaqdiyaApp(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 showToolsMenuDialog = false
+                                returnMenuAfterSubDialog = "TOOLS"
                                 showPriceTrackerDialog = true
                             }
                             .testTag("menu_open_price_tracker_card"),
@@ -505,6 +561,7 @@ fun TaqdiyaApp(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 showToolsMenuDialog = false
+                                returnMenuAfterSubDialog = "TOOLS"
                                 showPassingExpenseSheet = true
                             }
                             .testTag("menu_open_passing_expense_card"),
@@ -544,6 +601,7 @@ fun TaqdiyaApp(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 showToolsMenuDialog = false
+                                returnMenuAfterSubDialog = "TOOLS"
                                 showDictionaryDialog = true
                             }
                             .testTag("menu_open_dictionary_card"),
@@ -583,6 +641,7 @@ fun TaqdiyaApp(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 showToolsMenuDialog = false
+                                returnMenuAfterSubDialog = "TOOLS"
                                 showVendorManagerDialog = true
                             }
                             .testTag("menu_open_vendors_card"),
@@ -622,6 +681,7 @@ fun TaqdiyaApp(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 showToolsMenuDialog = false
+                                returnMenuAfterSubDialog = "TOOLS"
                                 showShareDialog = true
                             }
                             .testTag("menu_open_share_card"),
@@ -661,6 +721,7 @@ fun TaqdiyaApp(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 showToolsMenuDialog = false
+                                returnMenuAfterSubDialog = "TOOLS"
                                 showTrashBinDialog = true
                             }
                             .testTag("menu_open_trash_bin_card"),
@@ -700,6 +761,7 @@ fun TaqdiyaApp(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 showToolsMenuDialog = false
+                                didOpenSettingsFromTools = true
                                 showSettingsSheet = true
                             }
                             .testTag("menu_open_settings_card"),
@@ -739,6 +801,7 @@ fun TaqdiyaApp(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 showToolsMenuDialog = false
+                                returnMenuAfterSubDialog = "TOOLS"
                                 showBackupRestoreDialog = true
                             }
                             .testTag("menu_open_backup_restore_card"),
@@ -801,7 +864,7 @@ fun TaqdiyaApp(
                     dictItem.lastPriceDirhams
                 )
             },
-            onDismiss = { showPriceTrackerDialog = false }
+            onDismiss = { closeSubDialogAndRestoreParent { showPriceTrackerDialog = false } }
         )
     }
 
@@ -822,7 +885,7 @@ fun TaqdiyaApp(
             onRenameEntry = viewModel::renameDictionaryEntry,
             onMergeEntries = viewModel::mergeDictionaryEntries,
             onDeleteEntry = viewModel::deleteDictionaryEntry,
-            onDismiss = { showDictionaryDialog = false }
+            onDismiss = { closeSubDialogAndRestoreParent { showDictionaryDialog = false } }
         )
     }
 
@@ -842,7 +905,7 @@ fun TaqdiyaApp(
             onUpdateVendor = viewModel::updateVendor,
             onMoveVendor = viewModel::moveVendorOrder,
             onDeleteVendor = viewModel::deleteVendor,
-            onDismiss = { showVendorManagerDialog = false }
+            onDismiss = { closeSubDialogAndRestoreParent { showVendorManagerDialog = false } }
         )
     }
 
@@ -850,7 +913,7 @@ fun TaqdiyaApp(
         ShareListDialog(
             vendors = uiState.vendors,
             shoppingItems = uiState.shoppingItems,
-            onDismiss = { showShareDialog = false },
+            onDismiss = { closeSubDialogAndRestoreParent { showShareDialog = false } },
             onMessageCopied = { msg ->
                 coroutineScope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
@@ -872,9 +935,10 @@ fun TaqdiyaApp(
             onLockAppNow = viewModel::lockAppNow,
             onOpenBackupRestore = {
                 showSettingsSheet = false
+                returnMenuAfterSubDialog = "SETTINGS"
                 showBackupRestoreDialog = true
             },
-            onDismiss = { showSettingsSheet = false }
+            onDismiss = { closeSettingsAndRestoreParent() }
         )
     }
 
@@ -891,7 +955,7 @@ fun TaqdiyaApp(
             onPermanentDeletePassingExpense = viewModel::permanentlyDeleteFromTrashPassingExpense,
             onPermanentDeleteVendor = viewModel::permanentlyDeleteFromTrashVendor,
             onEmptyAllTrash = viewModel::emptyAllTrash,
-            onDismiss = { showTrashBinDialog = false }
+            onDismiss = { closeSubDialogAndRestoreParent { showTrashBinDialog = false } }
         )
     }
 
@@ -901,7 +965,7 @@ fun TaqdiyaApp(
             onExportBackupJson = viewModel::exportBackupJson,
             onImportBackupJson = viewModel::importBackupJson,
             onNotifyMessage = viewModel::notifyStatusMessage,
-            onDismiss = { showBackupRestoreDialog = false }
+            onDismiss = { closeSubDialogAndRestoreParent { showBackupRestoreDialog = false } }
         )
     }
 
@@ -910,6 +974,9 @@ fun TaqdiyaApp(
         EditShoppingItemDialog(
             item = itemToEdit,
             vendors = uiState.vendors,
+            dictionaryItems = uiState.dictionaryItems,
+            onAddCustomUnit = viewModel::addCustomUnitForItem,
+            onRemoveCustomUnit = viewModel::removeCustomUnitForItem,
             onDismiss = { editingShoppingItem = null },
             onSave = { newName, newNote, newVendorId ->
                 viewModel.updateShoppingItem(itemToEdit, newName, newNote, newVendorId)
@@ -940,3 +1007,4 @@ fun TaqdiyaApp(
         )
     }
 }
+

@@ -71,6 +71,7 @@ fun ConfirmVendorPaymentSheet(
         forgivenDiscountDirhams: Double,
         newVendorPendingBalanceDirhams: Double
     ) -> Unit,
+    onResetVendorPayment: (() -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -667,6 +668,36 @@ fun ConfirmVendorPaymentSheet(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
+            }
+
+            if (onResetVendorPayment != null && (existingPayment != null || calculatedItemsTotalDirhams > 0.0)) {
+                OutlinedButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onResetVendorPayment()
+                        onDismiss()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .testTag("reset_vendor_payment_sheet_button"),
+                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.error),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "إلغاء وتصفير الدفع والقفة لهذا البائع",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

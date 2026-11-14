@@ -97,6 +97,14 @@ sealed class UndoAction(val message: String) {
     data class DeletedPriceRecord(
         val record: PriceHistoryEntity
     ) : UndoAction("تم حذف سجل ثمن «${record.itemName}» (${CurrencyFormatter.formatDirhams(record.unitPriceDirhams)})")
+
+    data class ResetVendorPaymentAndBasket(
+        val roundId: Long,
+        val vendorId: Long,
+        val vendorName: String,
+        val previousPayment: VendorPaymentEntity?,
+        val previousPurchasedItems: List<ShoppingItemEntity>
+    ) : UndoAction("تم إلغاء وتصفير حساب «$vendorName»")
 }
 
 data class HomePrepUiState(
@@ -301,8 +309,8 @@ class HomePrepViewModel(
         }
 
         val validLastTouchedId = draft.lastTouchedItemId?.takeIf { id ->
-            roundItems.any { it.id == id }
-        } ?: roundItems.firstOrNull()?.id
+            roundItems.any { it.id == id && !it.isPurchased }
+        }
 
         val vendorsWithItemsIds = roundItems.map { it.vendorId }.toSet()
         val marketVendors = vendors.filter { vendorsWithItemsIds.contains(it.id) }
@@ -507,6 +515,36 @@ class HomePrepViewModel(
         }
     }
 
+    fun resetVendorPaymentAndBasket(vendor: VendorEntity, alsoUnmarkBasketItems: Boolean = true) {
+        val state = uiState.value
+        val roundId = state.activeRound?.id ?: return
+        val previousPayment = state.vendorPayments.firstOrNull { it.vendorId == vendor.id }
+        val vendorPurchasedItems = if (alsoUnmarkBasketItems) {
+            state.shoppingItems.filter { it.vendorId == vendor.id && it.isPurchased && !it.isDeleted }
+                .map { it.copy() }
+        } else {
+            emptyList()
+        }
+        if (previousPayment == null && vendorPurchasedItems.isEmpty()) return
+
+        viewModelScope.launch {
+            repository.cancelVendorPaymentAndOptionallyResetBasket(
+                roundId = roundId,
+                vendorId = vendor.id,
+                itemsToUnmark = vendorPurchasedItems
+            )
+            pushUndoAction(
+                UndoAction.ResetVendorPaymentAndBasket(
+                    roundId = roundId,
+                    vendorId = vendor.id,
+                    vendorName = vendor.name,
+                    previousPayment = previousPayment,
+                    previousPurchasedItems = vendorPurchasedItems
+                )
+            )
+        }
+    }
+
     // --- Batch 3: Passing Expenses (+ مصروف عابر) ---
     fun addPassingExpense(title: String, amountDirhams: Double) {
         if (amountDirhams <= 0.0) return
@@ -644,24 +682,30 @@ class HomePrepViewModel(
         val roundId = state.activeRound?.id ?: return
         val name = state.itemNameInput.trim()
         if (name.isEmpty()) return
+        val cleanNote = state.itemNoteInput.trim()
         val vendorId = state.selectedVendorIdForInput ?: state.vendors.firstOrNull()?.id ?: return
 
         viewModelScope.launch {
             val created = repository.addShoppingItemAndLearn(
                 roundId = roundId,
                 name = name,
-                note = state.itemNoteInput.trim(),
+                note = cleanNote,
                 vendorId = vendorId
             )
+            // If user already entered a note (e.g. "علبة" for "جافيل"), do not leave the item stuck in the 1-tap unit bar
             draftState.value = draftState.value.copy(
                 itemNameInput = "",
                 itemNoteInput = "",
                 autoMatchedVendorName = null,
                 isVendorManuallyOverridden = false,
-                lastTouchedItemId = created.id,
+                lastTouchedItemId = if (cleanNote.isNotEmpty()) null else created.id,
                 selectedMarketVendorId = vendorId
             )
         }
+    }
+
+    fun clearLastTouchedItem() {
+        draftState.value = draftState.value.copy(lastTouchedItemId = null)
     }
 
     fun toggleQuickDictionaryTile(dictItem: DictionaryItemEntity, overrideVendorId: Long? = null) {
@@ -675,6 +719,9 @@ class HomePrepViewModel(
         viewModelScope.launch {
             if (existingItem != null) {
                 repository.softDeleteShoppingItem(existingItem.id)
+                if (draftState.value.lastTouchedItemId == existingItem.id) {
+                    draftState.value = draftState.value.copy(lastTouchedItemId = null)
+                }
                 pushUndoAction(UndoAction.DeletedShoppingItem(existingItem.id, existingItem.name))
             } else {
                 val targetVendorId = overrideVendorId
@@ -697,11 +744,31 @@ class HomePrepViewModel(
 
     fun applyQuickNoteToActiveItem(noteText: String) {
         val state = uiState.value
-        val targetId = state.lastTouchedItemId ?: state.shoppingItems.firstOrNull()?.id ?: return
+        val targetId = state.lastTouchedItemId ?: return
         val targetItem = state.shoppingItems.firstOrNull { it.id == targetId } ?: return
         viewModelScope.launch {
             val newNote = if (targetItem.note == noteText) "" else noteText
             repository.updateShoppingItem(targetItem.copy(note = newNote))
+        }
+    }
+
+    fun addCustomUnitForItem(itemName: String, vendorId: Long, customUnit: String) {
+        val cleanName = itemName.trim()
+        val cleanUnit = customUnit.trim()
+        if (cleanName.isEmpty() || cleanUnit.isEmpty()) return
+        viewModelScope.launch {
+            repository.addCustomUnitForItem(cleanName, vendorId, cleanUnit)
+            _statusMessages.tryEmit("تمت إضافة المقدار «$cleanUnit» لـ «$cleanName»")
+        }
+    }
+
+    fun removeCustomUnitForItem(itemName: String, customUnit: String) {
+        val cleanName = itemName.trim()
+        val cleanUnit = customUnit.trim()
+        if (cleanName.isEmpty() || cleanUnit.isEmpty()) return
+        viewModelScope.launch {
+            repository.removeCustomUnitForItem(cleanName, cleanUnit)
+            _statusMessages.tryEmit("تم حذف المقدار «$cleanUnit» من «$cleanName»")
         }
     }
 
@@ -954,6 +1021,28 @@ class HomePrepViewModel(
                 is UndoAction.DeletedPriceRecord -> {
                     repository.restorePriceHistoryRecord(action.record)
                     _statusMessages.tryEmit("تم استرجاع سجل ثمن «${action.record.itemName}»")
+                }
+
+                is UndoAction.ResetVendorPaymentAndBasket -> {
+                    if (action.previousPayment != null) {
+                        repository.revertVendorPayment(
+                            roundId = action.roundId,
+                            vendorId = action.vendorId,
+                            previousPayment = action.previousPayment,
+                            previousVendorPendingBalanceDirhams = action.previousPayment.recordedPendingChangeDirhams
+                        )
+                    }
+                    action.previousPurchasedItems.forEach { prevItem ->
+                        repository.confirmItemPurchase(
+                            item = prevItem,
+                            purchaseMode = prevItem.purchaseMode,
+                            unitPriceDirhams = prevItem.unitPriceDirhams,
+                            quantity = prevItem.quantity,
+                            cleaningFeeDirhams = prevItem.cleaningFeeDirhams,
+                            totalDirhams = prevItem.totalDirhams
+                        )
+                    }
+                    _statusMessages.tryEmit("تمت استعادة حساب القفة والدفع عند «${action.vendorName}»")
                 }
             }
         }

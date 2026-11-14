@@ -88,6 +88,7 @@ fun PocketAuditScreen(
         forgivenDiscountDirhams: Double,
         newVendorPendingBalanceDirhams: Double
     ) -> Unit,
+    onResetVendorPaymentAndBasket: (VendorEntity, Boolean) -> Unit = { _, _ -> },
     onUpdateVendorPendingBalance: (VendorEntity, Double) -> Unit,
     onFinishAndArchiveRound: (
         newPocketDirhams: Double,
@@ -608,6 +609,9 @@ fun PocketAuditScreen(
                     forgiven,
                     newPending
                 )
+            },
+            onResetVendorPayment = {
+                onResetVendorPaymentAndBasket(targetPaymentVendor, true)
             },
             onDismiss = { paymentDialogVendor = null }
         )

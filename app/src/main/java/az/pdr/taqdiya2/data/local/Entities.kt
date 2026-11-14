@@ -92,6 +92,7 @@ data class DictionaryItemEntity(
     val normalizedName: String,
     val defaultVendorId: Long,
     val defaultNote: String = "",
+    val customUnitsCsv: String = "",
     val usageCount: Int = 1,
     val lastPriceDirhams: Double = 0.0,
     val lastUpdated: Long = System.currentTimeMillis()

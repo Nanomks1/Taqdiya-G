@@ -761,6 +761,71 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
         dao.insertDictionaryItem(item)
     }
 
+    // --- Custom Units per Item (مقادير خاصة لكل سلعة) ---
+    suspend fun addCustomUnitForItem(
+        itemName: String,
+        vendorId: Long,
+        customUnit: String
+    ) {
+        val cleanName = itemName.trim()
+        val cleanUnit = customUnit.trim()
+        if (cleanName.isEmpty() || cleanUnit.isEmpty()) return
+        val normalized = CurrencyFormatter.normalizeArabicName(cleanName)
+        val existing = dao.getDictionaryItemByNormalizedName(normalized)
+        if (existing != null) {
+            val updatedUnits = CurrencyFormatter.parseCustomUnits(existing.customUnitsCsv) + cleanUnit
+            dao.updateDictionaryItem(
+                existing.copy(
+                    customUnitsCsv = CurrencyFormatter.encodeCustomUnits(updatedUnits),
+                    lastUpdated = System.currentTimeMillis()
+                )
+            )
+        } else {
+            dao.insertDictionaryItem(
+                DictionaryItemEntity(
+                    name = cleanName,
+                    normalizedName = normalized,
+                    defaultVendorId = vendorId,
+                    defaultNote = cleanUnit,
+                    customUnitsCsv = CurrencyFormatter.encodeCustomUnits(listOf(cleanUnit)),
+                    usageCount = 1
+                )
+            )
+        }
+    }
+
+    suspend fun removeCustomUnitForItem(
+        itemName: String,
+        customUnit: String
+    ) {
+        val cleanName = itemName.trim()
+        val cleanUnit = customUnit.trim()
+        if (cleanName.isEmpty() || cleanUnit.isEmpty()) return
+        val normalized = CurrencyFormatter.normalizeArabicName(cleanName)
+        val existing = dao.getDictionaryItemByNormalizedName(normalized) ?: return
+        val updatedUnits = CurrencyFormatter.parseCustomUnits(existing.customUnitsCsv)
+            .filterNot { it == cleanUnit }
+        dao.updateDictionaryItem(
+            existing.copy(
+                customUnitsCsv = CurrencyFormatter.encodeCustomUnits(updatedUnits),
+                lastUpdated = System.currentTimeMillis()
+            )
+        )
+    }
+
+    suspend fun cancelVendorPaymentAndOptionallyResetBasket(
+        roundId: Long,
+        vendorId: Long,
+        itemsToUnmark: List<ShoppingItemEntity>
+    ) {
+        dao.deleteVendorPayment(roundId, vendorId)
+        for (item in itemsToUnmark) {
+            if (item.isPurchased) {
+                unmarkItemPurchased(item)
+            }
+        }
+    }
+
     // --- Batch 5: App Settings & Privacy Preferences ---
     suspend fun getAppSettingsOnce(): AppSettingsEntity {
         return dao.getAppSettingsOnce() ?: AppSettingsEntity().also { dao.upsertAppSettings(it) }

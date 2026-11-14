@@ -6,6 +6,8 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Color
 import android.widget.RemoteViews
 import az.pdr.taqdiya2.MainActivity
 import az.pdr.taqdiya2.R
@@ -34,7 +36,10 @@ class TaqdiyaWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        if (intent.action == ACTION_REFRESH_WIDGET) {
+        if (
+            intent.action == ACTION_REFRESH_WIDGET ||
+            intent.action == Intent.ACTION_CONFIGURATION_CHANGED
+        ) {
             val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
                 try {
@@ -77,6 +82,15 @@ class TaqdiyaWidgetProvider : AppWidgetProvider() {
             val settings = dao.getAppSettingsOnce()
             val showRial = settings?.showRial ?: true
             val maskAmounts = settings?.privacyMaskAmounts ?: false
+            val themeMode = settings?.themeMode ?: "LIGHT"
+
+            val isSystemNight = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
+            val isDarkWidget = when (themeMode) {
+                "DARK" -> true
+                "SYSTEM" -> isSystemNight
+                else -> false
+            }
 
             val activeRound = dao.getActiveRoundOnce()
             val initialPocket = activeRound?.initialPocketDirhams ?: 200.0
@@ -148,8 +162,19 @@ class TaqdiyaWidgetProvider : AppWidgetProvider() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
+            val bgRes = if (isDarkWidget) R.drawable.widget_bg_card else R.drawable.widget_bg_card_light
+            val titleColor = if (isDarkWidget) Color.parseColor("#EFECE6") else Color.parseColor("#243035")
+            val labelColor = if (isDarkWidget) Color.parseColor("#B5AEA2") else Color.parseColor("#544E46")
+            val valueColor = if (isDarkWidget) Color.parseColor("#E57C5E") else Color.parseColor("#C84B31")
+            val summaryColor = if (isDarkWidget) Color.parseColor("#EFECE6") else Color.parseColor("#1D1B18")
+
             for (widgetId in appWidgetIds) {
                 val views = RemoteViews(context.packageName, R.layout.widget_taqdiya_home)
+                views.setInt(R.id.widget_root_container, "setBackgroundResource", bgRes)
+                views.setTextColor(R.id.widget_title, titleColor)
+                views.setTextColor(R.id.widget_pocket_label, labelColor)
+                views.setTextColor(R.id.widget_pocket_value, valueColor)
+                views.setTextColor(R.id.widget_items_summary, summaryColor)
                 views.setTextViewText(R.id.widget_pocket_value, pocketText)
                 views.setTextViewText(R.id.widget_items_summary, itemsSummaryText)
                 views.setOnClickPendingIntent(R.id.widget_root_container, openAppPendingIntent)
@@ -159,3 +184,4 @@ class TaqdiyaWidgetProvider : AppWidgetProvider() {
         }
     }
 }
+

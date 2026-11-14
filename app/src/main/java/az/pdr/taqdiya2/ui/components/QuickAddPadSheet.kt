@@ -90,6 +90,9 @@ fun QuickAddPadSheet(
     onSelectVendor: (Long) -> Unit,
     onToggleTile: (DictionaryItemEntity, Long?) -> Unit,
     onApplyQuickNote: (String) -> Unit,
+    onClearTargetItem: () -> Unit,
+    onAddCustomUnit: (String, Long, String) -> Unit,
+    onRemoveCustomUnit: (String, String) -> Unit,
     onItemNameChanged: (String) -> Unit,
     onItemNoteChanged: (String) -> Unit,
     onSubmitCustomItem: () -> Unit,
@@ -103,6 +106,8 @@ fun QuickAddPadSheet(
 
     var isNameFieldFocused by remember { mutableStateOf(false) }
     var isNoteFieldFocused by remember { mutableStateOf(false) }
+    var showAddCustomUnitForTarget by remember { mutableStateOf(false) }
+    var newCustomUnitText by remember { mutableStateOf("") }
     val isImeOpen = WindowInsets.isImeVisible
     val isTypingMode = isNameFieldFocused || isNoteFieldFocused || isImeOpen
 
@@ -131,21 +136,50 @@ fun QuickAddPadSheet(
             .associateBy { CurrencyFormatter.normalizeArabicName(it.name) }
     }
 
+    // Only show 1-tap note bar when an item was explicitly touched in the grid (never fallback to random previous item)
     val activeTargetItem = remember(shoppingItems, lastTouchedItemId) {
-        shoppingItems.firstOrNull { it.id == lastTouchedItemId && !it.isDeleted }
-            ?: shoppingItems.firstOrNull { !it.isDeleted }
+        if (lastTouchedItemId == null) null
+        else shoppingItems.firstOrNull { it.id == lastTouchedItemId && !it.isDeleted && !it.isPurchased }
     }
 
-    val quickNotes = listOf(
-        "نص كيلو",
-        "كيلو",
-        "رابعة",
-        "2 كيلو",
-        "3 رابعات",
-        "بلاطو",
-        "طايبة",
-        "حجم متوسط"
-    )
+    val targetItemDictEntry = remember(activeTargetItem, dictionaryItems) {
+        if (activeTargetItem == null) null
+        else {
+            val norm = CurrencyFormatter.normalizeArabicName(activeTargetItem.name)
+            dictionaryItems.firstOrNull { it.normalizedName == norm }
+        }
+    }
+
+    val targetItemVendor = remember(activeTargetItem, vendors, currentVendor) {
+        if (activeTargetItem == null) currentVendor
+        else vendors.firstOrNull { it.id == activeTargetItem.vendorId } ?: currentVendor
+    }
+
+    val targetCustomUnitsSet = remember(targetItemDictEntry) {
+        CurrencyFormatter.parseCustomUnits(targetItemDictEntry?.customUnitsCsv.orEmpty()).toSet()
+    }
+
+    val smartQuickNotes = remember(activeTargetItem, targetItemVendor, targetItemDictEntry) {
+        if (activeTargetItem == null) emptyList()
+        else CurrencyFormatter.getSmartUnitsForItem(
+            itemName = activeTargetItem.name,
+            vendor = targetItemVendor,
+            customUnitsCsv = targetItemDictEntry?.customUnitsCsv.orEmpty()
+        )
+    }
+
+    val typedInputSmartUnits = remember(itemNameInput, currentVendor, dictionaryItems) {
+        val cleanTyped = itemNameInput.trim()
+        val normTyped = CurrencyFormatter.normalizeArabicName(cleanTyped)
+        val matchedDict = if (normTyped.isNotEmpty()) {
+            dictionaryItems.firstOrNull { it.normalizedName == normTyped }
+        } else null
+        CurrencyFormatter.getSmartUnitsForItem(
+            itemName = cleanTyped,
+            vendor = currentVendor,
+            customUnitsCsv = matchedDict?.customUnitsCsv.orEmpty()
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -407,7 +441,7 @@ fun QuickAddPadSheet(
                     }
                 }
 
-                // 4. 1-Tap Ready Notes Bar for the Active Item
+                // 4. 1-Tap Ready Notes Bar for the Active Item (Smart + Custom Units)
                 if (activeTargetItem != null) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Surface(
@@ -416,18 +450,41 @@ fun QuickAddPadSheet(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = "كمية أو ملاحظة بلمسة واحدة لـ «${activeTargetItem.name}»:",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "مقدار أو ملاحظة بلمسة واحدة لـ «${activeTargetItem.name}»:",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = {
+                                        showAddCustomUnitForTarget = false
+                                        onClearTargetItem()
+                                    },
+                                    modifier = Modifier.size(30.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "إخفاء شريط المقادير",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                quickNotes.forEach { noteOption ->
+                                smartQuickNotes.forEach { noteOption ->
                                     val isNoteSelected = activeTargetItem.note == noteOption
+                                    val isCustomUnit = targetCustomUnitsSet.contains(noteOption)
                                     Surface(
                                         modifier = Modifier
                                             .heightIn(min = 38.dp)
@@ -447,9 +504,10 @@ fun QuickAddPadSheet(
                                         ),
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
-                                        Box(
+                                        Row(
                                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                            contentAlignment = Alignment.Center
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             Text(
                                                 text = noteOption,
@@ -460,7 +518,93 @@ fun QuickAddPadSheet(
                                                     MaterialTheme.colorScheme.onSurface
                                                 }
                                             )
+                                            if (isCustomUnit) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Close,
+                                                    contentDescription = "حذف المقدار الخاص",
+                                                    tint = if (isNoteSelected) {
+                                                        MaterialTheme.colorScheme.onSecondary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.error
+                                                    },
+                                                    modifier = Modifier
+                                                        .size(16.dp)
+                                                        .clickable {
+                                                            onRemoveCustomUnit(activeTargetItem.name, noteOption)
+                                                        }
+                                                )
+                                            }
                                         }
+                                    }
+                                }
+
+                                // "+ مقدار خاص" chip to add a custom unit specifically for this item
+                                Surface(
+                                    modifier = Modifier
+                                        .heightIn(min = 38.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            showAddCustomUnitForTarget = !showAddCustomUnitForTarget
+                                        }
+                                        .testTag("add_custom_unit_chip"),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Add,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = "مقدار خاص",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (showAddCustomUnitForTarget) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    OutlinedTextField(
+                                        value = newCustomUnitText,
+                                        onValueChange = { newCustomUnitText = it },
+                                        placeholder = { Text("مثال: قرعة كبيرة، نص باكية...") },
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Button(
+                                        onClick = {
+                                            val cleanUnit = newCustomUnitText.trim()
+                                            if (cleanUnit.isNotEmpty()) {
+                                                onAddCustomUnit(
+                                                    activeTargetItem.name,
+                                                    activeTargetItem.vendorId,
+                                                    cleanUnit
+                                                )
+                                                onApplyQuickNote(cleanUnit)
+                                                newCustomUnitText = ""
+                                                showAddCustomUnitForTarget = false
+                                            }
+                                        },
+                                        enabled = newCustomUnitText.trim().isNotEmpty(),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Text("حفظ")
                                     }
                                 }
                             }
@@ -572,7 +716,7 @@ fun QuickAddPadSheet(
                             onValueChange = onItemNoteChanged,
                             placeholder = {
                                 Text(
-                                    text = "ملاحظة...",
+                                    text = "مقدار/ملاحظة...",
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -622,6 +766,65 @@ fun QuickAddPadSheet(
                                 maxLines = 1,
                                 softWrap = false
                             )
+                        }
+                    }
+
+                    // Smart 1-Tap Unit Chips while typing a new item (e.g. "أتاي" -> علبة، "جافيل" -> قرعة، لتر)
+                    if (itemNameInput.trim().isNotEmpty() || isTypingMode) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "مقدار سريع:",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Bold
+                            )
+                            typedInputSmartUnits.forEach { unitChip ->
+                                val isUnitSelected = itemNoteInput.trim() == unitChip
+                                Surface(
+                                    modifier = Modifier
+                                        .heightIn(min = 34.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            onItemNoteChanged(if (isUnitSelected) "" else unitChip)
+                                        },
+                                    color = if (isUnitSelected) {
+                                        MaterialTheme.colorScheme.secondary
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    },
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isUnitSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
+                                    ),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = unitChip,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = if (isUnitSelected) {
+                                                MaterialTheme.colorScheme.onSecondary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

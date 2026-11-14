@@ -1,18 +1,32 @@
 package az.pdr.taqdiya2.ui.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -20,35 +34,70 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.pdr.taqdiya2.data.local.DictionaryItemEntity
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
+import az.pdr.taqdiya2.util.CurrencyFormatter
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EditShoppingItemDialog(
     item: ShoppingItemEntity,
     vendors: List<VendorEntity>,
+    dictionaryItems: List<DictionaryItemEntity> = emptyList(),
+    onAddCustomUnit: (String, Long, String) -> Unit = { _, _, _ -> },
+    onRemoveCustomUnit: (String, String) -> Unit = { _, _ -> },
     onDismiss: () -> Unit,
     onSave: (String, String, Long) -> Unit
 ) {
     var nameInput by remember { mutableStateOf(item.name) }
     var noteInput by remember { mutableStateOf(item.note) }
     var selectedVendorId by remember { mutableStateOf(item.vendorId) }
+    var showAddCustomUnitInput by remember { mutableStateOf(false) }
+    var customUnitText by remember { mutableStateOf("") }
+
+    val selectedVendor = remember(vendors, selectedVendorId) {
+        vendors.firstOrNull { it.id == selectedVendorId }
+    }
+
+    val dictEntry = remember(nameInput, dictionaryItems) {
+        val norm = CurrencyFormatter.normalizeArabicName(nameInput)
+        dictionaryItems.firstOrNull { it.normalizedName == norm }
+    }
+
+    val customUnitsSet = remember(dictEntry) {
+        CurrencyFormatter.parseCustomUnits(dictEntry?.customUnitsCsv.orEmpty()).toSet()
+    }
+
+    val smartUnits = remember(nameInput, selectedVendor, dictEntry) {
+        CurrencyFormatter.getSmartUnitsForItem(
+            itemName = nameInput,
+            vendor = selectedVendor,
+            customUnitsCsv = dictEntry?.customUnitsCsv.orEmpty()
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "تعديل الغرض",
+                text = "تعديل الغرض والمقدار",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
         },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(
                     value = nameInput,
                     onValueChange = { nameInput = it },
@@ -64,12 +113,149 @@ fun EditShoppingItemDialog(
                 OutlinedTextField(
                     value = noteInput,
                     onValueChange = { noteInput = it },
-                    label = { Text("ملاحظة (مثال: نص كيلو، تكون طايبة...)") },
+                    label = { Text("المقدار أو الملاحظة (مثال: علبة، كيلو، قرعة...)") },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("edit_item_note_input")
                 )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "مقادير سريعة وخاصة لـ «${nameInput.ifBlank { item.name }}»:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    smartUnits.forEach { unitOption ->
+                        val isSelected = noteInput.trim() == unitOption
+                        val isCustom = customUnitsSet.contains(unitOption)
+                        Surface(
+                            modifier = Modifier
+                                .heightIn(min = 36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    noteInput = if (isSelected) "" else unitOption
+                                },
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.secondary
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            border = BorderStroke(
+                                1.dp,
+                                if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = unitOption,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.onSecondary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (isCustom) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "حذف المقدار الخاص",
+                                        tint = if (isSelected) {
+                                            MaterialTheme.colorScheme.onSecondary
+                                        } else {
+                                            MaterialTheme.colorScheme.error
+                                        },
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clickable {
+                                                onRemoveCustomUnit(nameInput.ifBlank { item.name }, unitOption)
+                                            }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier
+                            .heightIn(min = 36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable {
+                                showAddCustomUnitInput = !showAddCustomUnitInput
+                            },
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Text(
+                                text = "مقدار خاص",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                if (showAddCustomUnitInput) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = customUnitText,
+                            onValueChange = { customUnitText = it },
+                            placeholder = { Text("مقدار جديد (مثال: قرعة، باكية...)") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f)
+                        )
+                        Button(
+                            onClick = {
+                                val cleanUnit = customUnitText.trim()
+                                val targetName = nameInput.trim().ifEmpty { item.name }
+                                if (cleanUnit.isNotEmpty()) {
+                                    onAddCustomUnit(targetName, selectedVendorId, cleanUnit)
+                                    noteInput = cleanUnit
+                                    customUnitText = ""
+                                    showAddCustomUnitInput = false
+                                }
+                            },
+                            enabled = customUnitText.trim().isNotEmpty(),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("إضافة")
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -118,3 +304,4 @@ fun EditShoppingItemDialog(
         }
     )
 }
+

@@ -98,6 +98,7 @@ fun AtVendorScreen(
         forgivenDiscountDirhams: Double,
         newVendorPendingBalanceDirhams: Double
     ) -> Unit,
+    onResetVendorPaymentAndBasket: (VendorEntity, Boolean) -> Unit = { _, _ -> },
     onUpdateVendorPendingBalance: (VendorEntity, Double) -> Unit,
     onOpenPassingExpenseClick: () -> Unit,
     onOpenItemPriceHistory: (itemName: String, vendorId: Long, fallbackPriceDh: Double) -> Unit,
@@ -730,21 +731,21 @@ fun AtVendorScreen(
                 }
             }
 
-            // 5. Pinned Bottom Vendor Review & Payment Bar (Basket Counter + Total + Confirm Payment)
-            if (selectedVendor != null) {
+            // 5. Compact Bottom Vendor Payment Bar (Shown ONLY when there are purchased items or a confirmed payment)
+            if (selectedVendor != null && (purchasedItems.isNotEmpty() || currentVendorConfirmedPayment != null)) {
                 val displayedTotalDirhams = currentVendorConfirmedPayment?.actualPaidDirhams
                     ?: currentVendorCalculatedTotalDirhams
 
                 Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    shadowElevation = 8.dp,
+                    shadowElevation = 6.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Row(
@@ -752,31 +753,31 @@ fun AtVendorScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Right side: Purchased Items Counter (Never forget a bag on the scale!)
+                            // Right side: Compact Purchased Items Counter
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.tertiary),
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(MaterialTheme.colorScheme.tertiaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.ShoppingBag,
                                         contentDescription = "عداد القفة",
-                                        tint = MaterialTheme.colorScheme.onTertiary,
-                                        modifier = Modifier.size(22.dp)
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
-                                Spacer(modifier = Modifier.width(10.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Column {
                                     Text(
                                         text = "في القفة: ${purchasedItems.size} من ${currentVendorItems.size} أغراض",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.testTag("vendor_basket_counter_text")
                                     )
@@ -793,52 +794,62 @@ fun AtVendorScreen(
                                             "بقي ${waitingItems.size} أغراض لم تُوزن بعد"
                                         },
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
 
+                            Spacer(modifier = Modifier.width(8.dp))
+
                             // Left side: Current Vendor Total in Dirhams & Rials
                             Surface(
-                                color = MaterialTheme.colorScheme.secondary,
-                                shape = RoundedCornerShape(14.dp)
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                     horizontalAlignment = Alignment.End
                                 ) {
                                     Text(
-                                        text = if (currentVendorConfirmedPayment != null) "المدفوع فعلياً" else "مجموع البائع",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.9f)
-                                    )
-                                    Text(
                                         text = CurrencyFormatter.formatDirhams(displayedTotalDirhams),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = MaterialTheme.colorScheme.onSecondary,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false,
                                         modifier = Modifier.testTag("vendor_total_dirhams_text")
                                     )
-                                    Text(
-                                        text = CurrencyFormatter.formatRials(displayedTotalDirhams),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.95f)
-                                    )
+                                    if (uiState.appSettings.showRial) {
+                                        Text(
+                                            text = CurrencyFormatter.formatRials(displayedTotalDirhams),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.secondary,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
                                 }
                             }
                         }
 
-                        // Confirm Vendor Payment Button (shown whenever vendor has purchased items or pending change)
-                        if (purchasedItems.isNotEmpty() || abs(selectedVendor.pendingBalanceDirhams) > 0.009) {
+                        // Action Row: Confirm/Edit Payment + Cancel/Reset Payment
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Button(
                                 onClick = {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     showConfirmVendorPayment = true
                                 },
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp)
+                                    .weight(1f)
+                                    .height(44.dp)
                                     .testTag("open_confirm_vendor_payment_button"),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (currentVendorConfirmedPayment != null) {
                                         MaterialTheme.colorScheme.tertiaryContainer
@@ -851,7 +862,7 @@ fun AtVendorScreen(
                                         MaterialTheme.colorScheme.onTertiary
                                     }
                                 ),
-                                shape = RoundedCornerShape(14.dp)
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Icon(
                                     imageVector = if (currentVendorConfirmedPayment != null) {
@@ -860,18 +871,56 @@ fun AtVendorScreen(
                                         Icons.Outlined.Payments
                                     },
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = if (currentVendorConfirmedPayment != null) {
-                                        "تم الدفع (${CurrencyFormatter.formatDirhams(currentVendorConfirmedPayment.actualPaidDirhams)}) — اضغط لتعديل الحساب"
+                                        "تعديل الدفع (${CurrencyFormatter.formatDirhams(currentVendorConfirmedPayment.actualPaidDirhams)})"
                                     } else {
-                                        "تأكيد الدفع للبائع وتعديل الصرف"
+                                        "تأكيد الدفع للبائع"
                                     },
                                     style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
                                 )
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .height(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onResetVendorPaymentAndBasket(selectedVendor, true)
+                                    }
+                                    .testTag("reset_vendor_payment_bar_button"),
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Replay,
+                                        contentDescription = "إلغاء وتصفير الدفع",
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "إلغاء / تصفير",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
                             }
                         }
                     }
@@ -923,6 +972,9 @@ fun AtVendorScreen(
                     forgiven,
                     newPending
                 )
+            },
+            onResetVendorPayment = {
+                onResetVendorPaymentAndBasket(selectedVendor, true)
             },
             onDismiss = { showConfirmVendorPayment = false }
         )

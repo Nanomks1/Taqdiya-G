@@ -148,6 +148,7 @@ object BackupManager {
                     put("normalizedName", d.normalizedName)
                     put("defaultVendorId", d.defaultVendorId)
                     put("defaultNote", d.defaultNote)
+                    put("customUnitsCsv", d.customUnitsCsv)
                     put("usageCount", d.usageCount)
                     put("lastPriceDirhams", d.lastPriceDirhams)
                     put("lastUpdated", d.lastUpdated)
@@ -324,6 +325,7 @@ object BackupManager {
                             normalizedName = o.optString("normalizedName", CurrencyFormatter.normalizeArabicName(name)),
                             defaultVendorId = o.getLong("defaultVendorId"),
                             defaultNote = o.optString("defaultNote", ""),
+                            customUnitsCsv = o.optString("customUnitsCsv", ""),
                             usageCount = o.optInt("usageCount", 1),
                             lastPriceDirhams = o.optDouble("lastPriceDirhams", 0.0),
                             lastUpdated = o.optLong("lastUpdated", System.currentTimeMillis())
