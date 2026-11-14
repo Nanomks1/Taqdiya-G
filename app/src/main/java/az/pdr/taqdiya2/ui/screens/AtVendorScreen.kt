@@ -1027,151 +1027,156 @@ private fun WaitingMarketItemCard(
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
-        shape = RoundedCornerShape(20.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(18.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // Right Side: Vertical Accent Bar + Cohesive Item Title, Note Pill, and Usual Price Subtitle
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FlowRow(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(if (usualPriceEvaluation.referenceUsualDirhams > 0.0) 44.dp else 30.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.secondary)
+                )
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = item.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    )
-                    if (item.note.isNotBlank()) {
-                        Surface(
-                            modifier = Modifier.align(Alignment.CenterVertically),
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text(
-                                text = item.note,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondary,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.height(44.dp)
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Calculate,
-                                contentDescription = "احسب الثمن",
-                                tint = MaterialTheme.colorScheme.onSecondary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "احسب الثمن",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSecondary,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    IconButton(
-                        onClick = onDeleteItem,
-                        modifier = Modifier
-                            .size(42.dp)
-                            .testTag("market_delete_waiting_item_${item.id}")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.RemoveCircleOutline,
-                            contentDescription = "إزالة ${item.name} من القائمة",
-                            tint = MaterialTheme.colorScheme.secondary
+                        Text(
+                            text = item.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.CenterVertically)
                         )
+                        if (item.note.isNotBlank()) {
+                            Surface(
+                                modifier = Modifier.align(Alignment.CenterVertically),
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = RoundedCornerShape(9.dp)
+                            ) {
+                                Text(
+                                    text = item.note,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    if (usualPriceEvaluation.referenceUsualDirhams > 0.0) {
+                        val rialUsualSuffix = if (showRial) {
+                            " (${CurrencyFormatter.formatRials(usualPriceEvaluation.referenceUsualDirhams)})"
+                        } else {
+                            ""
+                        }
+                        Surface(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable(onClick = onOpenPriceHistory)
+                                .testTag("open_item_price_history_${item.id}"),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.History,
+                                    contentDescription = "سجل الأثمنة",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = "المعتاد: ${CurrencyFormatter.formatDirhams(usualPriceEvaluation.referenceUsualDirhams)}$rialUsualSuffix • السجل",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
                     }
                 }
             }
 
-            if (usualPriceEvaluation.referenceUsualDirhams > 0.0) {
-                val rialUsualSuffix = if (showRial) {
-                    " (${CurrencyFormatter.formatRials(usualPriceEvaluation.referenceUsualDirhams)})"
-                } else {
-                    ""
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Left Side: Vertically Centered Primary "احسب الثمن" Button + Clean Remove Icon
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondary,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.heightIn(min = 44.dp)
                 ) {
-                    Text(
-                        text = "المعتاد: ${CurrencyFormatter.formatDirhams(usualPriceEvaluation.referenceUsualDirhams)}$rialUsualSuffix",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Surface(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable(onClick = onOpenPriceHistory)
-                            .testTag("open_item_price_history_${item.id}"),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(8.dp)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.History,
-                                contentDescription = "سجل الأثمنة",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "سجل الأثمنة",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Outlined.Calculate,
+                            contentDescription = "احسب الثمن",
+                            tint = MaterialTheme.colorScheme.onSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "احسب الثمن",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
+                }
+
+                Spacer(modifier = Modifier.width(2.dp))
+
+                IconButton(
+                    onClick = onDeleteItem,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .testTag("market_delete_waiting_item_${item.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.RemoveCircleOutline,
+                        contentDescription = "إزالة ${item.name} من القائمة",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PurchasedMarketItemCard(
     item: ShoppingItemEntity,
@@ -1212,22 +1217,24 @@ private fun PurchasedMarketItemCard(
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
                                 text = item.name,
                                 style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 fontWeight = FontWeight.Bold,
-                                textDecoration = TextDecoration.Underline
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             )
-                            PriceTrendBadge(
-                                evaluation = priceEvaluation,
-                                onClick = onOpenPriceHistory
-                            )
+                            Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                                PriceTrendBadge(
+                                    evaluation = priceEvaluation,
+                                    onClick = onOpenPriceHistory
+                                )
+                            }
                         }
                         Text(
                             text = CurrencyFormatter.formatPurchaseDetails(item),
@@ -1237,6 +1244,8 @@ private fun PurchasedMarketItemCard(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
@@ -1261,74 +1270,76 @@ private fun PurchasedMarketItemCard(
 
             Spacer(modifier = Modifier.height(8.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f))
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Surface(
                     modifier = Modifier
-                        .height(36.dp)
+                        .heightIn(min = 38.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .clickable(onClick = onOpenPriceHistory),
                     color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.History,
                             contentDescription = "سجل الأثمنة",
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "سجل الأثمنة",
+                            text = "السجل",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
                 Surface(
                     modifier = Modifier
-                        .height(36.dp)
+                        .heightIn(min = 38.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .clickable(onClick = onEditPricing),
                     color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Edit,
                             contentDescription = "تعديل السعر",
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "تعديل الحساب",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
                 Surface(
                     modifier = Modifier
-                        .height(36.dp)
+                        .heightIn(min = 38.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .clickable(onClick = onUnmarkPurchased)
                         .testTag("unmark_purchased_${item.id}"),
@@ -1336,20 +1347,23 @@ private fun PurchasedMarketItemCard(
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Replay,
                             contentDescription = "إرجاع للانتظار",
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "إرجاع للانتظار",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }

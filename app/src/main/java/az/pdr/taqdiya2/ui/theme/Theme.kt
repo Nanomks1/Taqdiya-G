@@ -3,6 +3,7 @@ package az.pdr.taqdiya2.ui.theme
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -10,6 +11,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
@@ -18,7 +20,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
-private val LightColorScheme = lightColorScheme(
+private val TerracottaLightColorScheme = lightColorScheme(
     primary = SlateInkPrimaryLight,
     onPrimary = OnSlateInkPrimaryLight,
     primaryContainer = SlateInkContainerLight,
@@ -40,7 +42,7 @@ private val LightColorScheme = lightColorScheme(
     outline = WarmOutlineLight
 )
 
-private val DarkColorScheme = darkColorScheme(
+private val TerracottaDarkColorScheme = darkColorScheme(
     primary = SlateInkPrimaryDark,
     onPrimary = OnSlateInkPrimaryDark,
     primaryContainer = SlateInkContainerDark,
@@ -62,6 +64,147 @@ private val DarkColorScheme = darkColorScheme(
     outline = WarmOutlineDark
 )
 
+private val CalmSageLightColorScheme = lightColorScheme(
+    primary = SagePrimaryLight,
+    onPrimary = OnSagePrimaryLight,
+    primaryContainer = SageContainerLight,
+    onPrimaryContainer = OnSageContainerLight,
+    secondary = SageSecondaryLight,
+    onSecondary = OnSageSecondaryLight,
+    secondaryContainer = SageSecondaryContainerLight,
+    onSecondaryContainer = OnSageSecondaryContainerLight,
+    tertiary = SageTertiaryLight,
+    onTertiary = OnSageTertiaryLight,
+    tertiaryContainer = SageTertiaryContainerLight,
+    onTertiaryContainer = OnSageTertiaryContainerLight,
+    background = SageBackgroundLight,
+    onBackground = OnSageBackgroundLight,
+    surface = SageSurfaceLight,
+    onSurface = OnSageSurfaceLight,
+    surfaceVariant = SageSurfaceVariantLight,
+    onSurfaceVariant = OnSageSurfaceVariantLight,
+    outline = SageOutlineLight
+)
+
+private val CalmSageDarkColorScheme = darkColorScheme(
+    primary = SagePrimaryDark,
+    onPrimary = OnSagePrimaryDark,
+    primaryContainer = SageContainerDark,
+    onPrimaryContainer = OnSageContainerDark,
+    secondary = SageSecondaryDark,
+    onSecondary = OnSageSecondaryDark,
+    secondaryContainer = SageSecondaryContainerDark,
+    onSecondaryContainer = OnSageSecondaryContainerDark,
+    tertiary = SageTertiaryDark,
+    onTertiary = OnSageTertiaryDark,
+    tertiaryContainer = SageTertiaryContainerDark,
+    onTertiaryContainer = OnSageTertiaryContainerDark,
+    background = SageBackgroundDark,
+    onBackground = OnSageBackgroundDark,
+    surface = SageSurfaceDark,
+    onSurface = OnSageSurfaceDark,
+    surfaceVariant = SageSurfaceVariantDark,
+    onSurfaceVariant = OnSageSurfaceVariantDark,
+    outline = SageOutlineDark
+)
+
+private val VibrantCobaltLightColorScheme = lightColorScheme(
+    primary = CobaltPrimaryLight,
+    onPrimary = OnCobaltPrimaryLight,
+    primaryContainer = CobaltContainerLight,
+    onPrimaryContainer = OnCobaltContainerLight,
+    secondary = CobaltSecondaryLight,
+    onSecondary = OnCobaltSecondaryLight,
+    secondaryContainer = CobaltSecondaryContainerLight,
+    onSecondaryContainer = OnCobaltSecondaryContainerLight,
+    tertiary = CobaltTertiaryLight,
+    onTertiary = OnCobaltTertiaryLight,
+    tertiaryContainer = CobaltTertiaryContainerLight,
+    onTertiaryContainer = OnCobaltTertiaryContainerLight,
+    background = CobaltBackgroundLight,
+    onBackground = OnCobaltBackgroundLight,
+    surface = CobaltSurfaceLight,
+    onSurface = OnCobaltSurfaceLight,
+    surfaceVariant = CobaltSurfaceVariantLight,
+    onSurfaceVariant = OnCobaltSurfaceVariantLight,
+    outline = CobaltOutlineLight
+)
+
+private val VibrantCobaltDarkColorScheme = darkColorScheme(
+    primary = CobaltPrimaryDark,
+    onPrimary = OnCobaltPrimaryDark,
+    primaryContainer = CobaltContainerDark,
+    onPrimaryContainer = OnCobaltContainerDark,
+    secondary = CobaltSecondaryDark,
+    onSecondary = OnCobaltSecondaryDark,
+    secondaryContainer = CobaltSecondaryContainerDark,
+    onSecondaryContainer = OnCobaltSecondaryContainerDark,
+    tertiary = CobaltTertiaryDark,
+    onTertiary = OnCobaltTertiaryDark,
+    tertiaryContainer = CobaltTertiaryContainerDark,
+    onTertiaryContainer = OnCobaltTertiaryContainerDark,
+    background = CobaltBackgroundDark,
+    onBackground = OnCobaltBackgroundDark,
+    surface = CobaltSurfaceDark,
+    onSurface = OnCobaltSurfaceDark,
+    surfaceVariant = CobaltSurfaceVariantDark,
+    onSurfaceVariant = OnCobaltSurfaceVariantDark,
+    outline = CobaltOutlineDark
+)
+
+private val RoyalPlumLightColorScheme = lightColorScheme(
+    primary = PlumPrimaryLight,
+    onPrimary = OnPlumPrimaryLight,
+    primaryContainer = PlumContainerLight,
+    onPrimaryContainer = OnPlumContainerLight,
+    secondary = PlumSecondaryLight,
+    onSecondary = OnPlumSecondaryLight,
+    secondaryContainer = PlumSecondaryContainerLight,
+    onSecondaryContainer = OnPlumSecondaryContainerLight,
+    tertiary = PlumTertiaryLight,
+    onTertiary = OnPlumTertiaryLight,
+    tertiaryContainer = PlumTertiaryContainerLight,
+    onTertiaryContainer = OnPlumTertiaryContainerLight,
+    background = PlumBackgroundLight,
+    onBackground = OnPlumBackgroundLight,
+    surface = PlumSurfaceLight,
+    onSurface = OnPlumSurfaceLight,
+    surfaceVariant = PlumSurfaceVariantLight,
+    onSurfaceVariant = OnPlumSurfaceVariantLight,
+    outline = PlumOutlineLight
+)
+
+private val RoyalPlumDarkColorScheme = darkColorScheme(
+    primary = PlumPrimaryDark,
+    onPrimary = OnPlumPrimaryDark,
+    primaryContainer = PlumContainerDark,
+    onPrimaryContainer = OnPlumContainerDark,
+    secondary = PlumSecondaryDark,
+    onSecondary = OnPlumSecondaryDark,
+    secondaryContainer = PlumSecondaryContainerDark,
+    onSecondaryContainer = OnPlumSecondaryContainerDark,
+    tertiary = PlumTertiaryDark,
+    onTertiary = OnPlumTertiaryDark,
+    tertiaryContainer = PlumTertiaryContainerDark,
+    onTertiaryContainer = OnPlumTertiaryContainerDark,
+    background = PlumBackgroundDark,
+    onBackground = OnPlumBackgroundDark,
+    surface = PlumSurfaceDark,
+    onSurface = OnPlumSurfaceDark,
+    surfaceVariant = PlumSurfaceVariantDark,
+    onSurfaceVariant = OnPlumSurfaceVariantDark,
+    outline = PlumOutlineDark
+)
+
+fun resolveColorScheme(colorPalette: String, darkTheme: Boolean): ColorScheme {
+    return when (colorPalette) {
+        "CALM_SAGE" -> if (darkTheme) CalmSageDarkColorScheme else CalmSageLightColorScheme
+        "VIBRANT_COBALT" -> if (darkTheme) VibrantCobaltDarkColorScheme else VibrantCobaltLightColorScheme
+        "ROYAL_PLUM" -> if (darkTheme) RoyalPlumDarkColorScheme else RoyalPlumLightColorScheme
+        else -> if (darkTheme) TerracottaDarkColorScheme else TerracottaLightColorScheme
+    }
+}
+
 val AppShapes = Shapes(
     small = RoundedCornerShape(12.dp),
     medium = RoundedCornerShape(18.dp),
@@ -72,6 +215,9 @@ val AppShapes = Shapes(
 fun TaqdiyaTheme(
     themeMode: String = "LIGHT",
     uiScaleMode: String = "NORMAL",
+    colorPalette: String = "TERRACOTTA",
+    fontFamilyKey: String = "CAIRO",
+    customFontSignature: String = "",
     content: @Composable () -> Unit
 ) {
     val systemDark = isSystemInDarkTheme()
@@ -80,21 +226,41 @@ fun TaqdiyaTheme(
         "SYSTEM" -> systemDark
         else -> false
     }
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = resolveColorScheme(colorPalette, darkTheme)
 
     val view = LocalView.current
+    val context = view.context
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as? Activity)?.window
+            val window = (context as? Activity)?.window
             if (window != null) {
-                window.decorView.setBackgroundColor(
-                    if (darkTheme) android.graphics.Color.parseColor("#121618")
-                    else android.graphics.Color.parseColor("#F4EFE6")
-                )
+                window.decorView.setBackgroundColor(colorScheme.background.toArgb())
                 val insetsController = WindowCompat.getInsetsController(window, view)
                 insetsController.isAppearanceLightStatusBars = !darkTheme
                 insetsController.isAppearanceLightNavigationBars = !darkTheme
             }
+        }
+    }
+
+    val typography = androidx.compose.runtime.remember(fontFamilyKey, customFontSignature) {
+        when (fontFamilyKey) {
+            "TAJAWAL" -> buildAppTypography(
+                primaryFontFamily = TajawalFontFamily,
+                secondaryFontFamily = TajawalFontFamily
+            )
+            "SYSTEM" -> buildAppTypography(
+                primaryFontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
+                secondaryFontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif
+            )
+            "CUSTOM" -> {
+                val customFamily = az.pdr.taqdiya2.util.CustomFontManager.buildCustomFontFamilyOrNull(context)
+                    ?: CairoFontFamily
+                buildAppTypography(
+                    primaryFontFamily = customFamily,
+                    secondaryFontFamily = customFamily
+                )
+            }
+            else -> AppTypography
         }
     }
 
@@ -120,7 +286,7 @@ fun TaqdiyaTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = AppTypography,
+            typography = typography,
             shapes = AppShapes,
             content = content
         )

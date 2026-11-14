@@ -105,14 +105,26 @@ class MainActivity : ComponentActivity() {
         val cachedPrivacyMask = bootPrefs.getBoolean("privacyMaskAmounts", false)
         val cachedPrivacyPocketOnly = bootPrefs.getBoolean("privacyMaskPocketOnly", false)
 
+        val cachedColorPalette = bootPrefs.getString("colorPalette", "TERRACOTTA") ?: "TERRACOTTA"
+        val cachedAnimationMode = bootPrefs.getString("animationMode", "LIGHT") ?: "LIGHT"
+        val cachedFontFamilyKey = bootPrefs.getString("fontFamilyKey", "CAIRO") ?: "CAIRO"
+        val cachedFontReg = bootPrefs.getString("customFontRegularName", "") ?: ""
+        val cachedFontMed = bootPrefs.getString("customFontMediumName", "") ?: ""
+        val cachedFontBold = bootPrefs.getString("customFontBoldName", "") ?: ""
+
         val initialDark = when (cachedThemeMode) {
             "DARK" -> true
             "SYSTEM" -> isSystemDark
             else -> false
         }
+        val initialScheme = az.pdr.taqdiya2.ui.theme.resolveColorScheme(cachedColorPalette, initialDark)
         window.decorView.setBackgroundColor(
-            if (initialDark) android.graphics.Color.parseColor("#121618")
-            else android.graphics.Color.parseColor("#F4EFE6")
+            android.graphics.Color.argb(
+                255,
+                (initialScheme.background.red * 255).toInt(),
+                (initialScheme.background.green * 255).toInt(),
+                (initialScheme.background.blue * 255).toInt()
+            )
         )
 
         super.onCreate(savedInstanceState)
@@ -124,7 +136,13 @@ class MainActivity : ComponentActivity() {
             showRial = cachedShowRial,
             uiScaleMode = cachedUiScaleMode,
             privacyMaskAmounts = cachedPrivacyMask,
-            privacyMaskPocketOnly = cachedPrivacyPocketOnly
+            privacyMaskPocketOnly = cachedPrivacyPocketOnly,
+            colorPalette = cachedColorPalette,
+            animationMode = cachedAnimationMode,
+            fontFamilyKey = cachedFontFamilyKey,
+            customFontRegularName = cachedFontReg,
+            customFontMediumName = cachedFontMed,
+            customFontBoldName = cachedFontBold
         )
         az.pdr.taqdiya2.util.CurrencyFormatter.showRialState = cachedShowRial
         az.pdr.taqdiya2.util.CurrencyFormatter.privacyMaskState = cachedPrivacyMask
@@ -147,13 +165,24 @@ class MainActivity : ComponentActivity() {
                         .putBoolean("showRial", uiState.appSettings.showRial)
                         .putBoolean("privacyMaskAmounts", uiState.appSettings.privacyMaskAmounts)
                         .putBoolean("privacyMaskPocketOnly", uiState.appSettings.privacyMaskPocketOnly)
+                        .putString("colorPalette", uiState.appSettings.colorPalette)
+                        .putString("animationMode", uiState.appSettings.animationMode)
+                        .putString("fontFamilyKey", uiState.appSettings.fontFamilyKey)
+                        .putString("customFontRegularName", uiState.appSettings.customFontRegularName)
+                        .putString("customFontMediumName", uiState.appSettings.customFontMediumName)
+                        .putString("customFontBoldName", uiState.appSettings.customFontBoldName)
                         .apply()
                 }
             }
 
+            val customFontSignature = "${uiState.appSettings.customFontRegularName}|${uiState.appSettings.customFontMediumName}|${uiState.appSettings.customFontBoldName}"
+
             TaqdiyaTheme(
                 themeMode = uiState.appSettings.themeMode,
-                uiScaleMode = uiState.appSettings.uiScaleMode
+                uiScaleMode = uiState.appSettings.uiScaleMode,
+                colorPalette = uiState.appSettings.colorPalette,
+                fontFamilyKey = uiState.appSettings.fontFamilyKey,
+                customFontSignature = customFontSignature
             ) {
                 TaqdiyaApp(
                     viewModel = viewModel,
@@ -420,84 +449,108 @@ fun TaqdiyaApp(
             }
         }
     ) { innerPadding ->
-        when (selectedTab) {
-            0 -> {
-                HomePrepScreen(
-                    uiState = uiState,
-                    onOpenQuickPadForVendor = { vendorId ->
-                        viewModel.clearLastTouchedItem()
-                        if (vendorId != null) {
-                            viewModel.onVendorSelectedForInput(vendorId)
-                        }
-                        showQuickAddPad = true
-                    },
-                    onQuickAddDictionaryItem = viewModel::quickAddFromDictionary,
-                    onSearchQueryChanged = viewModel::onSearchQueryChanged,
-                    onFilterVendorChanged = viewModel::onFilterVendorChanged,
-                    onEditItemClick = { editingShoppingItem = it },
-                    onDeleteItemClick = viewModel::deleteShoppingItem,
-                    onOpenDictionaryClick = {
-                        returnMenuAfterSubDialog = null
-                        showDictionaryDialog = true
-                    },
-                    onOpenPriceTrackerClick = {
-                        returnMenuAfterSubDialog = null
-                        showPriceTrackerDialog = true
-                    },
-                    onOpenVendorsClick = {
-                        returnMenuAfterSubDialog = null
-                        showVendorManagerDialog = true
-                    },
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
+        val animMode = uiState.appSettings.animationMode
+        val renderTabContent: @Composable (Int) -> Unit = { tabIndex ->
+            when (tabIndex) {
+                0 -> {
+                    HomePrepScreen(
+                        uiState = uiState,
+                        onOpenQuickPadForVendor = { vendorId ->
+                            viewModel.clearLastTouchedItem()
+                            if (vendorId != null) {
+                                viewModel.onVendorSelectedForInput(vendorId)
+                            }
+                            showQuickAddPad = true
+                        },
+                        onQuickAddDictionaryItem = viewModel::quickAddFromDictionary,
+                        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                        onFilterVendorChanged = viewModel::onFilterVendorChanged,
+                        onEditItemClick = { editingShoppingItem = it },
+                        onDeleteItemClick = viewModel::deleteShoppingItem,
+                        onOpenDictionaryClick = {
+                            returnMenuAfterSubDialog = null
+                            showDictionaryDialog = true
+                        },
+                        onOpenPriceTrackerClick = {
+                            returnMenuAfterSubDialog = null
+                            showPriceTrackerDialog = true
+                        },
+                        onOpenVendorsClick = {
+                            returnMenuAfterSubDialog = null
+                            showVendorManagerDialog = true
+                        },
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
 
-            1 -> {
-                AtVendorScreen(
-                    uiState = uiState,
-                    onSelectMarketVendor = viewModel::onSelectMarketVendor,
-                    onToggleKeepScreenAwake = viewModel::toggleKeepScreenAwake,
-                    onConfirmItemPurchase = viewModel::confirmItemPurchase,
-                    onUnmarkItemPurchased = viewModel::unmarkItemPurchased,
-                    onDeleteItemClick = viewModel::deleteShoppingItem,
-                    onConfirmVendorPayment = viewModel::confirmVendorPayment,
-                    onResetVendorPaymentAndBasket = viewModel::resetVendorPaymentAndBasket,
-                    onUpdateVendorPendingBalance = viewModel::updateVendorPendingBalance,
-                    onOpenPassingExpenseClick = {
-                        returnMenuAfterSubDialog = null
-                        showPassingExpenseSheet = true
-                    },
-                    onOpenItemPriceHistory = { itemName, vendorId, fallbackDh ->
-                        priceHistoryTarget = Triple(itemName, vendorId, fallbackDh)
-                    },
-                    onOpenQuickPadForVendor = { vendorId ->
-                        viewModel.clearLastTouchedItem()
-                        if (vendorId != null) {
-                            viewModel.onVendorSelectedForInput(vendorId)
-                        }
-                        showQuickAddPad = true
-                    },
-                    onReturnToHomePrep = { selectedTab = 0 },
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
+                1 -> {
+                    AtVendorScreen(
+                        uiState = uiState,
+                        onSelectMarketVendor = viewModel::onSelectMarketVendor,
+                        onToggleKeepScreenAwake = viewModel::toggleKeepScreenAwake,
+                        onConfirmItemPurchase = viewModel::confirmItemPurchase,
+                        onUnmarkItemPurchased = viewModel::unmarkItemPurchased,
+                        onDeleteItemClick = viewModel::deleteShoppingItem,
+                        onConfirmVendorPayment = viewModel::confirmVendorPayment,
+                        onResetVendorPaymentAndBasket = viewModel::resetVendorPaymentAndBasket,
+                        onUpdateVendorPendingBalance = viewModel::updateVendorPendingBalance,
+                        onOpenPassingExpenseClick = {
+                            returnMenuAfterSubDialog = null
+                            showPassingExpenseSheet = true
+                        },
+                        onOpenItemPriceHistory = { itemName, vendorId, fallbackDh ->
+                            priceHistoryTarget = Triple(itemName, vendorId, fallbackDh)
+                        },
+                        onOpenQuickPadForVendor = { vendorId ->
+                            viewModel.clearLastTouchedItem()
+                            if (vendorId != null) {
+                                viewModel.onVendorSelectedForInput(vendorId)
+                            }
+                            showQuickAddPad = true
+                        },
+                        onReturnToHomePrep = { selectedTab = 0 },
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
 
-            2 -> {
-                PocketAuditScreen(
-                    uiState = uiState,
-                    onOpenPassingExpenseClick = {
-                        returnMenuAfterSubDialog = null
-                        showPassingExpenseSheet = true
-                    },
-                    onDeletePassingExpense = viewModel::deletePassingExpense,
-                    onConfirmVendorPayment = viewModel::confirmVendorPayment,
-                    onResetVendorPaymentAndBasket = viewModel::resetVendorPaymentAndBasket,
-                    onUpdateVendorPendingBalance = viewModel::updateVendorPendingBalance,
-                    onFinishAndArchiveRound = viewModel::finishAndArchiveCurrentRound,
-                    onLoadArchivedRoundItems = viewModel::loadArchivedRoundItems,
-                    onDeleteArchivedRound = viewModel::deleteArchivedRound,
-                    modifier = Modifier.padding(innerPadding)
-                )
+                2 -> {
+                    PocketAuditScreen(
+                        uiState = uiState,
+                        onOpenPassingExpenseClick = {
+                            returnMenuAfterSubDialog = null
+                            showPassingExpenseSheet = true
+                        },
+                        onDeletePassingExpense = viewModel::deletePassingExpense,
+                        onConfirmVendorPayment = viewModel::confirmVendorPayment,
+                        onResetVendorPaymentAndBasket = viewModel::resetVendorPaymentAndBasket,
+                        onUpdateVendorPendingBalance = viewModel::updateVendorPendingBalance,
+                        onFinishAndArchiveRound = viewModel::finishAndArchiveCurrentRound,
+                        onLoadArchivedRoundItems = viewModel::loadArchivedRoundItems,
+                        onDeleteArchivedRound = viewModel::deleteArchivedRound,
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
+        }
+
+        when (animMode) {
+            "OFF" -> renderTabContent(selectedTab)
+            "FULL" -> {
+                androidx.compose.animation.AnimatedContent(
+                    targetState = selectedTab,
+                    label = "full_tab_transition"
+                ) { targetTab ->
+                    renderTabContent(targetTab)
+                }
+            }
+            else -> {
+                androidx.compose.animation.Crossfade(
+                    targetState = selectedTab,
+                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 150),
+                    label = "light_tab_crossfade"
+                ) { targetTab ->
+                    renderTabContent(targetTab)
+                }
             }
         }
     }
@@ -973,6 +1026,12 @@ fun TaqdiyaApp(
             settings = uiState.appSettings,
             onUpdateThemeMode = viewModel::updateThemeMode,
             onUpdateUiScaleMode = viewModel::updateUiScaleMode,
+            onUpdateColorPalette = viewModel::updateColorPalette,
+            onUpdateAnimationMode = viewModel::updateAnimationMode,
+            onUpdateFontFamilyKey = viewModel::updateFontFamilyKey,
+            onCustomFontImported = viewModel::onCustomFontSlotImported,
+            onClearCustomFonts = viewModel::clearAllCustomFonts,
+            onNotifyMessage = viewModel::notifyStatusMessage,
             onToggleShowRial = viewModel::toggleShowRial,
             onTogglePrivacyMask = viewModel::togglePrivacyMask,
             onUpdatePrivacyMaskPocketOnly = viewModel::updatePrivacyMaskPocketOnly,

@@ -39,6 +39,12 @@ object BackupManager {
             put("privacyMaskAmounts", payload.appSettings.privacyMaskAmounts)
             put("privacyMaskPocketOnly", payload.appSettings.privacyMaskPocketOnly)
             put("pinCode", payload.appSettings.pinCode)
+            put("colorPalette", payload.appSettings.colorPalette)
+            put("animationMode", payload.appSettings.animationMode)
+            put("fontFamilyKey", payload.appSettings.fontFamilyKey)
+            put("customFontRegularName", payload.appSettings.customFontRegularName)
+            put("customFontMediumName", payload.appSettings.customFontMediumName)
+            put("customFontBoldName", payload.appSettings.customFontBoldName)
         }
         root.put("appSettings", settingsObj)
 
@@ -207,7 +213,13 @@ object BackupManager {
                     uiScaleMode = settingsObj.optString("uiScaleMode", "NORMAL"),
                     privacyMaskAmounts = settingsObj.optBoolean("privacyMaskAmounts", false),
                     privacyMaskPocketOnly = settingsObj.optBoolean("privacyMaskPocketOnly", false),
-                    pinCode = settingsObj.optString("pinCode", "")
+                    pinCode = settingsObj.optString("pinCode", ""),
+                    colorPalette = settingsObj.optString("colorPalette", "TERRACOTTA"),
+                    animationMode = settingsObj.optString("animationMode", "LIGHT"),
+                    fontFamilyKey = settingsObj.optString("fontFamilyKey", "CAIRO"),
+                    customFontRegularName = settingsObj.optString("customFontRegularName", ""),
+                    customFontMediumName = settingsObj.optString("customFontMediumName", ""),
+                    customFontBoldName = settingsObj.optString("customFontBoldName", "")
                 )
             } else {
                 AppSettingsEntity()

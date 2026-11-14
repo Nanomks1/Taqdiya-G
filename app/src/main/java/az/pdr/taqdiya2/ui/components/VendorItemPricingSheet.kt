@@ -65,6 +65,15 @@ private enum class ActiveNumpadField {
     COUNT_QTY
 }
 
+internal fun shouldShowCleaningFee(vendorName: String, itemName: String): Boolean {
+    val combined = "${CurrencyFormatter.normalizeArabicName(vendorName)} ${CurrencyFormatter.normalizeArabicName(itemName)}"
+    val fishAndPoultryKeywords = listOf(
+        "سمك", "حوت", "سردين", "شطون", "ميرنا", "صول", "كروفيت", "كلمار", "قمرون", "فرخ", "بواجو", "شرغو", "كابايلا", "درعي", "باجو",
+        "دجاج", "بيبي", "ديك رومي", "لداند", "حمام", "سمان", "ارنب", "قنيه", "قنية"
+    )
+    return fishAndPoultryKeywords.any { keyword -> combined.contains(keyword) }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun VendorItemPricingSheet(
@@ -147,8 +156,12 @@ fun VendorItemPricingSheet(
     }
     var replaceCountOnNextTap by remember { mutableStateOf(true) }
 
-    var cleaningFeeDirhams by remember {
-        mutableDoubleStateOf(if (item.isPurchased) item.cleaningFeeDirhams else 0.0)
+    val canHaveCleaningFee = remember(vendorName, item.name) {
+        shouldShowCleaningFee(vendorName, item.name)
+    }
+
+    var cleaningFeeDirhams by remember(canHaveCleaningFee) {
+        mutableDoubleStateOf(if (item.isPurchased && canHaveCleaningFee) item.cleaningFeeDirhams else 0.0)
     }
 
     var activeNumpadField by remember { mutableStateOf(ActiveNumpadField.PRICE) }
@@ -167,8 +180,10 @@ fun VendorItemPricingSheet(
         else -> 1.0
     }
 
+    val effectiveCleaningFee = if (selectedMode == "WEIGHT" && canHaveCleaningFee) cleaningFeeDirhams else 0.0
+
     val calculatedTotalDirhams = when (selectedMode) {
-        "WEIGHT" -> CurrencyFormatter.roundMoney((unitOrFixedPriceDirhams * effectiveQuantity) + cleaningFeeDirhams)
+        "WEIGHT" -> CurrencyFormatter.roundMoney((unitOrFixedPriceDirhams * effectiveQuantity) + effectiveCleaningFee)
         "FIXED" -> CurrencyFormatter.roundMoney(unitOrFixedPriceDirhams)
         "COUNT" -> CurrencyFormatter.roundMoney(unitOrFixedPriceDirhams * effectiveQuantity)
         else -> 0.0
@@ -576,52 +591,58 @@ fun VendorItemPricingSheet(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    val showCleaningFeeRow = remember(vendorName, item.name) {
+                        shouldShowCleaningFee(vendorName = vendorName, itemName = item.name)
+                    }
 
-                    // Optional Cleaning Fee Row (for Chicken / Fish)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "ثمن التنقية:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        val cleaningOptions = listOf(0.0, 2.0, 3.0, 4.0, 5.0)
-                        cleaningOptions.forEach { fee ->
-                            val isFeeSelected = abs(cleaningFeeDirhams - fee) < 0.01
-                            Surface(
-                                modifier = Modifier
-                                    .height(34.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable {
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        cleaningFeeDirhams = fee
+                    if (showCleaningFeeRow) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Optional Cleaning Fee Row (ONLY for Chicken / Poultry / Fish / Seafood)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "ثمن التنقية:",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            val cleaningOptions = listOf(0.0, 2.0, 3.0, 4.0, 5.0)
+                            cleaningOptions.forEach { fee ->
+                                val isFeeSelected = abs(cleaningFeeDirhams - fee) < 0.01
+                                Surface(
+                                    modifier = Modifier
+                                        .height(34.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            cleaningFeeDirhams = fee
+                                        },
+                                    color = if (isFeeSelected) {
+                                        MaterialTheme.colorScheme.secondary
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
                                     },
-                                color = if (isFeeSelected) {
-                                    MaterialTheme.colorScheme.secondary
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                },
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
-                                    contentAlignment = Alignment.Center
+                                    shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Text(
-                                        text = if (fee == 0.0) "بدون تنقية" else "+${fee.toInt()} درهم",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = if (isFeeSelected) {
-                                            MaterialTheme.colorScheme.onSecondary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        }
-                                    )
+                                    Box(
+                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (fee == 0.0) "بدون تنقية" else "+${fee.toInt()} درهم",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = if (isFeeSelected) {
+                                                MaterialTheme.colorScheme.onSecondary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1013,7 +1034,7 @@ fun VendorItemPricingSheet(
                                 selectedMode,
                                 unitOrFixedPriceDirhams,
                                 effectiveQuantity,
-                                if (selectedMode == "WEIGHT") cleaningFeeDirhams else 0.0,
+                                effectiveCleaningFee,
                                 calculatedTotalDirhams
                             )
                             onDismiss()

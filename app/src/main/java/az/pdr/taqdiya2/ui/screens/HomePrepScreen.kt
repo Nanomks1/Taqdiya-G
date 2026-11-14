@@ -1,5 +1,6 @@
 package az.pdr.taqdiya2.ui.screens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -456,6 +457,7 @@ fun HomePrepScreen(
                     OversizedVendorCard(
                         vendor = vendor,
                         items = vendorItems,
+                        animateChanges = uiState.appSettings.animationMode != "OFF",
                         onOpenQuickPadForVendor = { onOpenQuickPadForVendor(vendor.id) },
                         onEditItem = onEditItemClick,
                         onDeleteItem = onDeleteItemClick
@@ -514,6 +516,7 @@ fun HomePrepScreen(
 private fun OversizedVendorCard(
     vendor: VendorEntity,
     items: List<ShoppingItemEntity>,
+    animateChanges: Boolean = true,
     onOpenQuickPadForVendor: () -> Unit,
     onEditItem: (ShoppingItemEntity) -> Unit,
     onDeleteItem: (ShoppingItemEntity) -> Unit
@@ -521,6 +524,13 @@ private fun OversizedVendorCard(
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
+            .then(
+                if (animateChanges) {
+                    Modifier.animateContentSize()
+                } else {
+                    Modifier
+                }
+            )
             .testTag("vendor_card_${vendor.id}"),
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surface

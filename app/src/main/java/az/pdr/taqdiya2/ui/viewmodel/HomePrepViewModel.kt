@@ -1094,6 +1094,83 @@ class HomePrepViewModel(
         }
     }
 
+    fun updateColorPalette(colorPalette: String) {
+        viewModelScope.launch {
+            repository.updateAppSettings { it.copy(colorPalette = colorPalette) }
+            val paletteLabel = when (colorPalette) {
+                "CALM_SAGE" -> "أخضر المريمية الهادئ"
+                "VIBRANT_COBALT" -> "أزرق الأطلس البارز"
+                "ROYAL_PLUM" -> "عنابي الزليج والزمرد"
+                else -> "الطين المغربي الأصيل"
+            }
+            _statusMessages.tryEmit("تم تفعيل نسق الألوان: $paletteLabel")
+        }
+    }
+
+    fun updateAnimationMode(animationMode: String) {
+        viewModelScope.launch {
+            repository.updateAppSettings { it.copy(animationMode = animationMode) }
+            val animLabel = when (animationMode) {
+                "FULL" -> "حركات كاملة وسلسة"
+                "OFF" -> "إطفاء الحركات (أقصى سرعة)"
+                else -> "حركات خفيفة وسريعة"
+            }
+            _statusMessages.tryEmit("تم ضبط المؤثرات الحركية: $animLabel")
+        }
+    }
+
+    fun updateFontFamilyKey(fontFamilyKey: String) {
+        viewModelScope.launch {
+            repository.updateAppSettings { it.copy(fontFamilyKey = fontFamilyKey) }
+            val fontLabel = when (fontFamilyKey) {
+                "TAJAWAL" -> "خط تجوّل (Tajawal)"
+                "SYSTEM" -> "خط النظام الافتراضي"
+                "CUSTOM" -> "الخط المخصص المرفوع (.ttf / .otf)"
+                else -> "خط القاهرة (Cairo)"
+            }
+            _statusMessages.tryEmit("تم تفعيل $fontLabel")
+        }
+    }
+
+    fun onCustomFontSlotImported(
+        slot: az.pdr.taqdiya2.util.CustomFontWeightSlot,
+        displayFileName: String
+    ) {
+        viewModelScope.launch {
+            repository.updateAppSettings { current ->
+                when (slot) {
+                    az.pdr.taqdiya2.util.CustomFontWeightSlot.REGULAR -> current.copy(
+                        fontFamilyKey = "CUSTOM",
+                        customFontRegularName = displayFileName
+                    )
+                    az.pdr.taqdiya2.util.CustomFontWeightSlot.MEDIUM -> current.copy(
+                        fontFamilyKey = "CUSTOM",
+                        customFontMediumName = displayFileName
+                    )
+                    az.pdr.taqdiya2.util.CustomFontWeightSlot.BOLD -> current.copy(
+                        fontFamilyKey = "CUSTOM",
+                        customFontBoldName = displayFileName
+                    )
+                }
+            }
+            _statusMessages.tryEmit("تم استيراد خط ${slot.arabicLabel}: «$displayFileName»")
+        }
+    }
+
+    fun clearAllCustomFonts() {
+        viewModelScope.launch {
+            repository.updateAppSettings { current ->
+                current.copy(
+                    fontFamilyKey = "CAIRO",
+                    customFontRegularName = "",
+                    customFontMediumName = "",
+                    customFontBoldName = ""
+                )
+            }
+            _statusMessages.tryEmit("تم مسح ملفات الخط المخصص والعودة إلى خط القاهرة")
+        }
+    }
+
     fun toggleShowRial() {
         viewModelScope.launch {
             val updated = repository.updateAppSettings { it.copy(showRial = !it.showRial) }

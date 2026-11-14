@@ -130,7 +130,17 @@ data class AppSettingsEntity(
     // نطاق عين الخصوصية: true = إخفاء المبلغ في الجيب فقط، false = إخفاء كل المبالغ
     val privacyMaskPocketOnly: Boolean = false,
     // رمز قفل التطبيق السري (4 أرقام، فارغ يعني بدون قفل)
-    val pinCode: String = ""
+    val pinCode: String = "",
+    // نسق الألوان المختار: "TERRACOTTA", "CALM_SAGE", "VIBRANT_COBALT", "ROYAL_PLUM"
+    val colorPalette: String = "TERRACOTTA",
+    // وضع الحركات البصرية (Animations): "FULL" (كاملة), "LIGHT" (خفيفة), "OFF" (إطفاء)
+    val animationMode: String = "LIGHT",
+    // عائلة الخط المختارة: "CAIRO", "TAJAWAL", "SYSTEM", "CUSTOM"
+    val fontFamilyKey: String = "CAIRO",
+    // أسماء ملفات الخطوط المخصصة المرفوعة يدوياً (.ttf / .otf)
+    val customFontRegularName: String = "",
+    val customFontMediumName: String = "",
+    val customFontBoldName: String = ""
 )
 
 
