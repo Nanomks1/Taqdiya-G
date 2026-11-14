@@ -748,18 +748,17 @@ private fun PocketLedgerSummaryCard(
 ) {
     val isOverBudget = uiState.netPocketBalanceDirhams < -0.009
 
-    ElevatedCard(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.primary
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
-        shape = RoundedCornerShape(24.dp)
+        color = MaterialTheme.colorScheme.primaryContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        shadowElevation = 2.dp,
+        shape = RoundedCornerShape(22.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -770,8 +769,8 @@ private fun PocketLedgerSummaryCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(13.dp))
                             .background(MaterialTheme.colorScheme.secondary),
                         contentAlignment = Alignment.Center
                     ) {
@@ -779,21 +778,21 @@ private fun PocketLedgerSummaryCard(
                             imageVector = Icons.Outlined.AccountBalanceWallet,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSecondary,
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
                             text = "كشف جرد الجيب",
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "اشتريت $purchasedItemsCount أغراض • بقي $waitingItemsCount في القائمة",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                         )
                     }
                 }
@@ -801,8 +800,9 @@ private fun PocketLedgerSummaryCard(
 
             // 3 Financial Rows: Initial Pocket -> Total Spent -> Remaining in Pocket
             Surface(
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -820,12 +820,12 @@ private fun PocketLedgerSummaryCard(
                         Text(
                             text = "خرجت من البيت بـ:",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "${CurrencyFormatter.formatDirhams(uiState.initialPocketDirhams)} (${CurrencyFormatter.formatRials(uiState.initialPocketDirhams)})",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -840,20 +840,20 @@ private fun PocketLedgerSummaryCard(
                             Text(
                                 text = "مجموع ما صرفته فعلياً:",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             if (uiState.totalPassingExpensesDirhams > 0.0) {
                                 Text(
                                     text = "البائعين: ${CurrencyFormatter.formatDirhams(uiState.totalActualVendorPaidDirhams)} + عابر: ${CurrencyFormatter.formatDirhams(uiState.totalPassingExpensesDirhams)}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                 )
                             }
                         }
                         Text(
                             text = "${CurrencyFormatter.formatDirhams(uiState.totalActualSpentDirhams)} (${CurrencyFormatter.formatRials(uiState.totalActualSpentDirhams)})",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            color = MaterialTheme.colorScheme.secondary,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.testTag("audit_total_spent_text")
                         )
@@ -870,27 +870,27 @@ private fun PocketLedgerSummaryCard(
                                 Icon(
                                     imageVector = Icons.Outlined.Savings,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.tertiaryContainer,
+                                    tint = MaterialTheme.colorScheme.tertiary,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "توفير المسامحة في الصرف:",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                                    color = MaterialTheme.colorScheme.tertiary,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                             Text(
                                 text = "+ ${CurrencyFormatter.formatDirhams(uiState.totalForgivenSavingsDirhams)} (${CurrencyFormatter.formatRials(uiState.totalForgivenSavingsDirhams)})",
                                 style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                color = MaterialTheme.colorScheme.tertiary,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
 
                     // Row 3: Expected Remaining in Pocket
                     Row(
@@ -902,13 +902,13 @@ private fun PocketLedgerSummaryCard(
                             Text(
                                 text = if (isOverBudget) "تجاوزت ميزانية الجيب بـ:" else "الباقي المفترض في جيبك الآن:",
                                 style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = CurrencyFormatter.formatRials(abs(uiState.netPocketBalanceDirhams)),
                                 style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -940,7 +940,7 @@ private fun PocketLedgerSummaryCard(
                 onClick = onOpenFinishRound,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp)
+                    .height(52.dp)
                     .testTag("open_finish_round_button"),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondary,

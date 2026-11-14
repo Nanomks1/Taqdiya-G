@@ -1,5 +1,6 @@
 package az.pdr.taqdiya2.ui.theme
 
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -8,11 +9,14 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
     primary = SlateInkPrimaryLight,
@@ -78,10 +82,22 @@ fun TaqdiyaTheme(
     }
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = !darkTheme
+                insetsController.isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
+    }
+
     val baseDensity = LocalDensity.current
     val (densityScale, fontScaleMultiplier) = when (uiScaleMode) {
-        "LARGE" -> 1.06f to 1.12f
-        "EXTRA_LARGE" -> 1.10f to 1.22f
+        "LARGE" -> 1.04f to 1.10f
+        "EXTRA_LARGE" -> 1.07f to 1.18f
         else -> 1.0f to 1.0f
     }
     val scaledDensity = Density(
@@ -101,4 +117,3 @@ fun TaqdiyaTheme(
         )
     }
 }
-

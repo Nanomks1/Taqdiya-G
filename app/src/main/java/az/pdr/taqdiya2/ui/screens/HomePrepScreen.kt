@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -130,20 +132,24 @@ fun HomePrepScreen(
                             softWrap = false
                         )
 
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
                                 modifier = Modifier
-                                    .height(36.dp)
+                                    .heightIn(min = 36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable { showSearchBar = !showSearchBar },
                                 color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -157,7 +163,7 @@ fun HomePrepScreen(
 
                             Surface(
                                 modifier = Modifier
-                                    .height(36.dp)
+                                    .heightIn(min = 36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable(onClick = onOpenPriceTrackerClick)
                                     .testTag("card_open_price_tracker_button"),
@@ -165,7 +171,7 @@ fun HomePrepScreen(
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -188,15 +194,16 @@ fun HomePrepScreen(
 
                             Surface(
                                 modifier = Modifier
-                                    .height(36.dp)
+                                    .heightIn(min = 36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable(onClick = onOpenDictionaryClick)
                                     .testTag("card_open_dictionary_button"),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -210,6 +217,7 @@ fun HomePrepScreen(
                                         text = "القاموس",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -218,15 +226,16 @@ fun HomePrepScreen(
 
                             Surface(
                                 modifier = Modifier
-                                    .height(36.dp)
+                                    .heightIn(min = 36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable(onClick = onOpenVendorsClick)
                                     .testTag("card_open_vendors_button"),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -240,6 +249,7 @@ fun HomePrepScreen(
                                         text = "البائعون",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -273,7 +283,7 @@ fun HomePrepScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Horizontal Bento Tiles for Vendors (72.dp tall, bold and tactile)
+                    // Horizontal Bento Tiles for Vendors (Adaptive height so text never clips on Large/Extra-Large fonts!)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -285,8 +295,8 @@ fun HomePrepScreen(
                             val hasItems = count > 0
                             Surface(
                                 modifier = Modifier
-                                    .width(152.dp)
-                                    .height(78.dp)
+                                    .widthIn(min = 148.dp, max = 210.dp)
+                                    .heightIn(min = 82.dp)
                                     .clip(RoundedCornerShape(18.dp))
                                     .clickable {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -294,33 +304,32 @@ fun HomePrepScreen(
                                     }
                                     .testTag("bento_vendor_${vendor.id}"),
                                 color = if (hasItems) {
-                                    MaterialTheme.colorScheme.primary
+                                    MaterialTheme.colorScheme.primaryContainer
                                 } else {
                                     MaterialTheme.colorScheme.surface
                                 },
                                 border = BorderStroke(
-                                    width = if (hasItems) 0.dp else 1.5.dp,
-                                    color = if (hasItems) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                                    width = if (hasItems) 1.5.dp else 1.dp,
+                                    color = if (hasItems) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
                                 ),
                                 shape = RoundedCornerShape(18.dp),
-                                shadowElevation = 2.dp
+                                shadowElevation = 1.dp
                             ) {
                                 Column(
                                     modifier = Modifier
-                                        .fillMaxSize()
                                         .padding(horizontal = 12.dp, vertical = 10.dp),
-                                    verticalArrangement = Arrangement.SpaceBetween
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
                                             imageVector = VendorIconMapper.getIcon(vendor.iconKey),
                                             contentDescription = vendor.name,
                                             tint = if (hasItems) {
-                                                MaterialTheme.colorScheme.onPrimary
+                                                MaterialTheme.colorScheme.secondary
                                             } else {
                                                 MaterialTheme.colorScheme.primary
                                             },
@@ -342,6 +351,9 @@ fun HomePrepScreen(
                                                 } else {
                                                     MaterialTheme.colorScheme.onSurfaceVariant
                                                 },
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                softWrap = false,
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                             )
                                         }
@@ -351,7 +363,7 @@ fun HomePrepScreen(
                                         text = vendor.name,
                                         style = MaterialTheme.typography.titleSmall,
                                         color = if (hasItems) {
-                                            MaterialTheme.colorScheme.onPrimary
+                                            MaterialTheme.colorScheme.onPrimaryContainer
                                         } else {
                                             MaterialTheme.colorScheme.onSurface
                                         },
@@ -529,23 +541,23 @@ private fun OversizedVendorCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(46.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(MaterialTheme.colorScheme.primary),
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = VendorIconMapper.getIcon(vendor.iconKey),
                             contentDescription = vendor.name,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(26.dp)
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
                             text = vendor.name,
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
                         )
@@ -586,30 +598,35 @@ private fun OversizedVendorCard(
                     }
                 }
 
+                Spacer(modifier = Modifier.width(8.dp))
+
                 // Direct "+ أضف" button for this vendor
                 Surface(
                     modifier = Modifier
-                        .height(44.dp)
+                        .heightIn(min = 40.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .clickable(onClick = onOpenQuickPadForVendor),
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Add,
                             contentDescription = "إضافة",
                             tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "أضف غرض",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }

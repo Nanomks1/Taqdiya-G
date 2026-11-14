@@ -269,15 +269,17 @@ fun TaqdiyaApp(
                     icon = {
                         Icon(
                             imageVector = if (selectedTab == 0) Icons.Filled.Home else Icons.Outlined.Home,
-                            contentDescription = "التحضير في البيت",
+                            contentDescription = "التحضير",
                             modifier = Modifier.size(26.dp)
                         )
                     },
                     label = {
                         Text(
-                            text = "التحضير في البيت",
+                            text = "التحضير",
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     },
                     modifier = Modifier.testTag("nav_tab_home_prep")
@@ -309,7 +311,9 @@ fun TaqdiyaApp(
                         Text(
                             text = "عند البائع",
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     },
                     modifier = Modifier.testTag("nav_tab_at_vendor")
@@ -328,7 +332,9 @@ fun TaqdiyaApp(
                         Text(
                             text = "جرد الجيب",
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     },
                     modifier = Modifier.testTag("nav_tab_pocket_audit")

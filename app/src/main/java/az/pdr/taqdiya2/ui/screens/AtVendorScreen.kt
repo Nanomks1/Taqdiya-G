@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -272,19 +274,26 @@ fun AtVendorScreen(
                         ) {
                             Text(
                                 text = "بائعو جولة اليوم (${vendorsWithItems.size}):",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
                             )
 
+                            Spacer(modifier = Modifier.width(8.dp))
+
                             Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Quick "+ مصروف عابر" Button
                                 Surface(
                                     modifier = Modifier
-                                        .height(36.dp)
+                                        .heightIn(min = 36.dp)
                                         .clip(RoundedCornerShape(10.dp))
                                         .clickable(onClick = onOpenPassingExpenseClick)
                                         .testTag("market_passing_expense_button"),
@@ -292,7 +301,7 @@ fun AtVendorScreen(
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
@@ -306,7 +315,9 @@ fun AtVendorScreen(
                                             text = "+ مصروف عابر",
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
                                 }
@@ -314,7 +325,7 @@ fun AtVendorScreen(
                                 // Keep Screen Awake Toggle
                                 Surface(
                                     modifier = Modifier
-                                        .height(36.dp)
+                                        .heightIn(min = 36.dp)
                                         .clip(RoundedCornerShape(10.dp))
                                         .clickable(onClick = onToggleKeepScreenAwake)
                                         .testTag("toggle_keep_screen_awake_button"),
@@ -323,10 +334,14 @@ fun AtVendorScreen(
                                     } else {
                                         MaterialTheme.colorScheme.surfaceVariant
                                     },
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (uiState.keepScreenAwakeInMarket) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
+                                    ),
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
@@ -347,7 +362,10 @@ fun AtVendorScreen(
                                                 MaterialTheme.colorScheme.onTertiaryContainer
                                             } else {
                                                 MaterialTheme.colorScheme.onSurfaceVariant
-                                            }
+                                            },
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
                                 }
@@ -356,7 +374,7 @@ fun AtVendorScreen(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Oversized Tactile Vendor Selector Cards
+                        // Oversized Tactile Vendor Selector Cards (Adaptive height so text never clips on Large/Extra-Large fonts!)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -373,8 +391,8 @@ fun AtVendorScreen(
 
                                 Surface(
                                     modifier = Modifier
-                                        .width(172.dp)
-                                        .height(84.dp)
+                                        .widthIn(min = 160.dp, max = 225.dp)
+                                        .heightIn(min = 86.dp)
                                         .clip(RoundedCornerShape(18.dp))
                                         .clickable {
                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -382,37 +400,37 @@ fun AtVendorScreen(
                                         }
                                         .testTag("market_vendor_tab_${vendor.id}"),
                                     color = when {
-                                        isSelected -> MaterialTheme.colorScheme.primary
+                                        isSelected -> MaterialTheme.colorScheme.primaryContainer
                                         vAllDone -> MaterialTheme.colorScheme.tertiaryContainer
                                         else -> MaterialTheme.colorScheme.surface
                                     },
                                     border = BorderStroke(
-                                        width = if (isSelected) 0.dp else 1.5.dp,
+                                        width = if (isSelected) 2.dp else 1.5.dp,
                                         color = when {
+                                            isSelected -> MaterialTheme.colorScheme.secondary
                                             hasPendingChange -> MaterialTheme.colorScheme.secondary
                                             vAllDone -> MaterialTheme.colorScheme.tertiary
                                             else -> MaterialTheme.colorScheme.outline
                                         }
                                     ),
                                     shape = RoundedCornerShape(18.dp),
-                                    shadowElevation = if (isSelected) 4.dp else 1.dp
+                                    shadowElevation = if (isSelected) 3.dp else 1.dp
                                 ) {
                                     Column(
                                         modifier = Modifier
-                                            .fillMaxSize()
                                             .padding(horizontal = 12.dp, vertical = 10.dp),
-                                        verticalArrangement = Arrangement.SpaceBetween
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
                                                 imageVector = VendorIconMapper.getIcon(vendor.iconKey),
                                                 contentDescription = vendor.name,
                                                 tint = if (isSelected) {
-                                                    MaterialTheme.colorScheme.onPrimary
+                                                    MaterialTheme.colorScheme.secondary
                                                 } else {
                                                     MaterialTheme.colorScheme.primary
                                                 },
@@ -435,6 +453,9 @@ fun AtVendorScreen(
                                                         isSelected -> MaterialTheme.colorScheme.onSecondary
                                                         else -> MaterialTheme.colorScheme.onSecondaryContainer
                                                     },
+                                                    fontWeight = FontWeight.Bold,
+                                                    maxLines = 1,
+                                                    softWrap = false,
                                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                                 )
                                             }
@@ -444,7 +465,7 @@ fun AtVendorScreen(
                                             text = vendor.name,
                                             style = MaterialTheme.typography.titleSmall,
                                             color = if (isSelected) {
-                                                MaterialTheme.colorScheme.onPrimary
+                                                MaterialTheme.colorScheme.onPrimaryContainer
                                             } else {
                                                 MaterialTheme.colorScheme.onSurface
                                             },
@@ -715,8 +736,9 @@ fun AtVendorScreen(
                     ?: currentVendorCalculatedTotalDirhams
 
                 Surface(
-                    color = MaterialTheme.colorScheme.primary,
-                    shadowElevation = 12.dp,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    shadowElevation = 8.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -737,7 +759,7 @@ fun AtVendorScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(44.dp)
+                                        .size(42.dp)
                                         .clip(RoundedCornerShape(12.dp))
                                         .background(MaterialTheme.colorScheme.tertiary),
                                     contentAlignment = Alignment.Center
@@ -746,7 +768,7 @@ fun AtVendorScreen(
                                         imageVector = Icons.Outlined.ShoppingBag,
                                         contentDescription = "عداد القفة",
                                         tint = MaterialTheme.colorScheme.onTertiary,
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -754,7 +776,7 @@ fun AtVendorScreen(
                                     Text(
                                         text = "في القفة: ${purchasedItems.size} من ${currentVendorItems.size} أغراض",
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.testTag("vendor_basket_counter_text")
                                     )
@@ -771,7 +793,7 @@ fun AtVendorScreen(
                                             "بقي ${waitingItems.size} أغراض لم تُوزن بعد"
                                         },
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
                                     )
                                 }
                             }

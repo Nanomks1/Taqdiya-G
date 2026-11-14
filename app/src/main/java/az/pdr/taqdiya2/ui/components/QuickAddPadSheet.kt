@@ -1,5 +1,6 @@
 package az.pdr.taqdiya2.ui.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,9 +13,12 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,6 +30,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Add
@@ -44,12 +49,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -85,6 +97,26 @@ fun QuickAddPadSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val haptic = LocalHapticFeedback.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val scrollState = rememberScrollState()
+
+    var isNameFieldFocused by remember { mutableStateOf(false) }
+    var isNoteFieldFocused by remember { mutableStateOf(false) }
+    val isImeOpen = WindowInsets.isImeVisible
+    val isTypingMode = isNameFieldFocused || isNoteFieldFocused || isImeOpen
+
+    // When typing with keyboard open, pressing Back dismisses keyboard/focus first instead of closing the sheet
+    BackHandler(enabled = isTypingMode) {
+        keyboardController?.hide()
+        focusManager.clearFocus()
+    }
+
+    LaunchedEffect(isTypingMode) {
+        if (isTypingMode) {
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
+    }
 
     val activeVendorId = selectedVendorId ?: vendors.firstOrNull()?.id
     val currentVendor = vendors.firstOrNull { it.id == activeVendorId }
@@ -124,7 +156,9 @@ fun QuickAddPadSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .imePadding()
                 .navigationBarsPadding()
+                .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
             // 1. Header Row
@@ -133,10 +167,10 @@ fun QuickAddPadSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "لوحة الإضافة السريعة باللمس",
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
@@ -147,11 +181,13 @@ fun QuickAddPadSheet(
                     )
                 }
 
+                Spacer(modifier = Modifier.width(8.dp))
+
                 IconButton(
                     onClick = onDismiss,
                     modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                         .testTag("close_quick_pad_button")
                 ) {
@@ -172,7 +208,7 @@ fun QuickAddPadSheet(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // 2. Oversized Vendor Selector Strip
+            // 2. Vendor Selector Strip (Warm Tonal Highlight)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -184,7 +220,7 @@ fun QuickAddPadSheet(
                     val itemCount = shoppingItems.count { it.vendorId == vendor.id && !it.isDeleted && !it.isPurchased }
                     Surface(
                         modifier = Modifier
-                            .height(54.dp)
+                            .heightIn(min = 50.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -192,18 +228,18 @@ fun QuickAddPadSheet(
                             }
                             .testTag("pad_vendor_tile_${vendor.id}"),
                         color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.primaryContainer
                         } else {
                             MaterialTheme.colorScheme.surface
                         },
                         border = BorderStroke(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                            color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
                         ),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 14.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -211,21 +247,23 @@ fun QuickAddPadSheet(
                                 imageVector = VendorIconMapper.getIcon(vendor.iconKey),
                                 contentDescription = vendor.name,
                                 tint = if (isSelected) {
-                                    MaterialTheme.colorScheme.onPrimary
+                                    MaterialTheme.colorScheme.secondary
                                 } else {
                                     MaterialTheme.colorScheme.primary
                                 },
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                             Text(
                                 text = vendor.name,
                                 style = MaterialTheme.typography.titleSmall,
                                 color = if (isSelected) {
-                                    MaterialTheme.colorScheme.onPrimary
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 } else {
                                     MaterialTheme.colorScheme.onSurface
                                 },
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                             if (itemCount > 0) {
                                 Box(
@@ -257,169 +295,172 @@ fun QuickAddPadSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // When not actively typing in the bottom custom input, show the tactile grid and quick notes
+            if (!isTypingMode) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // 3. 3-Column Oversized Tactile Item Grid (68.dp tall tiles!)
-            Text(
-                text = "سلع ${currentVendor?.name ?: "البائع"} (اضغط للإضافة الفورية):",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
-            )
+                // 3. 3-Column Oversized Tactile Item Grid
+                Text(
+                    text = "سلع ${currentVendor?.name ?: "البائع"} (اضغط للإضافة الفورية):",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 140.dp, max = 210.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(vertical = 2.dp)
-            ) {
-                items(vendorDictionaryItems, key = { it.id }) { dictItem ->
-                    val existingInList = activeShoppingMap[dictItem.normalizedName]
-                    val isAdded = existingInList != null
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 135.dp, max = 205.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(vertical = 2.dp)
+                ) {
+                    items(vendorDictionaryItems, key = { it.id }) { dictItem ->
+                        val existingInList = activeShoppingMap[dictItem.normalizedName]
+                        val isAdded = existingInList != null
 
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(68.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onToggleTile(dictItem, activeVendorId)
-                            }
-                            .testTag("tactile_tile_${dictItem.id}"),
-                        color = if (isAdded) {
-                            MaterialTheme.colorScheme.tertiaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                        border = BorderStroke(
-                            width = if (isAdded) 2.dp else 1.dp,
-                            color = if (isAdded) {
-                                MaterialTheme.colorScheme.tertiary
-                            } else {
-                                MaterialTheme.colorScheme.outline
-                            }
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        shadowElevation = if (isAdded) 0.dp else 2.dp
-                    ) {
-                        Column(
+                        Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                if (isAdded) {
-                                    Icon(
-                                        imageVector = Icons.Filled.CheckCircle,
-                                        contentDescription = "مضاف",
-                                        tint = MaterialTheme.colorScheme.tertiary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
+                                .heightIn(min = 64.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onToggleTile(dictItem, activeVendorId)
                                 }
-                                Text(
-                                    text = dictItem.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = if (isAdded) {
-                                        MaterialTheme.colorScheme.onTertiaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface
-                                    },
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-
-                            if (isAdded && existingInList != null && existingInList.note.isNotBlank()) {
-                                Text(
-                                    text = existingInList.note,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                                .testTag("tactile_tile_${dictItem.id}"),
+                            color = if (isAdded) {
+                                MaterialTheme.colorScheme.tertiaryContainer
                             } else {
-                                Text(
-                                    text = if (isAdded) "في القائمة" else "+ أضف",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isAdded) {
-                                        MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
-                                    } else {
-                                        MaterialTheme.colorScheme.secondary
+                                MaterialTheme.colorScheme.surface
+                            },
+                            border = BorderStroke(
+                                width = if (isAdded) 2.dp else 1.dp,
+                                color = if (isAdded) {
+                                    MaterialTheme.colorScheme.tertiary
+                                } else {
+                                    MaterialTheme.colorScheme.outline
+                                }
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            shadowElevation = if (isAdded) 0.dp else 1.dp
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    if (isAdded) {
+                                        Icon(
+                                            imageVector = Icons.Filled.CheckCircle,
+                                            contentDescription = "مضاف",
+                                            tint = MaterialTheme.colorScheme.tertiary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
                                     }
-                                )
+                                    Text(
+                                        text = dictItem.name,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = if (isAdded) {
+                                            MaterialTheme.colorScheme.onTertiaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+
+                                if (isAdded && existingInList != null && existingInList.note.isNotBlank()) {
+                                    Text(
+                                        text = existingInList.note,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                } else {
+                                    Text(
+                                        text = if (isAdded) "في القائمة" else "+ أضف",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (isAdded) {
+                                            MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                                        } else {
+                                            MaterialTheme.colorScheme.secondary
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // 4. 1-Tap Ready Notes Bar for the Active Item
-            if (activeTargetItem != null) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "كمية أو ملاحظة بلمسة واحدة لـ «${activeTargetItem.name}»:",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            quickNotes.forEach { noteOption ->
-                                val isNoteSelected = activeTargetItem.note == noteOption
-                                Surface(
-                                    modifier = Modifier
-                                        .height(40.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .clickable {
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                            onApplyQuickNote(noteOption)
+                // 4. 1-Tap Ready Notes Bar for the Active Item
+                if (activeTargetItem != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "كمية أو ملاحظة بلمسة واحدة لـ «${activeTargetItem.name}»:",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                quickNotes.forEach { noteOption ->
+                                    val isNoteSelected = activeTargetItem.note == noteOption
+                                    Surface(
+                                        modifier = Modifier
+                                            .heightIn(min = 38.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable {
+                                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                onApplyQuickNote(noteOption)
+                                            },
+                                        color = if (isNoteSelected) {
+                                            MaterialTheme.colorScheme.secondary
+                                        } else {
+                                            MaterialTheme.colorScheme.surface
                                         },
-                                    color = if (isNoteSelected) {
-                                        MaterialTheme.colorScheme.secondary
-                                    } else {
-                                        MaterialTheme.colorScheme.surface
-                                    },
-                                    border = BorderStroke(
-                                        1.dp,
-                                        if (isNoteSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier.padding(horizontal = 12.dp),
-                                        contentAlignment = Alignment.Center
+                                        border = BorderStroke(
+                                            1.dp,
+                                            if (isNoteSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
+                                        ),
+                                        shape = RoundedCornerShape(12.dp)
                                     ) {
-                                        Text(
-                                            text = noteOption,
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = if (isNoteSelected) {
-                                                MaterialTheme.colorScheme.onSecondary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                            }
-                                        )
+                                        Box(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = noteOption,
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = if (isNoteSelected) {
+                                                    MaterialTheme.colorScheme.onSecondary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurface
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -432,106 +473,157 @@ fun QuickAddPadSheet(
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 5. Custom New Item Input Row
-            Text(
-                text = "أو اكتب غرضاً جديداً (يتعلمه القاموس تلقائياً):",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (autoMatchedVendorName != null) {
-                Row(
-                    modifier = Modifier.padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.AutoAwesome,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "سيُضاف تلقائياً إلى: $autoMatchedVendorName",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // 5. Custom New Item Input Row (Always clearly visible above keyboard!)
+            Surface(
+                color = if (isTypingMode) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.background,
+                border = if (isTypingMode) BorderStroke(1.5.dp, MaterialTheme.colorScheme.secondary) else null,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                OutlinedTextField(
-                    value = itemNameInput,
-                    onValueChange = onItemNameChanged,
-                    placeholder = {
-                        Text(
-                            text = "اسم الغرض...",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                Column(
                     modifier = Modifier
-                        .weight(1.25f)
-                        .testTag("add_item_name_input"),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { onSubmitCustomItem() })
-                )
-
-                OutlinedTextField(
-                    value = itemNoteInput,
-                    onValueChange = onItemNoteChanged,
-                    placeholder = {
-                        Text(
-                            text = "ملاحظة...",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .weight(0.95f)
-                        .testTag("add_item_note_input"),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { onSubmitCustomItem() })
-                )
-
-                Button(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onSubmitCustomItem()
-                    },
-                    enabled = itemNameInput.trim().isNotEmpty(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                    modifier = Modifier
-                        .height(54.dp)
-                        .testTag("submit_add_item_button"),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                        .fillMaxWidth()
+                        .padding(if (isTypingMode) 12.dp else 0.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Add,
-                        contentDescription = "إضافة",
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "أضف",
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "أو اكتب غرضاً جديداً (يتعلمه القاموس تلقائياً):",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (isTypingMode) {
+                            Text(
+                                text = "إخفاء الكيبورد",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        keyboardController?.hide()
+                                        focusManager.clearFocus()
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    if (autoMatchedVendorName != null) {
+                        Row(
+                            modifier = Modifier.padding(top = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "سيُضاف تلقائياً إلى: $autoMatchedVendorName",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    } else if (currentVendor != null) {
+                        Text(
+                            text = "سيُضاف إلى: ${currentVendor.name}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = itemNameInput,
+                            onValueChange = onItemNameChanged,
+                            placeholder = {
+                                Text(
+                                    text = "اسم الغرض...",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1.25f)
+                                .onFocusChanged { isNameFieldFocused = it.isFocused }
+                                .testTag("add_item_name_input"),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                        )
+
+                        OutlinedTextField(
+                            value = itemNoteInput,
+                            onValueChange = onItemNoteChanged,
+                            placeholder = {
+                                Text(
+                                    text = "ملاحظة...",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(0.95f)
+                                .onFocusChanged { isNoteFieldFocused = it.isFocused }
+                                .testTag("add_item_note_input"),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    onSubmitCustomItem()
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                }
+                            )
+                        )
+
+                        Button(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onSubmitCustomItem()
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            },
+                            enabled = itemNameInput.trim().isNotEmpty(),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                            modifier = Modifier
+                                .height(54.dp)
+                                .testTag("submit_add_item_button"),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = "إضافة",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "أضف",
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
                 }
             }
         }

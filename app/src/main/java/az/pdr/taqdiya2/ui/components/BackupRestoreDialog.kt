@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -339,6 +340,7 @@ fun BackupRestoreDialog(
                                         onNotifyMessage("تم نسخ كود النسخة الاحتياطية الشاملة إلى الحافظة")
                                     }
                                 },
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                                 modifier = Modifier
                                     .weight(1f)
                                     .heightIn(min = 48.dp)
@@ -348,9 +350,9 @@ fun BackupRestoreDialog(
                                 Icon(
                                     imageVector = Icons.Outlined.ContentCopy,
                                     contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "نسخ الكود",
                                     fontWeight = FontWeight.Bold,
@@ -373,6 +375,7 @@ fun BackupRestoreDialog(
                                         )
                                     }
                                 },
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                                 modifier = Modifier
                                     .weight(1f)
                                     .heightIn(min = 48.dp)
@@ -382,9 +385,9 @@ fun BackupRestoreDialog(
                                 Icon(
                                     imageVector = Icons.Outlined.Share,
                                     contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "إرسال واتساب",
                                     fontWeight = FontWeight.Bold,
@@ -608,8 +611,9 @@ fun BackupRestoreDialog(
                                         onNotifyMessage("اضغط مطولاً على شاشة الهاتف الرئيسية واختر (Widgets) ثم التقدية")
                                     }
                                 },
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                                 modifier = Modifier
-                                    .weight(1.3f)
+                                    .weight(1.25f)
                                     .heightIn(min = 48.dp)
                                     .testTag("pin_home_widget_button"),
                                 colors = ButtonDefaults.buttonColors(
@@ -620,9 +624,9 @@ fun BackupRestoreDialog(
                                 Icon(
                                     imageVector = Icons.Outlined.Widgets,
                                     contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "تثبيت الودجت",
                                     style = MaterialTheme.typography.labelLarge,
@@ -637,6 +641,7 @@ fun BackupRestoreDialog(
                                     TaqdiyaWidgetProvider.requestWidgetUpdate(context)
                                     onNotifyMessage("تم تحديث بيانات ودجت الشاشة الرئيسية بنجاح")
                                 },
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                                 modifier = Modifier
                                     .weight(1f)
                                     .heightIn(min = 48.dp)
@@ -646,7 +651,7 @@ fun BackupRestoreDialog(
                                 Icon(
                                     imageVector = Icons.Outlined.Refresh,
                                     contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
