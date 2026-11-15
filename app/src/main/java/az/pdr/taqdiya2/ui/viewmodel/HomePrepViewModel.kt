@@ -1098,10 +1098,10 @@ class HomePrepViewModel(
         viewModelScope.launch {
             repository.updateAppSettings { it.copy(colorPalette = colorPalette) }
             val paletteLabel = when (colorPalette) {
-                "CALM_SAGE" -> "أخضر المريمية الهادئ"
-                "VIBRANT_COBALT" -> "أزرق الأطلس البارز"
-                "ROYAL_PLUM" -> "عنابي الزليج والزمرد"
-                else -> "الطين المغربي الأصيل"
+                "VIBRANT_COBALT" -> "ياقوتي ومرجاني"
+                "CALM_SAGE" -> "كتان وطين حديث"
+                "ROYAL_PLUM" -> "سلايت وبنفسجي"
+                else -> "زمرد وعنبر"
             }
             _statusMessages.tryEmit("تم تفعيل نسق الألوان: $paletteLabel")
         }
@@ -1123,10 +1123,11 @@ class HomePrepViewModel(
         viewModelScope.launch {
             repository.updateAppSettings { it.copy(fontFamilyKey = fontFamilyKey) }
             val fontLabel = when (fontFamilyKey) {
-                "TAJAWAL" -> "خط تجوّل (Tajawal)"
-                "SYSTEM" -> "خط النظام الافتراضي"
-                "CUSTOM" -> "الخط المخصص المرفوع (.ttf / .otf)"
-                else -> "خط القاهرة (Cairo)"
+                "VAZIRMATN" -> "خط وزير (Vazirmatn)"
+                "BALOO" -> "خط Baloo Bhaijaan 2"
+                "SYSTEM" -> "خط الهاتف (النظام)"
+                "CUSTOM" -> "خط يدوي (.ttf / .otf)"
+                else -> "خط IBM Plex Arabic"
             }
             _statusMessages.tryEmit("تم تفعيل $fontLabel")
         }
@@ -1161,13 +1162,13 @@ class HomePrepViewModel(
         viewModelScope.launch {
             repository.updateAppSettings { current ->
                 current.copy(
-                    fontFamilyKey = "CAIRO",
+                    fontFamilyKey = "IBM_PLEX",
                     customFontRegularName = "",
                     customFontMediumName = "",
                     customFontBoldName = ""
                 )
             }
-            _statusMessages.tryEmit("تم مسح ملفات الخط المخصص والعودة إلى خط القاهرة")
+            _statusMessages.tryEmit("تم مسح ملفات الخط المخصص والعودة إلى خط IBM Plex Arabic")
         }
     }
 

@@ -107,7 +107,11 @@ class MainActivity : ComponentActivity() {
 
         val cachedColorPalette = bootPrefs.getString("colorPalette", "TERRACOTTA") ?: "TERRACOTTA"
         val cachedAnimationMode = bootPrefs.getString("animationMode", "LIGHT") ?: "LIGHT"
-        val cachedFontFamilyKey = bootPrefs.getString("fontFamilyKey", "CAIRO") ?: "CAIRO"
+        val rawCachedFontKey = bootPrefs.getString("fontFamilyKey", "IBM_PLEX") ?: "IBM_PLEX"
+        val cachedFontFamilyKey = when (rawCachedFontKey) {
+            "CAIRO", "TAJAWAL", "" -> "IBM_PLEX"
+            else -> rawCachedFontKey
+        }
         val cachedFontReg = bootPrefs.getString("customFontRegularName", "") ?: ""
         val cachedFontMed = bootPrefs.getString("customFontMediumName", "") ?: ""
         val cachedFontBold = bootPrefs.getString("customFontBoldName", "") ?: ""

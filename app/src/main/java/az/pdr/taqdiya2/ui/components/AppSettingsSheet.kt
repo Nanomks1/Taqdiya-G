@@ -205,7 +205,7 @@ fun AppSettingsSheet(
                 }
             }
 
-            // 1.5 Color Palette (نسق الألوان — هادئ، بارز، أصيل، أنيق)
+            // 1.5 Color Palette (نسق الألوان — زمرد وعنبر، ياقوتي ومرجاني، كتان وطين حديث، سلايت وبنفسجي)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "نسق الألوان (يدعم النهاري والليلي):",
@@ -214,10 +214,10 @@ fun AppSettingsSheet(
                     fontWeight = FontWeight.Bold
                 )
                 val palettes = listOf(
-                    Triple("TERRACOTTA", "الطين الأصيل", Pair(androidx.compose.ui.graphics.Color(0xFFB84A27), androidx.compose.ui.graphics.Color(0xFF2D6A4F))),
-                    Triple("CALM_SAGE", "أخضر هادئ", Pair(androidx.compose.ui.graphics.Color(0xFF3D6E57), androidx.compose.ui.graphics.Color(0xFF7D5D3B))),
-                    Triple("VIBRANT_COBALT", "أزرق بارز", Pair(androidx.compose.ui.graphics.Color(0xFF103466), androidx.compose.ui.graphics.Color(0xFFD9531E))),
-                    Triple("ROYAL_PLUM", "عنابي وزمرد", Pair(androidx.compose.ui.graphics.Color(0xFF9E2A47), androidx.compose.ui.graphics.Color(0xFF226B58)))
+                    Triple("TERRACOTTA", "زمرد وعنبر", Pair(androidx.compose.ui.graphics.Color(0xFF0A6847), androidx.compose.ui.graphics.Color(0xFFD97706))),
+                    Triple("VIBRANT_COBALT", "ياقوتي ومرجاني", Pair(androidx.compose.ui.graphics.Color(0xFF1E40AF), androidx.compose.ui.graphics.Color(0xFFEA580C))),
+                    Triple("CALM_SAGE", "كتان وطين حديث", Pair(androidx.compose.ui.graphics.Color(0xFFB43B0E), androidx.compose.ui.graphics.Color(0xFF15803D))),
+                    Triple("ROYAL_PLUM", "سلايت وبنفسجي", Pair(androidx.compose.ui.graphics.Color(0xFF4338CA), androidx.compose.ui.graphics.Color(0xFF0D9488)))
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -367,13 +367,17 @@ fun AppSettingsSheet(
                     )
                 }
 
-                // Font Family Selector (Cairo | Tajawal | System | Custom .ttf/.otf)
+                // Font Family Selector (IBM Plex | Vazirmatn | Baloo Bhaijaan 2 | System | Custom .ttf/.otf)
                 Text(
                     text = "نوع الخط المستخدم في التطبيق:",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
+                val normalizedSelectedFont = when (settings.fontFamilyKey) {
+                    "CAIRO", "TAJAWAL", "" -> "IBM_PLEX"
+                    else -> settings.fontFamilyKey
+                }
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -381,8 +385,9 @@ fun AppSettingsSheet(
                     maxItemsInEachRow = 2
                 ) {
                     val fontFamilies = listOf(
-                        Triple("CAIRO", "خط القاهرة (Cairo)", "واضح ومتوازن"),
-                        Triple("TAJAWAL", "خط تجوّل (Tajawal)", "ناعم وعصري"),
+                        Triple("IBM_PLEX", "خط IBM Plex Arabic", "تقني وواضح للأرقام"),
+                        Triple("VAZIRMATN", "خط وزير (Vazirmatn)", "متوازن ومريح للقراءة"),
+                        Triple("BALOO", "خط Baloo Bhaijaan 2", "ودود وبارز العناوين"),
                         Triple("SYSTEM", "خط الهاتف (النظام)", "خط جهازك الأصلي"),
                         Triple("CUSTOM", "خط يدوي (.ttf / .otf)", "Regular + Medium + Bold")
                     )
@@ -390,7 +395,7 @@ fun AppSettingsSheet(
                         ScaleOptionTile(
                             title = title,
                             badge = badge,
-                            selected = settings.fontFamilyKey == fontKey,
+                            selected = normalizedSelectedFont == fontKey,
                             onClick = { onUpdateFontFamilyKey(fontKey) },
                             modifier = Modifier
                                 .weight(1f)

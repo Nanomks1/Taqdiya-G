@@ -1,7 +1,6 @@
 package az.pdr.taqdiya2.ui.screens
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -37,8 +36,6 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,6 +62,8 @@ import az.pdr.taqdiya2.data.local.DictionaryItemEntity
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
 import az.pdr.taqdiya2.ui.components.VendorIconMapper
+import az.pdr.taqdiya2.ui.theme.ambientCardBorder
+import az.pdr.taqdiya2.ui.theme.ambientCardShadow
 import az.pdr.taqdiya2.ui.viewmodel.HomePrepUiState
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -108,7 +107,7 @@ fun HomePrepScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Main Scrollable Content (Clean, Uncluttered, Oversized Cards)
+        // Main Scrollable Content (Clean, Uncluttered, Floating Ambient Cards)
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
@@ -116,7 +115,7 @@ fun HomePrepScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. Oversized Tactile Vendor Bento Tiles Strip
+            // 1. Tactile Vendor Bento Tiles Strip
             item(key = "vendor_bento_strip") {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -127,7 +126,7 @@ fun HomePrepScreen(
                         Text(
                             text = "اختر البائع:",
                             style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             softWrap = false
@@ -140,17 +139,17 @@ fun HomePrepScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val pillShape = RoundedCornerShape(10.dp)
                             Surface(
                                 modifier = Modifier
                                     .heightIn(min = 36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(pillShape)
                                     .clickable { showSearchBar = !showSearchBar },
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                                shape = RoundedCornerShape(10.dp)
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                shape = pillShape
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -165,14 +164,14 @@ fun HomePrepScreen(
                             Surface(
                                 modifier = Modifier
                                     .heightIn(min = 36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(pillShape)
                                     .clickable(onClick = onOpenPriceTrackerClick)
                                     .testTag("card_open_price_tracker_button"),
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                shape = RoundedCornerShape(10.dp)
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f),
+                                shape = pillShape
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -186,7 +185,7 @@ fun HomePrepScreen(
                                         text = "الأثمنة",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -196,29 +195,28 @@ fun HomePrepScreen(
                             Surface(
                                 modifier = Modifier
                                     .heightIn(min = 36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(pillShape)
                                     .clickable(onClick = onOpenDictionaryClick)
                                     .testTag("card_open_dictionary_button"),
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                                shape = RoundedCornerShape(10.dp)
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                shape = pillShape
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.MenuBook,
                                         contentDescription = "القاموس",
                                         modifier = Modifier.size(15.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = "القاموس",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -228,29 +226,28 @@ fun HomePrepScreen(
                             Surface(
                                 modifier = Modifier
                                     .heightIn(min = 36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(pillShape)
                                     .clickable(onClick = onOpenVendorsClick)
                                     .testTag("card_open_vendors_button"),
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                                shape = RoundedCornerShape(10.dp)
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                shape = pillShape
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Storefront,
                                         contentDescription = "البائعون",
                                         modifier = Modifier.size(15.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = "البائعون",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -276,6 +273,7 @@ fun HomePrepScreen(
                                 }
                             },
                             singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("shopping_list_search_input")
@@ -284,7 +282,7 @@ fun HomePrepScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Horizontal Bento Tiles for Vendors (Adaptive height so text never clips on Large/Extra-Large fonts!)
+                    // Horizontal Bento Tiles for Vendors with Duotone Icon Containers & Ambient Shadow
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -294,27 +292,24 @@ fun HomePrepScreen(
                         uiState.vendors.forEach { vendor ->
                             val count = uiState.shoppingItems.count { it.vendorId == vendor.id && !it.isDeleted }
                             val hasItems = count > 0
+                            val bentoShape = RoundedCornerShape(18.dp)
                             Surface(
                                 modifier = Modifier
-                                    .widthIn(min = 148.dp, max = 210.dp)
+                                    .widthIn(min = 148.dp, max = 215.dp)
                                     .heightIn(min = 82.dp)
-                                    .clip(RoundedCornerShape(18.dp))
+                                    .ambientCardShadow(
+                                        shape = bentoShape,
+                                        elevation = if (hasItems) 5.dp else 3.dp
+                                    )
+                                    .clip(bentoShape)
                                     .clickable {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         onOpenQuickPadForVendor(vendor.id)
                                     }
                                     .testTag("bento_vendor_${vendor.id}"),
-                                color = if (hasItems) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surface
-                                },
-                                border = BorderStroke(
-                                    width = if (hasItems) 1.5.dp else 1.dp,
-                                    color = if (hasItems) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
-                                ),
-                                shape = RoundedCornerShape(18.dp),
-                                shadowElevation = 1.dp
+                                color = MaterialTheme.colorScheme.surface,
+                                border = ambientCardBorder(),
+                                shape = bentoShape
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -323,24 +318,28 @@ fun HomePrepScreen(
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(
-                                            imageVector = VendorIconMapper.getIcon(vendor.iconKey),
-                                            contentDescription = vendor.name,
-                                            tint = if (hasItems) {
-                                                MaterialTheme.colorScheme.secondary
-                                            } else {
-                                                MaterialTheme.colorScheme.primary
-                                            },
-                                            modifier = Modifier.size(22.dp)
-                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = VendorIconMapper.getIcon(vendor.iconKey),
+                                                contentDescription = vendor.name,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                         Surface(
                                             color = if (hasItems) {
-                                                MaterialTheme.colorScheme.secondary
+                                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
                                             } else {
-                                                MaterialTheme.colorScheme.surfaceVariant
+                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
                                             },
                                             shape = RoundedCornerShape(8.dp)
                                         ) {
@@ -348,14 +347,14 @@ fun HomePrepScreen(
                                                 text = if (hasItems) "$count أغراض" else "+ أضف",
                                                 style = MaterialTheme.typography.labelMedium,
                                                 color = if (hasItems) {
-                                                    MaterialTheme.colorScheme.onSecondary
+                                                    MaterialTheme.colorScheme.onSecondaryContainer
                                                 } else {
                                                     MaterialTheme.colorScheme.onSurfaceVariant
                                                 },
-                                                fontWeight = FontWeight.Bold,
+                                                fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
                                                 softWrap = false,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                             )
                                         }
                                     }
@@ -363,11 +362,7 @@ fun HomePrepScreen(
                                     Text(
                                         text = vendor.name,
                                         style = MaterialTheme.typography.titleSmall,
-                                        color = if (hasItems) {
-                                            MaterialTheme.colorScheme.onPrimaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurface
-                                        },
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
@@ -382,12 +377,14 @@ fun HomePrepScreen(
             // 2. If List is Empty: Show Instant 1-Tap Tactile Grid right on the screen!
             if (activeItems.isEmpty()) {
                 item(key = "instant_starter_grid") {
-                    ElevatedCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                    val starterShape = RoundedCornerShape(22.dp)
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .ambientCardShadow(shape = starterShape, elevation = 6.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = ambientCardBorder(),
+                        shape = starterShape
                     ) {
                         Column(
                             modifier = Modifier
@@ -397,7 +394,7 @@ fun HomePrepScreen(
                             Text(
                                 text = "كناش النواقص جاهز — اضغط على أي غرض لإضافته فوراً:",
                                 style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -419,16 +416,15 @@ fun HomePrepScreen(
                                     Surface(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .height(62.dp)
-                                            .clip(RoundedCornerShape(16.dp))
+                                            .height(58.dp)
+                                            .clip(RoundedCornerShape(14.dp))
                                             .clickable {
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                 onQuickAddDictionaryItem(dictItem)
                                             }
                                             .testTag("quick_chip_${dictItem.id}"),
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                                        shape = RoundedCornerShape(16.dp)
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                                        shape = RoundedCornerShape(14.dp)
                                     ) {
                                         Box(
                                             modifier = Modifier.padding(horizontal = 8.dp),
@@ -466,10 +462,10 @@ fun HomePrepScreen(
             }
         }
 
-        // Pinned Bottom Thumb-Zone Action Bar (Huge, Unmistakable Button!)
+        // Pinned Bottom Thumb-Zone Action Bar
         Surface(
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 10.dp,
+            shadowElevation = 8.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Box(
@@ -488,7 +484,8 @@ fun HomePrepScreen(
                         .testTag("open_quick_pad_main_button"),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     shape = RoundedCornerShape(18.dp)
                 ) {
@@ -521,9 +518,11 @@ private fun OversizedVendorCard(
     onEditItem: (ShoppingItemEntity) -> Unit,
     onDeleteItem: (ShoppingItemEntity) -> Unit
 ) {
-    ElevatedCard(
+    val cardShape = RoundedCornerShape(22.dp)
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .ambientCardShadow(shape = cardShape, elevation = 6.dp)
             .then(
                 if (animateChanges) {
                     Modifier.animateContentSize()
@@ -532,18 +531,16 @@ private fun OversizedVendorCard(
                 }
             )
             .testTag("vendor_card_${vendor.id}"),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
-        shape = RoundedCornerShape(22.dp)
+        color = MaterialTheme.colorScheme.surface,
+        border = ambientCardBorder(),
+        shape = cardShape
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Bold Vendor Header
+            // Balanced Vendor Header (38.dp duotone container so vendor name never wraps awkwardly)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -555,16 +552,16 @@ private fun OversizedVendorCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer),
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = VendorIconMapper.getIcon(vendor.iconKey),
                             contentDescription = vendor.name,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(24.dp)
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(21.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
@@ -572,13 +569,16 @@ private fun OversizedVendorCard(
                         Text(
                             text = vendor.name,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "${items.size} أغراض مسجلة",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Normal
                         )
                         if (kotlin.math.abs(vendor.pendingBalanceDirhams) > 0.009) {
                             val isVendorOwingMe = vendor.pendingBalanceDirhams > 0.0
@@ -586,9 +586,9 @@ private fun OversizedVendorCard(
                             Spacer(modifier = Modifier.height(4.dp))
                             Surface(
                                 color = if (isVendorOwingMe) {
-                                    MaterialTheme.colorScheme.tertiaryContainer
+                                    MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f)
                                 } else {
-                                    MaterialTheme.colorScheme.errorContainer
+                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
                                 },
                                 shape = RoundedCornerShape(8.dp)
                             ) {
@@ -604,7 +604,7 @@ private fun OversizedVendorCard(
                                     } else {
                                         MaterialTheme.colorScheme.onErrorContainer
                                     },
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
                             }
@@ -614,31 +614,31 @@ private fun OversizedVendorCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Direct "+ أضف" button for this vendor
+                // Direct "+ أضف غرض" button for this vendor
                 Surface(
                     modifier = Modifier
-                        .heightIn(min = 40.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .heightIn(min = 38.dp)
+                        .clip(RoundedCornerShape(11.dp))
                         .clickable(onClick = onOpenQuickPadForVendor),
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(12.dp)
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                    shape = RoundedCornerShape(11.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Add,
                             contentDescription = "إضافة",
                             tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(17.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "أضف غرض",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -647,12 +647,12 @@ private fun OversizedVendorCard(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
 
-            // Oversized Tactile Item Rows
+            // Clean Item Rows (Colored Dot + Bold Item Name + Soft Medium Note Badge)
             items.forEachIndexed { index, item ->
                 if (index > 0) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
                 }
                 Row(
                     modifier = Modifier
@@ -674,9 +674,9 @@ private fun OversizedVendorCard(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(RoundedCornerShape(5.dp))
-                                    .background(MaterialTheme.colorScheme.secondary)
+                                    .size(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.primary)
                             )
 
                             Text(
@@ -690,18 +690,18 @@ private fun OversizedVendorCard(
                         if (item.note.isNotBlank()) {
                             Surface(
                                 modifier = Modifier.align(Alignment.CenterVertically),
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                shape = RoundedCornerShape(10.dp)
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f),
+                                shape = RoundedCornerShape(9.dp)
                             ) {
                                 Text(
                                     text = item.note,
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontWeight = FontWeight.Medium,
                                     maxLines = 1,
                                     softWrap = false,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
                                 )
                             }
                         }
@@ -711,27 +711,27 @@ private fun OversizedVendorCard(
                         IconButton(
                             onClick = { onEditItem(item) },
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(42.dp)
                                 .testTag("edit_item_${item.id}")
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Edit,
                                 contentDescription = "تعديل الغرض",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(21.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                         IconButton(
                             onClick = { onDeleteItem(item) },
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(42.dp)
                                 .testTag("delete_item_${item.id}")
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.RemoveCircleOutline,
                                 contentDescription = "إزالة من القائمة",
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(22.dp)
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(21.dp)
                             )
                         }
                     }

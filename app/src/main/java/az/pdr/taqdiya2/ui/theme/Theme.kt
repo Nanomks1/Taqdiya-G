@@ -1,6 +1,7 @@
 package az.pdr.taqdiya2.ui.theme
 
 import android.app.Activity
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
@@ -11,14 +12,57 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+
+val LocalIsDarkTheme = compositionLocalOf { false }
+
+@Composable
+fun Modifier.ambientCardShadow(
+    shape: Shape = RoundedCornerShape(18.dp),
+    elevation: Dp = 6.dp
+): Modifier {
+    val isDark = LocalIsDarkTheme.current
+    val primary = MaterialTheme.colorScheme.primary
+    return if (isDark) {
+        this.shadow(
+            elevation = elevation,
+            shape = shape,
+            ambientColor = Color.Black.copy(alpha = 0.6f),
+            spotColor = Color.Black.copy(alpha = 0.6f)
+        )
+    } else {
+        this.shadow(
+            elevation = elevation,
+            shape = shape,
+            ambientColor = primary.copy(alpha = 0.24f),
+            spotColor = primary.copy(alpha = 0.18f)
+        )
+    }
+}
+
+@Composable
+fun ambientCardBorder(): BorderStroke {
+    val isDark = LocalIsDarkTheme.current
+    return if (isDark) {
+        BorderStroke(1.dp, Color.White.copy(alpha = 0.07f))
+    } else {
+        BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f))
+    }
+}
 
 private val TerracottaLightColorScheme = lightColorScheme(
     primary = SlateInkPrimaryLight,
@@ -216,7 +260,7 @@ fun TaqdiyaTheme(
     themeMode: String = "LIGHT",
     uiScaleMode: String = "NORMAL",
     colorPalette: String = "TERRACOTTA",
-    fontFamilyKey: String = "CAIRO",
+    fontFamilyKey: String = "IBM_PLEX",
     customFontSignature: String = "",
     content: @Composable () -> Unit
 ) {
@@ -242,26 +286,15 @@ fun TaqdiyaTheme(
         }
     }
 
-    val typography = androidx.compose.runtime.remember(fontFamilyKey, customFontSignature) {
-        when (fontFamilyKey) {
-            "TAJAWAL" -> buildAppTypography(
-                primaryFontFamily = TajawalFontFamily,
-                secondaryFontFamily = TajawalFontFamily
-            )
-            "SYSTEM" -> buildAppTypography(
-                primaryFontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
-                secondaryFontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif
-            )
-            "CUSTOM" -> {
-                val customFamily = az.pdr.taqdiya2.util.CustomFontManager.buildCustomFontFamilyOrNull(context)
-                    ?: CairoFontFamily
-                buildAppTypography(
-                    primaryFontFamily = customFamily,
-                    secondaryFontFamily = customFamily
-                )
-            }
-            else -> AppTypography
-        }
+    val typography = remember(fontFamilyKey, customFontSignature) {
+        val resolvedFamily = loadAssetFontFamilyOrFallback(
+            context = context,
+            fontFamilyKey = fontFamilyKey
+        )
+        buildAppTypography(
+            primaryFontFamily = resolvedFamily,
+            secondaryFontFamily = resolvedFamily
+        )
     }
 
     val baseDensity = LocalDensity.current
@@ -282,7 +315,8 @@ fun TaqdiyaTheme(
 
     CompositionLocalProvider(
         LocalLayoutDirection provides LayoutDirection.Rtl,
-        LocalDensity provides scaledDensity
+        LocalDensity provides scaledDensity,
+        LocalIsDarkTheme provides darkTheme
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

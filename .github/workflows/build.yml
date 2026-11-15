@@ -50,6 +50,16 @@ jobs:
             cat debug.keystore.base64 | tr -d '[:space:]' | base64 --decode > debug.keystore
           fi
 
+      - name: Ensure Arabic Fonts Exist in Assets
+        run: |
+          mkdir -p app/src/main/assets/fonts
+          cd app/src/main/assets/fonts
+          [ -f ibm_plex_regular.ttf ] || curl -L -s -o ibm_plex_regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-Regular.ttf"
+          [ -f ibm_plex_medium.ttf ] || curl -L -s -o ibm_plex_medium.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-Medium.ttf"
+          [ -f ibm_plex_bold.ttf ] || curl -L -s -o ibm_plex_bold.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-Bold.ttf"
+          [ -f vazirmatn_var.ttf ] || curl -L -s -o vazirmatn_var.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/vazirmatn/Vazirmatn%5Bwght%5D.ttf"
+          [ -f baloo_bhaijaan_2_var.ttf ] || curl -L -s -o baloo_bhaijaan_2_var.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/baloobhaijaan2/BalooBhaijaan2%5Bwght%5D.ttf"
+
       - name: Grant Execute Permission to gradlew & Build Release APK
         env:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}

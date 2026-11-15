@@ -135,8 +135,8 @@ data class AppSettingsEntity(
     val colorPalette: String = "TERRACOTTA",
     // وضع الحركات البصرية (Animations): "FULL" (كاملة), "LIGHT" (خفيفة), "OFF" (إطفاء)
     val animationMode: String = "LIGHT",
-    // عائلة الخط المختارة: "CAIRO", "TAJAWAL", "SYSTEM", "CUSTOM"
-    val fontFamilyKey: String = "CAIRO",
+    // عائلة الخط المختارة: "IBM_PLEX", "VAZIRMATN", "BALOO", "SYSTEM", "CUSTOM"
+    val fontFamilyKey: String = "IBM_PLEX",
     // أسماء ملفات الخطوط المخصصة المرفوعة يدوياً (.ttf / .otf)
     val customFontRegularName: String = "",
     val customFontMediumName: String = "",

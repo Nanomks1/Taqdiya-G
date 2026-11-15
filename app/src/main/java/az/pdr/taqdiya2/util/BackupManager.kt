@@ -216,7 +216,10 @@ object BackupManager {
                     pinCode = settingsObj.optString("pinCode", ""),
                     colorPalette = settingsObj.optString("colorPalette", "TERRACOTTA"),
                     animationMode = settingsObj.optString("animationMode", "LIGHT"),
-                    fontFamilyKey = settingsObj.optString("fontFamilyKey", "CAIRO"),
+                    fontFamilyKey = when (val rawFont = settingsObj.optString("fontFamilyKey", "IBM_PLEX")) {
+                        "CAIRO", "TAJAWAL", "" -> "IBM_PLEX"
+                        else -> rawFont
+                    },
                     customFontRegularName = settingsObj.optString("customFontRegularName", ""),
                     customFontMediumName = settingsObj.optString("customFontMediumName", ""),
                     customFontBoldName = settingsObj.optString("customFontBoldName", "")

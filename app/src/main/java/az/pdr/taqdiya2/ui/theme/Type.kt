@@ -1,28 +1,123 @@
 package az.pdr.taqdiya2.ui.theme
 
+import android.content.Context
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
-import az.pdr.taqdiya2.R
+import az.pdr.taqdiya2.util.CustomFontManager
 
-val CairoFontFamily = FontFamily(
-    Font(R.font.cairo, FontWeight.Normal),
-    Font(R.font.cairo, FontWeight.Medium),
-    Font(R.font.cairo, FontWeight.SemiBold),
-    Font(R.font.cairo, FontWeight.Bold)
-)
+@OptIn(ExperimentalTextApi::class)
+fun loadAssetFontFamilyOrFallback(
+    context: Context,
+    fontFamilyKey: String
+): FontFamily {
+    val normalizedKey = when (fontFamilyKey) {
+        "CAIRO", "TAJAWAL", "" -> "IBM_PLEX"
+        else -> fontFamilyKey
+    }
 
-val TajawalFontFamily = FontFamily(
-    Font(R.font.tajawal, FontWeight.Normal),
-    Font(R.font.tajawal, FontWeight.Medium),
-    Font(R.font.tajawal, FontWeight.SemiBold),
-    Font(R.font.tajawal, FontWeight.Bold)
-)
+    if (normalizedKey == "SYSTEM") {
+        return FontFamily.SansSerif
+    }
+
+    if (normalizedKey == "CUSTOM") {
+        CustomFontManager.buildCustomFontFamilyOrNull(context)?.let { return it }
+    }
+
+    return runCatching {
+        val availableFonts = context.assets.list("fonts")?.toSet() ?: emptySet()
+        when (normalizedKey) {
+            "VAZIRMATN" -> {
+                if ("vazirmatn_var.ttf" !in availableFonts) {
+                    FontFamily.SansSerif
+                } else {
+                    val weights = listOf(
+                        FontWeight.Normal,
+                        FontWeight.Medium,
+                        FontWeight.SemiBold,
+                        FontWeight.Bold
+                    )
+                    FontFamily(
+                        weights.map { w ->
+                            Font(
+                                path = "fonts/vazirmatn_var.ttf",
+                                assetManager = context.assets,
+                                weight = w,
+                                variationSettings = FontVariation.Settings(
+                                    FontVariation.weight(w.weight)
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
+            "BALOO" -> {
+                if ("baloo_bhaijaan_2_var.ttf" !in availableFonts) {
+                    FontFamily.SansSerif
+                } else {
+                    val weights = listOf(
+                        FontWeight.Normal,
+                        FontWeight.Medium,
+                        FontWeight.SemiBold,
+                        FontWeight.Bold
+                    )
+                    FontFamily(
+                        weights.map { w ->
+                            Font(
+                                path = "fonts/baloo_bhaijaan_2_var.ttf",
+                                assetManager = context.assets,
+                                weight = w,
+                                variationSettings = FontVariation.Settings(
+                                    FontVariation.weight(w.weight)
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
+            else -> {
+                val hasIbmPlex = "ibm_plex_regular.ttf" in availableFonts &&
+                    "ibm_plex_medium.ttf" in availableFonts &&
+                    "ibm_plex_bold.ttf" in availableFonts
+                if (!hasIbmPlex) {
+                    FontFamily.SansSerif
+                } else {
+                    FontFamily(
+                        Font(
+                            path = "fonts/ibm_plex_regular.ttf",
+                            assetManager = context.assets,
+                            weight = FontWeight.Normal
+                        ),
+                        Font(
+                            path = "fonts/ibm_plex_medium.ttf",
+                            assetManager = context.assets,
+                            weight = FontWeight.Medium
+                        ),
+                        Font(
+                            path = "fonts/ibm_plex_medium.ttf",
+                            assetManager = context.assets,
+                            weight = FontWeight.SemiBold
+                        ),
+                        Font(
+                            path = "fonts/ibm_plex_bold.ttf",
+                            assetManager = context.assets,
+                            weight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
+        }
+    }.getOrDefault(FontFamily.SansSerif)
+}
 
 private val ArabicPlatformStyle = PlatformTextStyle(
     includeFontPadding = true
@@ -34,8 +129,8 @@ private val ArabicLineHeightStyle = LineHeightStyle(
 )
 
 fun buildAppTypography(
-    primaryFontFamily: FontFamily = CairoFontFamily,
-    secondaryFontFamily: FontFamily = TajawalFontFamily
+    primaryFontFamily: FontFamily = FontFamily.SansSerif,
+    secondaryFontFamily: FontFamily = primaryFontFamily
 ): Typography {
     return Typography(
         headlineLarge = TextStyle(
@@ -43,6 +138,7 @@ fun buildAppTypography(
             fontWeight = FontWeight.Bold,
             fontSize = 28.sp,
             lineHeight = 36.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
@@ -51,6 +147,7 @@ fun buildAppTypography(
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp,
             lineHeight = 32.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
@@ -59,6 +156,7 @@ fun buildAppTypography(
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             lineHeight = 28.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
@@ -67,6 +165,7 @@ fun buildAppTypography(
             fontWeight = FontWeight.Bold,
             fontSize = 19.sp,
             lineHeight = 26.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
@@ -75,6 +174,7 @@ fun buildAppTypography(
             fontWeight = FontWeight.Bold,
             fontSize = 17.sp,
             lineHeight = 24.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
@@ -83,54 +183,61 @@ fun buildAppTypography(
             fontWeight = FontWeight.SemiBold,
             fontSize = 15.sp,
             lineHeight = 22.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
         bodyLarge = TextStyle(
             fontFamily = primaryFontFamily,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Medium,
             fontSize = 17.sp,
             lineHeight = 24.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
         bodyMedium = TextStyle(
             fontFamily = secondaryFontFamily,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Normal,
             fontSize = 15.sp,
-            lineHeight = 22.sp,
+            lineHeight = 21.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
         bodySmall = TextStyle(
             fontFamily = secondaryFontFamily,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Normal,
             fontSize = 13.sp,
             lineHeight = 19.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
         labelLarge = TextStyle(
             fontFamily = primaryFontFamily,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 15.sp,
             lineHeight = 21.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
         labelMedium = TextStyle(
             fontFamily = primaryFontFamily,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Medium,
             fontSize = 13.sp,
             lineHeight = 18.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
         labelSmall = TextStyle(
             fontFamily = primaryFontFamily,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Medium,
             fontSize = 11.sp,
             lineHeight = 16.sp,
+            fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         )

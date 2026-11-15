@@ -35,8 +35,6 @@ import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -61,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.PassingExpenseEntity
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
@@ -69,6 +68,8 @@ import az.pdr.taqdiya2.data.local.VendorEntity
 import az.pdr.taqdiya2.ui.components.ConfirmVendorPaymentSheet
 import az.pdr.taqdiya2.ui.components.VendorIconMapper
 import az.pdr.taqdiya2.ui.components.VendorPendingBalanceSheet
+import az.pdr.taqdiya2.ui.theme.ambientCardBorder
+import az.pdr.taqdiya2.ui.theme.ambientCardShadow
 import az.pdr.taqdiya2.ui.viewmodel.HomePrepUiState
 import az.pdr.taqdiya2.util.CurrencyFormatter
 import java.text.SimpleDateFormat
@@ -153,7 +154,7 @@ fun PocketAuditScreen(
                     Text(
                         text = "المصاريف العابرة (${uiState.passingExpenses.size}):",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
@@ -192,21 +193,33 @@ fun PocketAuditScreen(
 
         if (uiState.passingExpenses.isEmpty()) {
             item(key = "passing_expenses_empty") {
+                val emptyShape = RoundedCornerShape(16.dp)
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    modifier = Modifier.fillMaxWidth()
+                    shape = emptyShape,
+                    border = ambientCardBorder(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .ambientCardShadow(shape = emptyShape, elevation = 4.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ReceiptLong,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ReceiptLong,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "لا توجد مصاريف عابرة مسجلة في هذه الجولة بعد.",
@@ -218,11 +231,14 @@ fun PocketAuditScreen(
             }
         } else {
             items(uiState.passingExpenses, key = { "expense_${it.id}" }) { expense ->
+                val expenseShape = RoundedCornerShape(16.dp)
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    modifier = Modifier.fillMaxWidth()
+                    shape = expenseShape,
+                    border = ambientCardBorder(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .ambientCardShadow(shape = expenseShape, elevation = 5.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -234,16 +250,16 @@ fun PocketAuditScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.ReceiptLong,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(20.dp)
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(19.dp)
                                 )
                             }
                             Spacer(modifier = Modifier.width(10.dp))
@@ -295,7 +311,7 @@ fun PocketAuditScreen(
                 Text(
                     text = "كشف حساب البائعين والصرف العالق:",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -307,13 +323,15 @@ fun PocketAuditScreen(
                 val vPayment = uiState.vendorPayments.firstOrNull { it.vendorId == vendor.id }
                 val vActualPaid = vPayment?.actualPaidDirhams ?: vCalcTotal
                 val hasPending = abs(vendor.pendingBalanceDirhams) > 0.009
+                val vendorCardShape = RoundedCornerShape(18.dp)
 
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    shape = RoundedCornerShape(18.dp)
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .ambientCardShadow(shape = vendorCardShape, elevation = 6.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = ambientCardBorder(),
+                    shape = vendorCardShape
                 ) {
                     Column(
                         modifier = Modifier
@@ -332,16 +350,16 @@ fun PocketAuditScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.primaryContainer),
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = VendorIconMapper.getIcon(vendor.iconKey),
                                         contentDescription = vendor.name,
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.size(22.dp)
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -349,7 +367,7 @@ fun PocketAuditScreen(
                                     Text(
                                         text = vendor.name,
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.primary,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
@@ -364,7 +382,7 @@ fun PocketAuditScreen(
                             Spacer(modifier = Modifier.width(8.dp))
 
                             Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Column(
@@ -374,7 +392,7 @@ fun PocketAuditScreen(
                                     Text(
                                         text = CurrencyFormatter.formatDirhams(vActualPaid),
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         softWrap = false
@@ -384,7 +402,7 @@ fun PocketAuditScreen(
                                             text = CurrencyFormatter.formatRials(vActualPaid),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.secondary,
-                                            fontWeight = FontWeight.Bold,
+                                            fontWeight = FontWeight.Medium,
                                             maxLines = 1,
                                             softWrap = false
                                         )
@@ -395,14 +413,14 @@ fun PocketAuditScreen(
 
                         if (vPayment != null && vPayment.forgivenDiscountDirhams > 0.0) {
                             Surface(
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.65f),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Text(
                                     text = "حساب الميزان كان ${CurrencyFormatter.formatDirhams(vPayment.calculatedTotalDirhams)} — سامح البائع في ${CurrencyFormatter.formatDirhams(vPayment.forgivenDiscountDirhams)}",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.Medium,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 )
                             }
@@ -418,9 +436,9 @@ fun PocketAuditScreen(
                             }
                             Surface(
                                 color = if (isVendorOwingMe) {
-                                    MaterialTheme.colorScheme.tertiaryContainer
+                                    MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f)
                                 } else {
-                                    MaterialTheme.colorScheme.errorContainer
+                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
                                 },
                                 shape = RoundedCornerShape(10.dp)
                             ) {
@@ -443,7 +461,7 @@ fun PocketAuditScreen(
                                         } else {
                                             MaterialTheme.colorScheme.onErrorContainer
                                         },
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                 }
                             }
@@ -461,7 +479,7 @@ fun PocketAuditScreen(
                                     .height(40.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable { paymentDialogVendor = vendor },
-                                color = MaterialTheme.colorScheme.primaryContainer,
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
@@ -480,7 +498,7 @@ fun PocketAuditScreen(
                                         text = if (vPayment != null) "تعديل الدفع" else "تأكيد الدفع",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -493,7 +511,7 @@ fun PocketAuditScreen(
                                     .height(40.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable { pendingBalanceDialogVendor = vendor },
-                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
@@ -512,7 +530,7 @@ fun PocketAuditScreen(
                                         text = if (hasPending) "تصفية الصرف" else "صرف عالق",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -531,15 +549,24 @@ fun PocketAuditScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.History,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(19.dp)
+                    )
+                }
                 Text(
                     text = "أرشيف الجولات السابقة (${uiState.archivedRounds.size}):",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -547,11 +574,14 @@ fun PocketAuditScreen(
 
         if (uiState.archivedRounds.isEmpty()) {
             item(key = "archived_rounds_empty") {
+                val emptyArchiveShape = RoundedCornerShape(16.dp)
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    modifier = Modifier.fillMaxWidth()
+                    shape = emptyArchiveShape,
+                    border = ambientCardBorder(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .ambientCardShadow(shape = emptyArchiveShape, elevation = 4.dp)
                 ) {
                     Text(
                         text = "لا توجد جولات مؤرشفة بعد. عند الانتهاء من التقدية والعودة للبيت، اضغط على «إنهاء الجولة وحفظها في الأرشيف» ليُحفظ سجل تقديتك هنا.",
@@ -565,16 +595,18 @@ fun PocketAuditScreen(
             items(uiState.archivedRounds, key = { "archived_round_${it.id}" }) { round ->
                 val dateFormat = remember { SimpleDateFormat("yyyy/MM/dd - HH:mm", Locale.getDefault()) }
                 val dateStr = dateFormat.format(Date(round.completedAt ?: round.createdAt))
+                val archiveCardShape = RoundedCornerShape(18.dp)
 
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
+                        .ambientCardShadow(shape = archiveCardShape, elevation = 5.dp)
+                        .clip(archiveCardShape)
                         .clickable { viewingArchivedRound = round }
                         .testTag("archived_round_card_${round.id}"),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    shape = RoundedCornerShape(18.dp)
+                    border = ambientCardBorder(),
+                    shape = archiveCardShape
                 ) {
                     Row(
                         modifier = Modifier
@@ -587,7 +619,7 @@ fun PocketAuditScreen(
                             Text(
                                 text = round.title,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
@@ -600,7 +632,7 @@ fun PocketAuditScreen(
                                 text = "خرجت بـ ${CurrencyFormatter.formatPocketDirhams(round.initialPocketDirhams)} | صرفت ${CurrencyFormatter.formatDirhams(round.archivedTotalSpentDirhams)}",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.secondary,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
 
@@ -697,7 +729,7 @@ fun PocketAuditScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Column(
@@ -786,13 +818,16 @@ private fun PocketLedgerSummaryCard(
 ) {
     val isOverBudget = uiState.netPocketBalanceDirhams < -0.009
     val showRial = uiState.appSettings.showRial
+    val summaryShape = RoundedCornerShape(22.dp)
 
+    // Single floating card with ambient shadow and zero nested hard borders!
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        shadowElevation = 2.dp,
-        shape = RoundedCornerShape(22.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .ambientCardShadow(shape = summaryShape, elevation = 6.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = ambientCardBorder(),
+        shape = summaryShape
     ) {
         Column(
             modifier = Modifier
@@ -808,16 +843,16 @@ private fun PocketLedgerSummaryCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(13.dp))
-                            .background(MaterialTheme.colorScheme.secondary),
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.AccountBalanceWallet,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondary,
-                            modifier = Modifier.size(24.dp)
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
@@ -825,233 +860,226 @@ private fun PocketLedgerSummaryCard(
                         Text(
                             text = "كشف جرد الجيب",
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "اشتريت $purchasedItemsCount أغراض • بقي $waitingItemsCount في القائمة",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
 
-            // Harmonious Financial Breakdown Box
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier.fillMaxWidth()
+            // Two balanced side-by-side borderless stat tiles: Initial Pocket vs Total Spent
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                // Tile 1: Initial Pocket
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
-                    // Two balanced side-by-side stat tiles: Initial Pocket vs Total Spent
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        // Tile 1: Initial Pocket
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
-                            shape = RoundedCornerShape(14.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = "خرجت من البيت بـ",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1
-                                )
-                                Text(
-                                    text = CurrencyFormatter.formatPocketDirhams(uiState.initialPocketDirhams),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                                if (showRial) {
-                                    Text(
-                                        text = CurrencyFormatter.formatPocketRials(uiState.initialPocketDirhams),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        softWrap = false
-                                    )
-                                }
-                            }
-                        }
-
-                        // Tile 2: Total Actual Spent
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f)),
-                            shape = RoundedCornerShape(14.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = "مجموع ما صرفته فعلياً",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f),
-                                    maxLines = 1
-                                )
-                                Text(
-                                    text = CurrencyFormatter.formatDirhams(uiState.totalActualSpentDirhams),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    modifier = Modifier.testTag("audit_total_spent_text")
-                                )
-                                if (showRial) {
-                                    Text(
-                                        text = CurrencyFormatter.formatRials(uiState.totalActualSpentDirhams),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        softWrap = false
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (uiState.totalPassingExpensesDirhams > 0.0) {
                         Text(
-                            text = "تفصيل المصروف: عند البائعين ${CurrencyFormatter.formatDirhams(uiState.totalActualVendorPaidDirhams)} + مصاريف عابرة ${CurrencyFormatter.formatDirhams(uiState.totalPassingExpensesDirhams)}",
-                            style = MaterialTheme.typography.labelSmall,
+                            text = "خرجت من البيت بـ",
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 4.dp)
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                    }
-
-                    // Optional Row: Savings from Forgiven Small Change
-                    if (uiState.totalForgivenSavingsDirhams > 0.0) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Savings,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.tertiary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "توفير المسامحة في الصرف:",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Text(
-                                    text = "+ ${CurrencyFormatter.formatDirhams(uiState.totalForgivenSavingsDirhams)}" +
-                                        if (showRial) " (${CurrencyFormatter.formatRials(uiState.totalForgivenSavingsDirhams)})" else "",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
+                        Text(
+                            text = CurrencyFormatter.formatPocketDirhams(uiState.initialPocketDirhams),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        if (showRial) {
+                            Text(
+                                text = CurrencyFormatter.formatPocketRials(uiState.initialPocketDirhams),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                         }
                     }
+                }
 
-                    // Highlighted Remaining in Pocket Banner
-                    Surface(
-                        color = if (isOverBudget) {
-                            MaterialTheme.colorScheme.errorContainer
-                        } else {
-                            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.65f)
-                        },
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary
-                        ),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth()
+                // Tile 2: Total Actual Spent
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "مجموع ما صرفته",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = CurrencyFormatter.formatDirhams(uiState.totalActualSpentDirhams),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.testTag("audit_total_spent_text")
+                        )
+                        if (showRial) {
+                            Text(
+                                text = CurrencyFormatter.formatRials(uiState.totalActualSpentDirhams),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (uiState.totalPassingExpensesDirhams > 0.0) {
+                Text(
+                    text = "تفصيل المصروف: عند البائعين ${CurrencyFormatter.formatDirhams(uiState.totalActualVendorPaidDirhams)} + مصاريف عابرة ${CurrencyFormatter.formatDirhams(uiState.totalPassingExpensesDirhams)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
+
+            // Optional Row: Savings from Forgiven Small Change
+            if (uiState.totalForgivenSavingsDirhams > 0.0) {
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.65f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = if (isOverBudget) "تجاوزت ميزانية الجيب بـ:" else "الباقي المفترض في جيبك الآن:",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = if (isOverBudget) {
-                                        MaterialTheme.colorScheme.onErrorContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onTertiaryContainer
-                                    },
-                                    fontWeight = FontWeight.Bold
-                                )
-                                if (showRial) {
-                                    Text(
-                                        text = CurrencyFormatter.formatPocketRials(abs(uiState.netPocketBalanceDirhams)),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.width(10.dp))
-
-                            Surface(
-                                color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    text = CurrencyFormatter.formatPocketDirhams(abs(uiState.netPocketBalanceDirhams)),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = if (isOverBudget) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onTertiary,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    modifier = Modifier
-                                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                                        .testTag("audit_remaining_pocket_text")
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Outlined.Savings,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "توفير المسامحة في الصرف:",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
+                        Text(
+                            text = "+ ${CurrencyFormatter.formatDirhams(uiState.totalForgivenSavingsDirhams)}" +
+                                if (showRial) " (${CurrencyFormatter.formatRials(uiState.totalForgivenSavingsDirhams)})" else "",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                }
+            }
+
+            // Highlighted Remaining in Pocket Banner (non-breaking space prevents "بـ:" from wrapping onto a separate line!)
+            Surface(
+                color = if (isOverBudget) {
+                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.75f)
+                } else {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+                },
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (isOverBudget) {
+                                "تجاوزت ميزانية الجيب\u00A0بـ:"
+                            } else {
+                                "الباقي المفترض في جيبك\u00A0الآن:"
+                            },
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (isOverBudget) {
+                                MaterialTheme.colorScheme.onErrorContainer
+                            } else {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            },
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (showRial) {
+                            Text(
+                                text = CurrencyFormatter.formatPocketRials(abs(uiState.netPocketBalanceDirhams)),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (isOverBudget) {
+                                    MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
+                                } else {
+                                    MaterialTheme.colorScheme.secondary
+                                },
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Surface(
+                        color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = CurrencyFormatter.formatPocketDirhams(abs(uiState.netPocketBalanceDirhams)),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = if (isOverBudget) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier
+                                .padding(horizontal = 14.dp, vertical = 6.dp)
+                                .testTag("audit_remaining_pocket_text")
+                        )
                     }
                 }
             }
@@ -1064,8 +1092,8 @@ private fun PocketLedgerSummaryCard(
                     .height(52.dp)
                     .testTag("open_finish_round_button"),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -1138,7 +1166,7 @@ private fun FinishRoundSheet(
             Surface(
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                border = ambientCardBorder()
             ) {
                 Column(
                     modifier = Modifier
@@ -1171,7 +1199,7 @@ private fun FinishRoundSheet(
 
             if (waitingItemsCount > 0) {
                 Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
@@ -1236,7 +1264,7 @@ private fun FinishRoundSheet(
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { nextPocketBudget = dhValue },
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Box(
@@ -1277,8 +1305,8 @@ private fun FinishRoundSheet(
                     .height(58.dp)
                     .testTag("confirm_finish_round_submit_button"),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.onTertiary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 shape = RoundedCornerShape(16.dp)
             ) {
