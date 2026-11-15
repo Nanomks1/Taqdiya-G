@@ -13,6 +13,7 @@ import az.pdr.taqdiya2.data.local.VendorEntity
 import az.pdr.taqdiya2.data.local.VendorPaymentEntity
 import az.pdr.taqdiya2.data.repository.TaqdiyaRepository
 import az.pdr.taqdiya2.util.CurrencyFormatter
+import az.pdr.taqdiya2.util.PinSecurityUtil
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -140,17 +141,19 @@ data class HomePrepUiState(
         get() = deletedShoppingItems.size + deletedPassingExpenses.size + deletedVendors.size
 
     val initialPocketDirhams: Double
-        get() = activeRound?.initialPocketDirhams ?: 200.0
+        get() = CurrencyFormatter.roundMoney(activeRound?.initialPocketDirhams ?: 0.0)
 
     val totalCalculatedItemsDirhams: Double
-        get() = shoppingItems.filter { it.isPurchased && !it.isDeleted }.sumOf { it.totalDirhams }
+        get() = CurrencyFormatter.roundMoney(
+            shoppingItems.filter { it.isPurchased && !it.isDeleted }.sumOf { it.totalDirhams }
+        )
 
     val totalActualVendorPaidDirhams: Double
         get() {
             val activePurchased = shoppingItems.filter { it.isPurchased && !it.isDeleted }
             val paymentsByVendor = vendorPayments.associateBy { it.vendorId }
             val involvedVendorIds = (activePurchased.map { it.vendorId } + paymentsByVendor.keys).toSet()
-            return involvedVendorIds.sumOf { vendorId ->
+            val rawSum = involvedVendorIds.sumOf { vendorId ->
                 val confirmedPayment = paymentsByVendor[vendorId]
                 if (confirmedPayment != null) {
                     confirmedPayment.actualPaidDirhams
@@ -158,22 +161,25 @@ data class HomePrepUiState(
                     activePurchased.filter { it.vendorId == vendorId }.sumOf { it.totalDirhams }
                 }
             }
+            return CurrencyFormatter.roundMoney(rawSum)
         }
 
     val totalPassingExpensesDirhams: Double
-        get() = passingExpenses.filter { !it.isDeleted }.sumOf { it.amountDirhams }
+        get() = CurrencyFormatter.roundMoney(
+            passingExpenses.filter { !it.isDeleted }.sumOf { it.amountDirhams }
+        )
 
     val totalActualSpentDirhams: Double
-        get() = totalActualVendorPaidDirhams + totalPassingExpensesDirhams
+        get() = CurrencyFormatter.roundMoney(totalActualVendorPaidDirhams + totalPassingExpensesDirhams)
 
     val totalPurchasedDirhams: Double
         get() = totalActualSpentDirhams
 
     val totalForgivenSavingsDirhams: Double
-        get() = vendorPayments.sumOf { it.forgivenDiscountDirhams }
+        get() = CurrencyFormatter.roundMoney(vendorPayments.sumOf { it.forgivenDiscountDirhams })
 
     val netPocketBalanceDirhams: Double
-        get() = initialPocketDirhams - totalActualSpentDirhams
+        get() = CurrencyFormatter.roundMoney(initialPocketDirhams - totalActualSpentDirhams)
 
     val remainingPocketDirhams: Double
         get() = netPocketBalanceDirhams.coerceAtLeast(0.0)
@@ -1120,55 +1126,16 @@ class HomePrepViewModel(
     }
 
     fun updateFontFamilyKey(fontFamilyKey: String) {
+        val safeKey = if (fontFamilyKey == "CUSTOM") "IBM_PLEX" else fontFamilyKey
         viewModelScope.launch {
-            repository.updateAppSettings { it.copy(fontFamilyKey = fontFamilyKey) }
-            val fontLabel = when (fontFamilyKey) {
+            repository.updateAppSettings { it.copy(fontFamilyKey = safeKey) }
+            val fontLabel = when (safeKey) {
                 "VAZIRMATN" -> "خط وزير (Vazirmatn)"
                 "BALOO" -> "خط Baloo Bhaijaan 2"
                 "SYSTEM" -> "خط الهاتف (النظام)"
-                "CUSTOM" -> "خط يدوي (.ttf / .otf)"
                 else -> "خط IBM Plex Arabic"
             }
             _statusMessages.tryEmit("تم تفعيل $fontLabel")
-        }
-    }
-
-    fun onCustomFontSlotImported(
-        slot: az.pdr.taqdiya2.util.CustomFontWeightSlot,
-        displayFileName: String
-    ) {
-        viewModelScope.launch {
-            repository.updateAppSettings { current ->
-                when (slot) {
-                    az.pdr.taqdiya2.util.CustomFontWeightSlot.REGULAR -> current.copy(
-                        fontFamilyKey = "CUSTOM",
-                        customFontRegularName = displayFileName
-                    )
-                    az.pdr.taqdiya2.util.CustomFontWeightSlot.MEDIUM -> current.copy(
-                        fontFamilyKey = "CUSTOM",
-                        customFontMediumName = displayFileName
-                    )
-                    az.pdr.taqdiya2.util.CustomFontWeightSlot.BOLD -> current.copy(
-                        fontFamilyKey = "CUSTOM",
-                        customFontBoldName = displayFileName
-                    )
-                }
-            }
-            _statusMessages.tryEmit("تم استيراد خط ${slot.arabicLabel}: «$displayFileName»")
-        }
-    }
-
-    fun clearAllCustomFonts() {
-        viewModelScope.launch {
-            repository.updateAppSettings { current ->
-                current.copy(
-                    fontFamilyKey = "IBM_PLEX",
-                    customFontRegularName = "",
-                    customFontMediumName = "",
-                    customFontBoldName = ""
-                )
-            }
-            _statusMessages.tryEmit("تم مسح ملفات الخط المخصص والعودة إلى خط IBM Plex Arabic")
         }
     }
 
@@ -1222,13 +1189,14 @@ class HomePrepViewModel(
     fun setOrUpdatePinCode(newPin: String) {
         val cleanPin = newPin.trim()
         if (cleanPin.length != 4 || !cleanPin.all { it.isDigit() }) return
+        val hashedPin = PinSecurityUtil.hashPin(cleanPin)
         viewModelScope.launch {
-            repository.updateAppSettings { it.copy(pinCode = cleanPin) }
+            repository.updateAppSettings { it.copy(pinCode = hashedPin) }
             draftState.value = draftState.value.copy(
                 isSessionPinUnlocked = true,
                 isManualPinLockRequested = false
             )
-            _statusMessages.tryEmit("تم حفظ وتفعيل الرمز السري (PIN) لحماية الكناش")
+            _statusMessages.tryEmit("تم حفظ وتشفير الرمز السري (PIN) لحماية الكناش")
         }
     }
 
@@ -1245,7 +1213,7 @@ class HomePrepViewModel(
 
     fun unlockWithPin(enteredPin: String): Boolean {
         val currentPin = uiState.value.appSettings.pinCode
-        return if (enteredPin == currentPin || currentPin.isBlank()) {
+        return if (PinSecurityUtil.verifyPin(enteredPin, currentPin)) {
             draftState.value = draftState.value.copy(
                 isSessionPinUnlocked = true,
                 isManualPinLockRequested = false

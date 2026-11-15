@@ -44,6 +44,7 @@ import az.pdr.taqdiya2.util.CurrencyFormatter
 fun TopPocketBar(
     remainingPocketDirhams: Double,
     initialPocketDirhams: Double,
+    totalActualSpentDirhams: Double = 0.0,
     totalMissingItemsCount: Int,
     privacyMaskAmounts: Boolean = CurrencyFormatter.privacyMaskState,
     showRial: Boolean = CurrencyFormatter.showRialState,
@@ -240,47 +241,79 @@ fun TopPocketBar(
 
                         Spacer(modifier = Modifier.width(10.dp))
 
+                        val isPocketUnset = initialPocketDirhams <= 0.0 && totalActualSpentDirhams <= 0.0
+
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
-                                text = if (privacyMaskAmounts) {
-                                    "الباقي في الجيب (مخفي)"
-                                } else {
-                                    "الباقي في الجيب الآن"
+                                text = when {
+                                    privacyMaskAmounts -> "الباقي في الجيب (مخفي)"
+                                    isPocketUnset -> "لم تحدد مبلغ الجيب بعد"
+                                    else -> "الباقي في الجيب الآن"
                                 },
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.88f),
                                 fontWeight = FontWeight.Medium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
 
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = CurrencyFormatter.formatPocketDirhams(remainingPocketDirhams),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-
-                                if (showRial) {
+                            if (isPocketUnset && !privacyMaskAmounts) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "0 درهم",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
                                     Surface(
-                                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                                        color = MaterialTheme.colorScheme.secondary,
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
                                         Text(
-                                            text = CurrencyFormatter.formatPocketRials(remainingPocketDirhams),
+                                            text = "اضغط لتحديد المبلغ",
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onPrimary,
-                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSecondary,
+                                            fontWeight = FontWeight.Bold,
                                             maxLines = 1,
                                             softWrap = false,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                         )
+                                    }
+                                }
+                            } else {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = CurrencyFormatter.formatPocketDirhams(remainingPocketDirhams),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+
+                                    if (showRial) {
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(
+                                                text = CurrencyFormatter.formatPocketRials(remainingPocketDirhams),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.onPrimary,
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1,
+                                                softWrap = false,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }

@@ -22,7 +22,7 @@ data class VendorEntity(
 data class ShoppingRoundEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
-    val initialPocketDirhams: Double = 200.0,
+    val initialPocketDirhams: Double = 0.0,
     val createdAt: Long = System.currentTimeMillis(),
     val isActive: Boolean = true,
     val isArchived: Boolean = false,

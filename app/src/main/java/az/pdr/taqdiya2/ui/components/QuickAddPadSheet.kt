@@ -743,17 +743,16 @@ fun QuickAddPadSheet(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OutlinedTextField(
                             value = itemNameInput,
                             onValueChange = onItemNameChanged,
                             placeholder = {
                                 Text(
-                                    text = "اسم الغرض...",
+                                    text = "اسم الغرض (مثال: شعرية، خميرة...)",
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -761,65 +760,71 @@ fun QuickAddPadSheet(
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
-                                .weight(1.25f)
+                                .fillMaxWidth()
                                 .onFocusChanged { isNameFieldFocused = it.isFocused }
                                 .testTag("add_item_name_input"),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                         )
 
-                        OutlinedTextField(
-                            value = itemNoteInput,
-                            onValueChange = onItemNoteChanged,
-                            placeholder = {
-                                Text(
-                                    text = "مقدار/ملاحظة...",
-                                    maxLines = 1,
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = itemNoteInput,
+                                onValueChange = onItemNoteChanged,
+                                placeholder = {
+                                    Text(
+                                        text = "المقدار أو ملاحظة (اختياري)...",
+                                        maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .onFocusChanged { isNoteFieldFocused = it.isFocused }
+                                    .testTag("add_item_note_input"),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        onSubmitCustomItem()
+                                        hideKeyboardAndExitTyping()
+                                    }
                                 )
-                            },
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .weight(0.95f)
-                                .onFocusChanged { isNoteFieldFocused = it.isFocused }
-                                .testTag("add_item_note_input"),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
+                            )
+
+                            Button(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     onSubmitCustomItem()
                                     hideKeyboardAndExitTyping()
-                                }
-                            )
-                        )
-
-                        Button(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onSubmitCustomItem()
-                                hideKeyboardAndExitTyping()
-                            },
-                            enabled = itemNameInput.trim().isNotEmpty(),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                            modifier = Modifier
-                                .height(54.dp)
-                                .testTag("submit_add_item_button"),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Add,
-                                contentDescription = "إضافة",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "أضف",
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false
-                            )
+                                },
+                                enabled = itemNameInput.trim().isNotEmpty(),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                                modifier = Modifier
+                                    .height(54.dp)
+                                    .testTag("submit_add_item_button"),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondary
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Add,
+                                    contentDescription = "إضافة",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "أضف",
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
                     }
 

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -59,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.PassingExpenseEntity
@@ -473,35 +475,37 @@ fun PocketAuditScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(40.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable { paymentDialogVendor = vendor },
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
+                            if (vPurchased.isNotEmpty() || vPayment != null) {
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(40.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { paymentDialogVendor = vendor },
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                                    shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Payments,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = if (vPayment != null) "تعديل الدفع" else "تأكيد الدفع",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1,
-                                        softWrap = false
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Payments,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = if (vPayment != null) "تعديل الدفع" else "تأكيد الدفع",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
                                 }
                             }
 
@@ -527,7 +531,7 @@ fun PocketAuditScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = if (hasPending) "تصفية الصرف" else "صرف عالق",
+                                        text = if (hasPending) "تصفية الصرف" else "تسجيل صرف عالق",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.SemiBold,
@@ -1044,7 +1048,7 @@ private fun PocketLedgerSummaryCard(
                                 MaterialTheme.colorScheme.onPrimaryContainer
                             },
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                         if (showRial) {
@@ -1089,8 +1093,9 @@ private fun PocketLedgerSummaryCard(
                 onClick = onOpenFinishRound,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
+                    .heightIn(min = 54.dp)
                     .testTag("open_finish_round_button"),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -1103,7 +1108,8 @@ private fun PocketLedgerSummaryCard(
                     text = "إنهاء الجولة وحفظها في الأرشيف",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1
+                    textAlign = TextAlign.Center,
+                    maxLines = 2
                 )
             }
         }
@@ -1130,7 +1136,7 @@ private fun FinishRoundSheet(
     var newRoundTitle by remember { mutableStateOf("جولة التقدية الحالية") }
     var nextPocketBudget by remember {
         mutableDoubleStateOf(
-            if (remainingPocketDirhams > 0.0) remainingPocketDirhams else 200.0
+            if (remainingPocketDirhams > 0.0) remainingPocketDirhams else 0.0
         )
     }
 
@@ -1242,6 +1248,7 @@ private fun FinishRoundSheet(
                 if (remainingPocketDirhams > 0.0) {
                     list.add("الباقي في الجيب (${CurrencyFormatter.formatDirhams(remainingPocketDirhams)})" to remainingPocketDirhams)
                 }
+                list.add("تحديد لاحقاً (0 درهم)" to 0.0)
                 listOf(100.0, 150.0, 200.0, 300.0, 500.0).forEach { dh ->
                     if (abs(dh - remainingPocketDirhams) > 0.009) {
                         list.add(CurrencyFormatter.formatDirhams(dh) to dh)

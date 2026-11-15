@@ -1,5 +1,6 @@
 package az.pdr.taqdiya2.util
 
+import android.content.Context
 import az.pdr.taqdiya2.data.local.AppSettingsEntity
 import az.pdr.taqdiya2.data.local.DictionaryItemEntity
 import az.pdr.taqdiya2.data.local.PassingExpenseEntity
@@ -8,6 +9,7 @@ import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.data.local.ShoppingRoundEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
 import az.pdr.taqdiya2.data.local.VendorPaymentEntity
+import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -23,28 +25,83 @@ data class FullBackupPayload(
     val appSettings: AppSettingsEntity
 )
 
+data class AutoBackupInfo(
+    val lastSavedAtMillis: Long,
+    val hasPreviousSnapshot: Boolean,
+    val sizeBytes: Long
+)
+
 object BackupManager {
     private const val BACKUP_FORMAT_TAG = "TAQDIYA_LEDGER_BACKUP_V1"
+    private const val AUTO_BACKUP_DIR = "backups"
+    private const val AUTO_BACKUP_LATEST_FILE = "auto_backup_latest.json"
+    private const val AUTO_BACKUP_PREVIOUS_FILE = "auto_backup_previous.json"
+
+    fun saveAutoBackup(context: Context, json: String) {
+        runCatching {
+            val dir = File(context.filesDir, AUTO_BACKUP_DIR)
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            val latestFile = File(dir, AUTO_BACKUP_LATEST_FILE)
+            val previousFile = File(dir, AUTO_BACKUP_PREVIOUS_FILE)
+            if (latestFile.exists() && latestFile.length() > 0L) {
+                latestFile.copyTo(previousFile, overwrite = true)
+            }
+            latestFile.writeText(json, Charsets.UTF_8)
+        }
+    }
+
+    fun getAutoBackupInfo(context: Context): AutoBackupInfo? {
+        return runCatching {
+            val dir = File(context.filesDir, AUTO_BACKUP_DIR)
+            val latestFile = File(dir, AUTO_BACKUP_LATEST_FILE)
+            val previousFile = File(dir, AUTO_BACKUP_PREVIOUS_FILE)
+            if (!latestFile.exists() || latestFile.length() <= 0L) {
+                null
+            } else {
+                AutoBackupInfo(
+                    lastSavedAtMillis = latestFile.lastModified(),
+                    hasPreviousSnapshot = previousFile.exists() && previousFile.length() > 0L,
+                    sizeBytes = latestFile.length()
+                )
+            }
+        }.getOrNull()
+    }
+
+    fun readLatestAutoBackupJson(context: Context): String? {
+        return runCatching {
+            val dir = File(context.filesDir, AUTO_BACKUP_DIR)
+            val latestFile = File(dir, AUTO_BACKUP_LATEST_FILE)
+            val previousFile = File(dir, AUTO_BACKUP_PREVIOUS_FILE)
+            when {
+                latestFile.exists() && latestFile.length() > 0L -> latestFile.readText(Charsets.UTF_8)
+                previousFile.exists() && previousFile.length() > 0L -> previousFile.readText(Charsets.UTF_8)
+                else -> null
+            }
+        }.getOrNull()
+    }
 
     fun encodeToJson(payload: FullBackupPayload): String {
         val root = JSONObject()
         root.put("format", BACKUP_FORMAT_TAG)
         root.put("exportedAt", payload.exportedAt)
 
-        // 1. Settings
+        // 1. Settings (PIN is always hashed with SHA-256 before exporting)
+        val normalizedFont = when (payload.appSettings.fontFamilyKey) {
+            "VAZIRMATN", "BALOO", "SYSTEM" -> payload.appSettings.fontFamilyKey
+            else -> "IBM_PLEX"
+        }
         val settingsObj = JSONObject().apply {
             put("themeMode", payload.appSettings.themeMode)
             put("showRial", payload.appSettings.showRial)
             put("uiScaleMode", payload.appSettings.uiScaleMode)
             put("privacyMaskAmounts", payload.appSettings.privacyMaskAmounts)
             put("privacyMaskPocketOnly", payload.appSettings.privacyMaskPocketOnly)
-            put("pinCode", payload.appSettings.pinCode)
+            put("pinCode", PinSecurityUtil.normalizeForStorage(payload.appSettings.pinCode))
             put("colorPalette", payload.appSettings.colorPalette)
             put("animationMode", payload.appSettings.animationMode)
-            put("fontFamilyKey", payload.appSettings.fontFamilyKey)
-            put("customFontRegularName", payload.appSettings.customFontRegularName)
-            put("customFontMediumName", payload.appSettings.customFontMediumName)
-            put("customFontBoldName", payload.appSettings.customFontBoldName)
+            put("fontFamilyKey", normalizedFont)
         }
         root.put("appSettings", settingsObj)
 
@@ -58,7 +115,7 @@ object BackupManager {
                     put("specialty", v.specialty)
                     put("iconKey", v.iconKey)
                     put("sortOrder", v.sortOrder)
-                    put("pendingBalanceDirhams", v.pendingBalanceDirhams)
+                    put("pendingBalanceDirhams", CurrencyFormatter.roundMoney(v.pendingBalanceDirhams))
                     put("isDeleted", v.isDeleted)
                     if (v.deletedAt != null) put("deletedAt", v.deletedAt)
                 }
@@ -73,13 +130,13 @@ object BackupManager {
                 JSONObject().apply {
                     put("id", r.id)
                     put("title", r.title)
-                    put("initialPocketDirhams", r.initialPocketDirhams)
+                    put("initialPocketDirhams", CurrencyFormatter.roundMoney(r.initialPocketDirhams))
                     put("createdAt", r.createdAt)
                     put("isActive", r.isActive)
                     put("isArchived", r.isArchived)
                     if (r.completedAt != null) put("completedAt", r.completedAt)
-                    put("archivedTotalSpentDirhams", r.archivedTotalSpentDirhams)
-                    put("archivedSavingsDirhams", r.archivedSavingsDirhams)
+                    put("archivedTotalSpentDirhams", CurrencyFormatter.roundMoney(r.archivedTotalSpentDirhams))
+                    put("archivedSavingsDirhams", CurrencyFormatter.roundMoney(r.archivedSavingsDirhams))
                     put("archivedItemsCount", r.archivedItemsCount)
                 }
             )
@@ -98,10 +155,10 @@ object BackupManager {
                     put("note", item.note)
                     put("isPurchased", item.isPurchased)
                     put("purchaseMode", item.purchaseMode)
-                    put("unitPriceDirhams", item.unitPriceDirhams)
+                    put("unitPriceDirhams", CurrencyFormatter.roundMoney(item.unitPriceDirhams))
                     put("quantity", item.quantity)
-                    put("cleaningFeeDirhams", item.cleaningFeeDirhams)
-                    put("totalDirhams", item.totalDirhams)
+                    put("cleaningFeeDirhams", CurrencyFormatter.roundMoney(item.cleaningFeeDirhams))
+                    put("totalDirhams", CurrencyFormatter.roundMoney(item.totalDirhams))
                     put("createdAt", item.createdAt)
                     put("isDeleted", item.isDeleted)
                     if (item.deletedAt != null) put("deletedAt", item.deletedAt)
@@ -118,10 +175,10 @@ object BackupManager {
                     put("id", p.id)
                     put("roundId", p.roundId)
                     put("vendorId", p.vendorId)
-                    put("calculatedTotalDirhams", p.calculatedTotalDirhams)
-                    put("actualPaidDirhams", p.actualPaidDirhams)
-                    put("forgivenDiscountDirhams", p.forgivenDiscountDirhams)
-                    put("recordedPendingChangeDirhams", p.recordedPendingChangeDirhams)
+                    put("calculatedTotalDirhams", CurrencyFormatter.roundMoney(p.calculatedTotalDirhams))
+                    put("actualPaidDirhams", CurrencyFormatter.roundMoney(p.actualPaidDirhams))
+                    put("forgivenDiscountDirhams", CurrencyFormatter.roundMoney(p.forgivenDiscountDirhams))
+                    put("recordedPendingChangeDirhams", CurrencyFormatter.roundMoney(p.recordedPendingChangeDirhams))
                     put("paidAt", p.paidAt)
                 }
             )
@@ -136,7 +193,7 @@ object BackupManager {
                     put("id", e.id)
                     put("roundId", e.roundId)
                     put("title", e.title)
-                    put("amountDirhams", e.amountDirhams)
+                    put("amountDirhams", CurrencyFormatter.roundMoney(e.amountDirhams))
                     put("createdAt", e.createdAt)
                     put("isDeleted", e.isDeleted)
                     if (e.deletedAt != null) put("deletedAt", e.deletedAt)
@@ -157,7 +214,7 @@ object BackupManager {
                     put("defaultNote", d.defaultNote)
                     put("customUnitsCsv", d.customUnitsCsv)
                     put("usageCount", d.usageCount)
-                    put("lastPriceDirhams", d.lastPriceDirhams)
+                    put("lastPriceDirhams", CurrencyFormatter.roundMoney(d.lastPriceDirhams))
                     put("lastUpdated", d.lastUpdated)
                 }
             )
@@ -175,9 +232,9 @@ object BackupManager {
                     put("vendorId", h.vendorId)
                     put("vendorName", h.vendorName)
                     put("purchaseMode", h.purchaseMode)
-                    put("unitPriceDirhams", h.unitPriceDirhams)
+                    put("unitPriceDirhams", CurrencyFormatter.roundMoney(h.unitPriceDirhams))
                     put("quantity", h.quantity)
-                    put("totalPaidDirhams", h.totalPaidDirhams)
+                    put("totalPaidDirhams", CurrencyFormatter.roundMoney(h.totalPaidDirhams))
                     if (h.shoppingItemId != null) put("shoppingItemId", h.shoppingItemId)
                     put("recordedAt", h.recordedAt)
                 }
@@ -213,16 +270,13 @@ object BackupManager {
                     uiScaleMode = settingsObj.optString("uiScaleMode", "NORMAL"),
                     privacyMaskAmounts = settingsObj.optBoolean("privacyMaskAmounts", false),
                     privacyMaskPocketOnly = settingsObj.optBoolean("privacyMaskPocketOnly", false),
-                    pinCode = settingsObj.optString("pinCode", ""),
+                    pinCode = PinSecurityUtil.normalizeForStorage(settingsObj.optString("pinCode", "")),
                     colorPalette = settingsObj.optString("colorPalette", "TERRACOTTA"),
                     animationMode = settingsObj.optString("animationMode", "LIGHT"),
                     fontFamilyKey = when (val rawFont = settingsObj.optString("fontFamilyKey", "IBM_PLEX")) {
-                        "CAIRO", "TAJAWAL", "" -> "IBM_PLEX"
-                        else -> rawFont
-                    },
-                    customFontRegularName = settingsObj.optString("customFontRegularName", ""),
-                    customFontMediumName = settingsObj.optString("customFontMediumName", ""),
-                    customFontBoldName = settingsObj.optString("customFontBoldName", "")
+                        "VAZIRMATN", "BALOO", "SYSTEM" -> rawFont
+                        else -> "IBM_PLEX"
+                    }
                 )
             } else {
                 AppSettingsEntity()
@@ -239,7 +293,7 @@ object BackupManager {
                             specialty = o.optString("specialty", ""),
                             iconKey = o.optString("iconKey", "store"),
                             sortOrder = o.optInt("sortOrder", i + 1),
-                            pendingBalanceDirhams = o.optDouble("pendingBalanceDirhams", 0.0),
+                            pendingBalanceDirhams = CurrencyFormatter.roundMoney(o.optDouble("pendingBalanceDirhams", 0.0)),
                             isDeleted = o.optBoolean("isDeleted", false),
                             deletedAt = if (o.has("deletedAt") && !o.isNull("deletedAt")) o.getLong("deletedAt") else null
                         )
@@ -255,13 +309,13 @@ object BackupManager {
                         ShoppingRoundEntity(
                             id = o.getLong("id"),
                             title = o.optString("title", "جولة التقدية"),
-                            initialPocketDirhams = o.optDouble("initialPocketDirhams", 200.0),
+                            initialPocketDirhams = CurrencyFormatter.roundMoney(o.optDouble("initialPocketDirhams", 0.0)),
                             createdAt = o.optLong("createdAt", System.currentTimeMillis()),
                             isActive = o.optBoolean("isActive", false),
                             isArchived = o.optBoolean("isArchived", false),
                             completedAt = if (o.has("completedAt") && !o.isNull("completedAt")) o.getLong("completedAt") else null,
-                            archivedTotalSpentDirhams = o.optDouble("archivedTotalSpentDirhams", 0.0),
-                            archivedSavingsDirhams = o.optDouble("archivedSavingsDirhams", 0.0),
+                            archivedTotalSpentDirhams = CurrencyFormatter.roundMoney(o.optDouble("archivedTotalSpentDirhams", 0.0)),
+                            archivedSavingsDirhams = CurrencyFormatter.roundMoney(o.optDouble("archivedSavingsDirhams", 0.0)),
                             archivedItemsCount = o.optInt("archivedItemsCount", 0)
                         )
                     )
@@ -281,10 +335,10 @@ object BackupManager {
                             note = o.optString("note", ""),
                             isPurchased = o.optBoolean("isPurchased", false),
                             purchaseMode = o.optString("purchaseMode", "WEIGHT"),
-                            unitPriceDirhams = o.optDouble("unitPriceDirhams", 0.0),
+                            unitPriceDirhams = CurrencyFormatter.roundMoney(o.optDouble("unitPriceDirhams", 0.0)),
                             quantity = o.optDouble("quantity", 1.0),
-                            cleaningFeeDirhams = o.optDouble("cleaningFeeDirhams", 0.0),
-                            totalDirhams = o.optDouble("totalDirhams", 0.0),
+                            cleaningFeeDirhams = CurrencyFormatter.roundMoney(o.optDouble("cleaningFeeDirhams", 0.0)),
+                            totalDirhams = CurrencyFormatter.roundMoney(o.optDouble("totalDirhams", 0.0)),
                             createdAt = o.optLong("createdAt", System.currentTimeMillis()),
                             isDeleted = o.optBoolean("isDeleted", false),
                             deletedAt = if (o.has("deletedAt") && !o.isNull("deletedAt")) o.getLong("deletedAt") else null
@@ -302,10 +356,10 @@ object BackupManager {
                             id = o.getLong("id"),
                             roundId = o.getLong("roundId"),
                             vendorId = o.getLong("vendorId"),
-                            calculatedTotalDirhams = o.optDouble("calculatedTotalDirhams", 0.0),
-                            actualPaidDirhams = o.optDouble("actualPaidDirhams", 0.0),
-                            forgivenDiscountDirhams = o.optDouble("forgivenDiscountDirhams", 0.0),
-                            recordedPendingChangeDirhams = o.optDouble("recordedPendingChangeDirhams", 0.0),
+                            calculatedTotalDirhams = CurrencyFormatter.roundMoney(o.optDouble("calculatedTotalDirhams", 0.0)),
+                            actualPaidDirhams = CurrencyFormatter.roundMoney(o.optDouble("actualPaidDirhams", 0.0)),
+                            forgivenDiscountDirhams = CurrencyFormatter.roundMoney(o.optDouble("forgivenDiscountDirhams", 0.0)),
+                            recordedPendingChangeDirhams = CurrencyFormatter.roundMoney(o.optDouble("recordedPendingChangeDirhams", 0.0)),
                             paidAt = o.optLong("paidAt", System.currentTimeMillis())
                         )
                     )
@@ -321,7 +375,7 @@ object BackupManager {
                             id = o.getLong("id"),
                             roundId = o.getLong("roundId"),
                             title = o.optString("title", "مصروف عابر"),
-                            amountDirhams = o.optDouble("amountDirhams", 0.0),
+                            amountDirhams = CurrencyFormatter.roundMoney(o.optDouble("amountDirhams", 0.0)),
                             createdAt = o.optLong("createdAt", System.currentTimeMillis()),
                             isDeleted = o.optBoolean("isDeleted", false),
                             deletedAt = if (o.has("deletedAt") && !o.isNull("deletedAt")) o.getLong("deletedAt") else null
@@ -344,7 +398,7 @@ object BackupManager {
                             defaultNote = o.optString("defaultNote", ""),
                             customUnitsCsv = o.optString("customUnitsCsv", ""),
                             usageCount = o.optInt("usageCount", 1),
-                            lastPriceDirhams = o.optDouble("lastPriceDirhams", 0.0),
+                            lastPriceDirhams = CurrencyFormatter.roundMoney(o.optDouble("lastPriceDirhams", 0.0)),
                             lastUpdated = o.optLong("lastUpdated", System.currentTimeMillis())
                         )
                     )
@@ -364,9 +418,9 @@ object BackupManager {
                             vendorId = o.getLong("vendorId"),
                             vendorName = o.optString("vendorName", "البائع"),
                             purchaseMode = o.optString("purchaseMode", "WEIGHT"),
-                            unitPriceDirhams = o.optDouble("unitPriceDirhams", 0.0),
+                            unitPriceDirhams = CurrencyFormatter.roundMoney(o.optDouble("unitPriceDirhams", 0.0)),
                             quantity = o.optDouble("quantity", 1.0),
-                            totalPaidDirhams = o.optDouble("totalPaidDirhams", 0.0),
+                            totalPaidDirhams = CurrencyFormatter.roundMoney(o.optDouble("totalPaidDirhams", 0.0)),
                             shoppingItemId = if (o.has("shoppingItemId") && !o.isNull("shoppingItemId")) o.getLong("shoppingItemId") else null,
                             recordedAt = o.optLong("recordedAt", System.currentTimeMillis())
                         )

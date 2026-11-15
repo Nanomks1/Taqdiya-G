@@ -11,7 +11,6 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
-import az.pdr.taqdiya2.util.CustomFontManager
 
 @OptIn(ExperimentalTextApi::class)
 fun loadAssetFontFamilyOrFallback(
@@ -19,16 +18,12 @@ fun loadAssetFontFamilyOrFallback(
     fontFamilyKey: String
 ): FontFamily {
     val normalizedKey = when (fontFamilyKey) {
-        "CAIRO", "TAJAWAL", "" -> "IBM_PLEX"
+        "CAIRO", "TAJAWAL", "CUSTOM", "" -> "IBM_PLEX"
         else -> fontFamilyKey
     }
 
     if (normalizedKey == "SYSTEM") {
         return FontFamily.SansSerif
-    }
-
-    if (normalizedKey == "CUSTOM") {
-        CustomFontManager.buildCustomFontFamilyOrNull(context)?.let { return it }
     }
 
     return runCatching {

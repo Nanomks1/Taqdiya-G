@@ -124,7 +124,7 @@ fun HomePrepScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "اختر البائع:",
+                            text = "البائعون:",
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.Bold,
@@ -132,24 +132,24 @@ fun HomePrepScreen(
                             softWrap = false
                         )
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
 
                         Row(
                             modifier = Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             val pillShape = RoundedCornerShape(10.dp)
                             Surface(
                                 modifier = Modifier
-                                    .heightIn(min = 36.dp)
+                                    .heightIn(min = 34.dp)
                                     .clip(pillShape)
                                     .clickable { showSearchBar = !showSearchBar },
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
                                 shape = pillShape
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -163,7 +163,7 @@ fun HomePrepScreen(
 
                             Surface(
                                 modifier = Modifier
-                                    .heightIn(min = 36.dp)
+                                    .heightIn(min = 34.dp)
                                     .clip(pillShape)
                                     .clickable(onClick = onOpenPriceTrackerClick)
                                     .testTag("card_open_price_tracker_button"),
@@ -171,7 +171,7 @@ fun HomePrepScreen(
                                 shape = pillShape
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -194,7 +194,7 @@ fun HomePrepScreen(
 
                             Surface(
                                 modifier = Modifier
-                                    .heightIn(min = 36.dp)
+                                    .heightIn(min = 34.dp)
                                     .clip(pillShape)
                                     .clickable(onClick = onOpenDictionaryClick)
                                     .testTag("card_open_dictionary_button"),
@@ -202,7 +202,7 @@ fun HomePrepScreen(
                                 shape = pillShape
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -225,7 +225,7 @@ fun HomePrepScreen(
 
                             Surface(
                                 modifier = Modifier
-                                    .heightIn(min = 36.dp)
+                                    .heightIn(min = 34.dp)
                                     .clip(pillShape)
                                     .clickable(onClick = onOpenVendorsClick)
                                     .testTag("card_open_vendors_button"),
@@ -233,12 +233,12 @@ fun HomePrepScreen(
                                 shape = pillShape
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Storefront,
-                                        contentDescription = "البائعون",
+                                        contentDescription = "إدارة البائعين",
                                         modifier = Modifier.size(15.dp),
                                         tint = MaterialTheme.colorScheme.primary
                                     )
@@ -364,7 +364,7 @@ fun HomePrepScreen(
                                         style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
+                                        maxLines = 2,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 }
@@ -571,7 +571,7 @@ private fun OversizedVendorCard(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
@@ -614,31 +614,31 @@ private fun OversizedVendorCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Direct "+ أضف غرض" button for this vendor
+                // Direct "+ أضف" button for this vendor
                 Surface(
                     modifier = Modifier
-                        .heightIn(min = 38.dp)
+                        .heightIn(min = 36.dp)
                         .clip(RoundedCornerShape(11.dp))
                         .clickable(onClick = onOpenQuickPadForVendor),
                     color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
                     shape = RoundedCornerShape(11.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Add,
                             contentDescription = "إضافة",
                             tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(17.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = "أضف غرض",
+                            text = "أضف",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             softWrap = false
                         )

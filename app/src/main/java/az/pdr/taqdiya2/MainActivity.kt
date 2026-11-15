@@ -109,12 +109,9 @@ class MainActivity : ComponentActivity() {
         val cachedAnimationMode = bootPrefs.getString("animationMode", "LIGHT") ?: "LIGHT"
         val rawCachedFontKey = bootPrefs.getString("fontFamilyKey", "IBM_PLEX") ?: "IBM_PLEX"
         val cachedFontFamilyKey = when (rawCachedFontKey) {
-            "CAIRO", "TAJAWAL", "" -> "IBM_PLEX"
+            "CAIRO", "TAJAWAL", "CUSTOM", "" -> "IBM_PLEX"
             else -> rawCachedFontKey
         }
-        val cachedFontReg = bootPrefs.getString("customFontRegularName", "") ?: ""
-        val cachedFontMed = bootPrefs.getString("customFontMediumName", "") ?: ""
-        val cachedFontBold = bootPrefs.getString("customFontBoldName", "") ?: ""
 
         val initialDark = when (cachedThemeMode) {
             "DARK" -> true
@@ -143,17 +140,21 @@ class MainActivity : ComponentActivity() {
             privacyMaskPocketOnly = cachedPrivacyPocketOnly,
             colorPalette = cachedColorPalette,
             animationMode = cachedAnimationMode,
-            fontFamilyKey = cachedFontFamilyKey,
-            customFontRegularName = cachedFontReg,
-            customFontMediumName = cachedFontMed,
-            customFontBoldName = cachedFontBold
+            fontFamilyKey = cachedFontFamilyKey
         )
         az.pdr.taqdiya2.util.CurrencyFormatter.showRialState = cachedShowRial
         az.pdr.taqdiya2.util.CurrencyFormatter.privacyMaskState = cachedPrivacyMask
         az.pdr.taqdiya2.util.CurrencyFormatter.privacyMaskPocketOnlyState = cachedPrivacyPocketOnly
 
         val database = AppDatabase.getInstance(applicationContext)
-        val repository = TaqdiyaRepository(database.taqdiyaDao())
+        val repository = TaqdiyaRepository(
+            dao = database.taqdiyaDao(),
+            onAutoBackupSnapshot = { json ->
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    az.pdr.taqdiya2.util.BackupManager.saveAutoBackup(applicationContext, json)
+                }
+            }
+        )
 
         setContent {
             val viewModel: HomePrepViewModel = viewModel(
@@ -172,21 +173,15 @@ class MainActivity : ComponentActivity() {
                         .putString("colorPalette", uiState.appSettings.colorPalette)
                         .putString("animationMode", uiState.appSettings.animationMode)
                         .putString("fontFamilyKey", uiState.appSettings.fontFamilyKey)
-                        .putString("customFontRegularName", uiState.appSettings.customFontRegularName)
-                        .putString("customFontMediumName", uiState.appSettings.customFontMediumName)
-                        .putString("customFontBoldName", uiState.appSettings.customFontBoldName)
                         .apply()
                 }
             }
-
-            val customFontSignature = "${uiState.appSettings.customFontRegularName}|${uiState.appSettings.customFontMediumName}|${uiState.appSettings.customFontBoldName}"
 
             TaqdiyaTheme(
                 themeMode = uiState.appSettings.themeMode,
                 uiScaleMode = uiState.appSettings.uiScaleMode,
                 colorPalette = uiState.appSettings.colorPalette,
-                fontFamilyKey = uiState.appSettings.fontFamilyKey,
-                customFontSignature = customFontSignature
+                fontFamilyKey = uiState.appSettings.fontFamilyKey
             ) {
                 TaqdiyaApp(
                     viewModel = viewModel,
@@ -351,6 +346,7 @@ fun TaqdiyaApp(
             TopPocketBar(
                 remainingPocketDirhams = uiState.remainingPocketDirhams,
                 initialPocketDirhams = uiState.initialPocketDirhams,
+                totalActualSpentDirhams = uiState.totalActualSpentDirhams,
                 totalMissingItemsCount = activeMissingItems.size,
                 privacyMaskAmounts = uiState.appSettings.privacyMaskAmounts,
                 showRial = uiState.appSettings.showRial,
@@ -1033,9 +1029,6 @@ fun TaqdiyaApp(
             onUpdateColorPalette = viewModel::updateColorPalette,
             onUpdateAnimationMode = viewModel::updateAnimationMode,
             onUpdateFontFamilyKey = viewModel::updateFontFamilyKey,
-            onCustomFontImported = viewModel::onCustomFontSlotImported,
-            onClearCustomFonts = viewModel::clearAllCustomFonts,
-            onNotifyMessage = viewModel::notifyStatusMessage,
             onToggleShowRial = viewModel::toggleShowRial,
             onTogglePrivacyMask = viewModel::togglePrivacyMask,
             onUpdatePrivacyMaskPocketOnly = viewModel::updatePrivacyMaskPocketOnly,

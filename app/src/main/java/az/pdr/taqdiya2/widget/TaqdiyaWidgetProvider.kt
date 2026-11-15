@@ -93,7 +93,7 @@ class TaqdiyaWidgetProvider : AppWidgetProvider() {
             }
 
             val activeRound = dao.getActiveRoundOnce()
-            val initialPocket = activeRound?.initialPocketDirhams ?: 200.0
+            val initialPocket = activeRound?.initialPocketDirhams ?: 0.0
             val roundItems = if (activeRound != null) {
                 dao.getItemsForRoundOnce(activeRound.id)
             } else {
@@ -119,11 +119,13 @@ class TaqdiyaWidgetProvider : AppWidgetProvider() {
                     ?: purchasedItems.filter { it.vendorId == vId }.sumOf { it.totalDirhams }
             }
             val passingSpent = allExpenses.sumOf { it.amountDirhams }
-            val remainingDirhams = (initialPocket - (vendorSpent + passingSpent)).coerceAtLeast(0.0)
+            val totalSpent = CurrencyFormatter.roundMoney(vendorSpent + passingSpent)
+            val remainingDirhams = CurrencyFormatter.roundMoney((initialPocket - totalSpent).coerceAtLeast(0.0))
 
             val pocketText = when {
                 maskAmounts && showRial -> "*** درهم (*** ريال)"
                 maskAmounts -> "*** درهم"
+                initialPocket <= 0.0 && totalSpent <= 0.0 -> "0 درهم (اضغط لتحديد الجيب)"
                 showRial -> {
                     val dh = CurrencyFormatter.formatAmountPlain(remainingDirhams)
                     val rials = CurrencyFormatter.dirhamsToRials(remainingDirhams)

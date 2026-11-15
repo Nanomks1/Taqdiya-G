@@ -1,7 +1,5 @@
 package az.pdr.taqdiya2.ui.components
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,9 +27,6 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.FileOpen
-import androidx.compose.material.icons.outlined.FontDownload
 import androidx.compose.material.icons.outlined.FormatSize
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Lock
@@ -60,15 +55,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.AppSettingsEntity
-import az.pdr.taqdiya2.util.CustomFontManager
-import az.pdr.taqdiya2.util.CustomFontWeightSlot
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -79,9 +70,6 @@ fun AppSettingsSheet(
     onUpdateColorPalette: (String) -> Unit = {},
     onUpdateAnimationMode: (String) -> Unit = {},
     onUpdateFontFamilyKey: (String) -> Unit = {},
-    onCustomFontImported: (CustomFontWeightSlot, String) -> Unit = { _, _ -> },
-    onClearCustomFonts: () -> Unit = {},
-    onNotifyMessage: (String) -> Unit = {},
     onToggleShowRial: () -> Unit,
     onTogglePrivacyMask: () -> Unit,
     onUpdatePrivacyMaskPocketOnly: (Boolean) -> Unit = {},
@@ -91,28 +79,9 @@ fun AppSettingsSheet(
     onOpenBackupRestore: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showPinEditor by remember { mutableStateOf(false) }
     var draftPin by remember { mutableStateOf("") }
-    var activeFontSlotForPicker by remember { mutableStateOf(CustomFontWeightSlot.REGULAR) }
-
-    val fontPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            val result = CustomFontManager.importFontFromUri(
-                context = context,
-                uri = uri,
-                slot = activeFontSlotForPicker
-            )
-            result.onSuccess { imported ->
-                onCustomFontImported(imported.slot, imported.displayFileName)
-            }.onFailure { err ->
-                onNotifyMessage(err.message ?: "تعذر استيراد ملف الخط")
-            }
-        }
-    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -219,9 +188,11 @@ fun AppSettingsSheet(
                     Triple("CALM_SAGE", "كتان وطين حديث", Pair(androidx.compose.ui.graphics.Color(0xFFB43B0E), androidx.compose.ui.graphics.Color(0xFF15803D))),
                     Triple("ROYAL_PLUM", "سلايت وبنفسجي", Pair(androidx.compose.ui.graphics.Color(0xFF4338CA), androidx.compose.ui.graphics.Color(0xFF0D9488)))
                 )
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    maxItemsInEachRow = 2
                 ) {
                     palettes.forEach { (paletteKey, label, swatchPair) ->
                         val isSelected = settings.colorPalette == paletteKey
@@ -242,10 +213,10 @@ fun AppSettingsSheet(
                             ),
                             shape = RoundedCornerShape(14.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 10.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
                             ) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Box(
@@ -261,9 +232,10 @@ fun AppSettingsSheet(
                                             .background(swatchPair.second)
                                     )
                                 }
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = label,
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
@@ -367,7 +339,7 @@ fun AppSettingsSheet(
                     )
                 }
 
-                // Font Family Selector (IBM Plex | Vazirmatn | Baloo Bhaijaan 2 | System | Custom .ttf/.otf)
+                // Font Family Selector (IBM Plex | Vazirmatn | Baloo Bhaijaan 2 | System)
                 Text(
                     text = "نوع الخط المستخدم في التطبيق:",
                     style = MaterialTheme.typography.labelLarge,
@@ -375,7 +347,7 @@ fun AppSettingsSheet(
                     fontWeight = FontWeight.Bold
                 )
                 val normalizedSelectedFont = when (settings.fontFamilyKey) {
-                    "CAIRO", "TAJAWAL", "" -> "IBM_PLEX"
+                    "CAIRO", "TAJAWAL", "CUSTOM", "" -> "IBM_PLEX"
                     else -> settings.fontFamilyKey
                 }
                 FlowRow(
@@ -388,8 +360,7 @@ fun AppSettingsSheet(
                         Triple("IBM_PLEX", "خط IBM Plex Arabic", "تقني وواضح للأرقام"),
                         Triple("VAZIRMATN", "خط وزير (Vazirmatn)", "متوازن ومريح للقراءة"),
                         Triple("BALOO", "خط Baloo Bhaijaan 2", "ودود وبارز العناوين"),
-                        Triple("SYSTEM", "خط الهاتف (النظام)", "خط جهازك الأصلي"),
-                        Triple("CUSTOM", "خط يدوي (.ttf / .otf)", "Regular + Medium + Bold")
+                        Triple("SYSTEM", "خط الهاتف (النظام)", "خط جهازك الأصلي")
                     )
                     fontFamilies.forEach { (fontKey, title, badge) ->
                         ScaleOptionTile(
@@ -404,214 +375,38 @@ fun AppSettingsSheet(
                     }
                 }
 
-                // Manual Custom Font Importer Panel (Regular, Medium, Bold .ttf or .otf)
+                // Live Typography Preview Box (Regular / Medium / Bold)
                 Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("custom_font_importer_panel"),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(
-                        width = if (settings.fontFamilyKey == "CUSTOM") 1.5.dp else 1.dp,
-                        color = if (settings.fontFamilyKey == "CUSTOM") {
-                            MaterialTheme.colorScheme.secondary
-                        } else {
-                            MaterialTheme.colorScheme.outline
-                        }
-                    ),
-                    shape = RoundedCornerShape(16.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.FontDownload,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        text = "إضافة خط يدوياً من الهاتف (.ttf أو .otf)",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "حدد أوزان الخط الثلاثة (Regular و Medium و Bold) أو أي وزن منها ليُحفظ داخل التطبيق:",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            val hasAnyUploaded = settings.customFontRegularName.isNotBlank() ||
-                                settings.customFontMediumName.isNotBlank() ||
-                                settings.customFontBoldName.isNotBlank()
-
-                            if (hasAnyUploaded) {
-                                IconButton(
-                                    onClick = {
-                                        CustomFontManager.clearCustomFonts(context)
-                                        onClearCustomFonts()
-                                    },
-                                    modifier = Modifier.testTag("clear_custom_fonts_button")
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.DeleteOutline,
-                                        contentDescription = "مسح الخطوط المخصصة",
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
-
-                        val slots = listOf(
-                            CustomFontWeightSlot.REGULAR to settings.customFontRegularName,
-                            CustomFontWeightSlot.MEDIUM to settings.customFontMediumName,
-                            CustomFontWeightSlot.BOLD to settings.customFontBoldName
+                        Text(
+                            text = "معاينة الخط الحالي بالأوزان الثلاثة:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
-                        slots.forEach { (slot, currentFileName) ->
-                            val isLoaded = currentFileName.isNotBlank()
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable {
-                                        activeFontSlotForPicker = slot
-                                        fontPickerLauncher.launch(arrayOf("*/*"))
-                                    }
-                                    .testTag("pick_custom_font_${slot.name.lowercase()}_button"),
-                                color = if (isLoaded) {
-                                    MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.55f)
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
-                                },
-                                border = BorderStroke(
-                                    1.dp,
-                                    if (isLoaded) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 9.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "وزن ${slot.arabicLabel}",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = if (isLoaded) {
-                                                "الملف المحفوظ: $currentFileName"
-                                            } else {
-                                                "لم يُحدد بعد — اضغط لاختيار ملف .ttf أو .otf"
-                                            },
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = if (isLoaded) {
-                                                MaterialTheme.colorScheme.tertiary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            },
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(8.dp))
-
-                                    Surface(
-                                        color = if (isLoaded) {
-                                            MaterialTheme.colorScheme.tertiary
-                                        } else {
-                                            MaterialTheme.colorScheme.secondary
-                                        },
-                                        shape = RoundedCornerShape(9.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.FileOpen,
-                                                contentDescription = null,
-                                                tint = if (isLoaded) {
-                                                    MaterialTheme.colorScheme.onTertiary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSecondary
-                                                },
-                                                modifier = Modifier.size(15.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = if (isLoaded) "تغيير" else "اختيار ملف",
-                                                style = MaterialTheme.typography.labelMedium,
-                                                color = if (isLoaded) {
-                                                    MaterialTheme.colorScheme.onTertiary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSecondary
-                                                },
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Live Typography Preview Box (Regular / Medium / Bold)
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = "معاينة الخط الحالي بالأوزان الثلاثة:",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "عادي (Regular): مطيشة وبطاطا — 12.5 درهم (250 ريال)",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Normal),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    text = "متوسط (Medium): زيت الزيتون وأتاي — 85 درهم (1700 ريال)",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    text = "عريض (Bold): الباقي في الجيب الآن 188.5 درهم",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
+                        Text(
+                            text = "عادي (Regular): مطيشة وبطاطا — 12.5 درهم (250 ريال)",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Normal),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = "متوسط (Medium): زيت الزيتون وأتاي — 85 درهم (1700 ريال)",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = "عريض (Bold): الباقي في الجيب الآن 188.5 درهم",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }

@@ -12,9 +12,13 @@ import az.pdr.taqdiya2.data.local.VendorPaymentEntity
 import az.pdr.taqdiya2.util.BackupManager
 import az.pdr.taqdiya2.util.CurrencyFormatter
 import az.pdr.taqdiya2.util.FullBackupPayload
+import az.pdr.taqdiya2.util.PinSecurityUtil
 import kotlinx.coroutines.flow.Flow
 
-class TaqdiyaRepository(private val dao: TaqdiyaDao) {
+class TaqdiyaRepository(
+    private val dao: TaqdiyaDao,
+    private val onAutoBackupSnapshot: (suspend (String) -> Unit)? = null
+) {
 
     val activeVendors: Flow<List<VendorEntity>> = dao.observeActiveVendors()
     val activeRound: Flow<ShoppingRoundEntity?> = dao.observeActiveRound()
@@ -38,9 +42,24 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
     )
 
     suspend fun ensureInitialized() {
-        // Initialize default AppSettings if not present
-        if (dao.getAppSettingsOnce() == null) {
+        // Initialize default AppSettings if not present, and migrate any plain-text PIN or legacy CUSTOM font key
+        val existingSettings = dao.getAppSettingsOnce()
+        if (existingSettings == null) {
             dao.upsertAppSettings(AppSettingsEntity())
+        } else {
+            val normalizedPin = PinSecurityUtil.normalizeForStorage(existingSettings.pinCode)
+            val normalizedFont = if (existingSettings.fontFamilyKey == "CUSTOM") "IBM_PLEX" else existingSettings.fontFamilyKey
+            if (normalizedPin != existingSettings.pinCode || normalizedFont != existingSettings.fontFamilyKey) {
+                dao.upsertAppSettings(
+                    existingSettings.copy(
+                        pinCode = normalizedPin,
+                        fontFamilyKey = normalizedFont,
+                        customFontRegularName = "",
+                        customFontMediumName = "",
+                        customFontBoldName = ""
+                    )
+                )
+            }
         }
 
         // Auto-purge Trash Bin items older than 30 days
@@ -339,7 +358,7 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
             dao.insertRound(
                 ShoppingRoundEntity(
                     title = "جولة التقدية الحالية",
-                    initialPocketDirhams = 200.0,
+                    initialPocketDirhams = 0.0,
                     isActive = true,
                     isArchived = false
                 )
@@ -366,10 +385,20 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
                 }
             }
         }
+        triggerSilentAutoBackup()
+    }
+
+    private suspend fun triggerSilentAutoBackup() {
+        val hook = onAutoBackupSnapshot ?: return
+        runCatching {
+            val json = exportFullBackupJson()
+            hook(json)
+        }
     }
 
     suspend fun updateInitialPocket(roundId: Long, pocketDirhams: Double) {
-        dao.updateInitialPocket(roundId, pocketDirhams.coerceAtLeast(0.0))
+        dao.updateInitialPocket(roundId, CurrencyFormatter.roundMoney(pocketDirhams.coerceAtLeast(0.0)))
+        triggerSilentAutoBackup()
     }
 
     suspend fun addShoppingItemAndLearn(
@@ -431,6 +460,7 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
             unitPriceDirhams = existingDict?.lastPriceDirhams ?: 0.0
         )
         val newId = dao.insertShoppingItem(item)
+        triggerSilentAutoBackup()
         return item.copy(id = newId)
     }
 
@@ -491,6 +521,7 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
                 )
             )
         }
+        triggerSilentAutoBackup()
     }
 
     suspend fun unmarkItemPurchased(item: ShoppingItemEntity) {
@@ -603,6 +634,7 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
             vendorId = vendorId,
             pendingBalanceDirhams = CurrencyFormatter.roundMoney(newVendorPendingBalanceDirhams)
         )
+        triggerSilentAutoBackup()
         return payment.copy(id = id)
     }
 
@@ -635,6 +667,7 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
             amountDirhams = CurrencyFormatter.roundMoney(amountDirhams)
         )
         val id = dao.insertPassingExpense(expense)
+        triggerSilentAutoBackup()
         return expense.copy(id = id)
     }
 
@@ -691,6 +724,7 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
             }
             dao.insertShoppingItems(rolledOverItems)
         }
+        triggerSilentAutoBackup()
         return nextRound.copy(id = newRoundId)
     }
 
@@ -877,8 +911,14 @@ class TaqdiyaRepository(private val dao: TaqdiyaDao) {
 
     suspend fun updateAppSettings(transform: (AppSettingsEntity) -> AppSettingsEntity): AppSettingsEntity {
         val current = getAppSettingsOnce()
-        val updated = transform(current).copy(id = 1)
+        val transformed = transform(current)
+        val updated = transformed.copy(
+            id = 1,
+            pinCode = PinSecurityUtil.normalizeForStorage(transformed.pinCode),
+            fontFamilyKey = if (transformed.fontFamilyKey == "CUSTOM") "IBM_PLEX" else transformed.fontFamilyKey
+        )
         dao.upsertAppSettings(updated)
+        triggerSilentAutoBackup()
         return updated
     }
 

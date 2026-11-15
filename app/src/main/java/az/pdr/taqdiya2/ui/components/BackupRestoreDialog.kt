@@ -61,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import az.pdr.taqdiya2.ui.viewmodel.HomePrepUiState
+import az.pdr.taqdiya2.util.BackupManager
 import az.pdr.taqdiya2.widget.TaqdiyaWidgetProvider
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -83,6 +84,10 @@ fun BackupRestoreDialog(
     var showPasteRestoreSection by remember { mutableStateOf(false) }
     var pastedBackupJson by remember { mutableStateOf("") }
     var pendingRestoreJsonForConfirmation by remember { mutableStateOf<String?>(null) }
+    var autoBackupRefreshTick by remember { mutableStateOf(0) }
+    val autoBackupInfo = remember(uiState.shoppingItems.size, uiState.vendorPayments.size, autoBackupRefreshTick) {
+        BackupManager.getAutoBackupInfo(context)
+    }
 
     // SAF Launcher: Save JSON Backup File to Phone Storage
     val createDocumentLauncher = rememberLauncherForActivityResult(
@@ -190,6 +195,133 @@ fun BackupRestoreDialog(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+                    }
+                }
+
+                // Automatic Internal Rolling Backup Card (حماية تلقائية داخل الهاتف)
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("auto_backup_status_card"),
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "الحفظ التلقائي الداخلي بالهاتف (مفعّل):",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        if (autoBackupInfo != null) {
+                            val formattedTime = remember(autoBackupInfo.lastSavedAtMillis) {
+                                SimpleDateFormat("yyyy/MM/dd - HH:mm", Locale.US)
+                                    .format(Date(autoBackupInfo.lastSavedAtMillis))
+                            }
+                            Text(
+                                text = "آخر نسخة تلقائية محفوظة: $formattedTime",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        val autoJson = BackupManager.readLatestAutoBackupJson(context)
+                                        if (!autoJson.isNullOrBlank()) {
+                                            pendingRestoreJsonForConfirmation = autoJson
+                                        } else {
+                                            onNotifyMessage("تعذر قراءة النسخة التلقائية")
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .weight(1.3f)
+                                        .heightIn(min = 46.dp)
+                                        .testTag("restore_auto_backup_button"),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiary
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Refresh,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "استرجاع النسخة التلقائية",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            val json = onExportBackupJson()
+                                            withContext(Dispatchers.IO) {
+                                                BackupManager.saveAutoBackup(context, json)
+                                            }
+                                            autoBackupRefreshTick++
+                                            onNotifyMessage("تم تحديث النسخة التلقائية الداخلية الآن")
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 46.dp)
+                                        .testTag("force_auto_backup_now_button"),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        text = "حفظ الآن",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = "يتم حفظ نسخة تلقائية داخل الهاتف مع كل عملية شراء أو تعديل.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            OutlinedButton(
+                                onClick = {
+                                    scope.launch {
+                                        val json = onExportBackupJson()
+                                        withContext(Dispatchers.IO) {
+                                            BackupManager.saveAutoBackup(context, json)
+                                        }
+                                        autoBackupRefreshTick++
+                                        onNotifyMessage("تم إنشاء النسخة التلقائية الداخلية بنجاح")
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 46.dp)
+                                    .testTag("create_first_auto_backup_button"),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "إنشاء نسخة تلقائية داخلية الآن",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
 

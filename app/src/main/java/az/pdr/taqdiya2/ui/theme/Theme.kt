@@ -261,7 +261,6 @@ fun TaqdiyaTheme(
     uiScaleMode: String = "NORMAL",
     colorPalette: String = "TERRACOTTA",
     fontFamilyKey: String = "IBM_PLEX",
-    customFontSignature: String = "",
     content: @Composable () -> Unit
 ) {
     val systemDark = isSystemInDarkTheme()
@@ -286,7 +285,7 @@ fun TaqdiyaTheme(
         }
     }
 
-    val typography = remember(fontFamilyKey, customFontSignature) {
+    val typography = remember(fontFamilyKey) {
         val resolvedFamily = loadAssetFontFamilyOrFallback(
             context = context,
             fontFamilyKey = fontFamilyKey

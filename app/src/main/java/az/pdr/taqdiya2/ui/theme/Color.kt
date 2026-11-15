@@ -35,7 +35,7 @@ val OnSlateInkContainerDark = Color(0xFFA7F3D0)
 
 val TerracottaSecondaryDark = Color(0xFFFBBF24)
 val OnTerracottaSecondaryDark = Color(0xFF1C1917)
-val TerracottaContainerDark = Color(0xFF451A03)
+val TerracottaContainerDark = Color(0xFF1B3328)
 val OnTerracottaContainerDark = Color(0xFFFDE68A)
 
 val OliveTertiaryDark = Color(0xFF10B981)
@@ -84,7 +84,7 @@ val OnCobaltContainerDark = Color(0xFFBFDBFE)
 
 val CobaltSecondaryDark = Color(0xFFFB923C)
 val OnCobaltSecondaryDark = Color(0xFF271202)
-val CobaltSecondaryContainerDark = Color(0xFF431407)
+val CobaltSecondaryContainerDark = Color(0xFF1E2D4A)
 val OnCobaltSecondaryContainerDark = Color(0xFFFED7AA)
 
 val CobaltTertiaryDark = Color(0xFF2DD4BF)
