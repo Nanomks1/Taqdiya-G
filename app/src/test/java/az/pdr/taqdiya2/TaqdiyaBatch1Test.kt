@@ -139,6 +139,15 @@ class TaqdiyaBatch1Test {
         assertEquals("set_meal", az.pdr.taqdiya2.ui.components.VendorIconMapper.inferIconKeyFromName("الكزار ومول الدجاج"))
         assertEquals("kitchen", az.pdr.taqdiya2.ui.components.VendorIconMapper.inferIconKeyFromName("مول المواعن"))
         assertEquals("egg", az.pdr.taqdiya2.ui.components.VendorIconMapper.inferIconKeyFromName("مول البيض"))
+
+        // 5. Verify full Arabic Rubik variable font is bundled in assets/fonts/rubik_var.ttf
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val rubikBytes = context.assets.open("fonts/rubik_var.ttf").use { it.readBytes() }
+        assertTrue("rubik_var.ttf must be the full variable font (>200KB)", rubikBytes.size > 200_000)
+        val rubikAscii = String(rubikBytes, Charsets.ISO_8859_1)
+        assertTrue("rubik_var.ttf must contain fvar table", rubikAscii.contains("fvar"))
+        val rubikFamily = az.pdr.taqdiya2.ui.theme.loadAssetFontFamilyOrFallback(context, "RUBIK")
+        assertTrue(rubikFamily != androidx.compose.ui.text.font.FontFamily.SansSerif)
     }
 }
 

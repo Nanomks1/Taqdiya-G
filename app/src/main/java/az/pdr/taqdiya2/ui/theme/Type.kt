@@ -80,7 +80,14 @@ fun loadAssetFontFamilyOrFallback(
             }
 
             "RUBIK" -> {
-                if ("rubik_var.ttf" !in availableFonts) {
+                val rubikFile = when {
+                    "rubik_var.ttf" in availableFonts -> "rubik_var.ttf"
+                    else -> availableFonts.firstOrNull {
+                        it.lowercase().contains("rubik") &&
+                            (it.lowercase().endsWith(".ttf") || it.lowercase().endsWith(".otf"))
+                    }
+                }
+                if (rubikFile == null) {
                     FontFamily.SansSerif
                 } else {
                     val weights = listOf(
@@ -89,18 +96,30 @@ fun loadAssetFontFamilyOrFallback(
                         FontWeight.SemiBold,
                         FontWeight.Bold
                     )
-                    FontFamily(
-                        weights.map { w ->
-                            Font(
-                                path = "fonts/rubik_var.ttf",
-                                assetManager = context.assets,
-                                weight = w,
-                                variationSettings = FontVariation.Settings(
-                                    FontVariation.weight(w.weight)
+                    runCatching {
+                        FontFamily(
+                            weights.map { w ->
+                                Font(
+                                    path = "fonts/$rubikFile",
+                                    assetManager = context.assets,
+                                    weight = w,
+                                    variationSettings = FontVariation.Settings(
+                                        FontVariation.weight(w.weight)
+                                    )
                                 )
-                            )
-                        }
-                    )
+                            }
+                        )
+                    }.getOrElse {
+                        FontFamily(
+                            weights.map { w ->
+                                Font(
+                                    path = "fonts/$rubikFile",
+                                    assetManager = context.assets,
+                                    weight = w
+                                )
+                            }
+                        )
+                    }
                 }
             }
 

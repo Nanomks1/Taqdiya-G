@@ -5,12 +5,23 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <group
-        android:translateX="22"
+        android:translateX="24"
         android:translateY="22">
-        <!-- Monochrome Ledger Silhouette with Cutout Lines for Material You Themed Icon -->
+        <!-- Arched Leather Handles of the Moroccan Quffa -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M20,24 C20,8 40,8 40,24"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeLineCap="round"
+            android:strokeWidth="4.2" />
+        <!-- Fresh Produce & Mint Leaves Peeking from Top of Basket -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M14,23 C14,18.5 18,16 22,18 C24,14.5 30,14.5 32,18 C36,15.5 41,17.5 42,23 Z" />
+        <!-- Woven Moroccan Quffa Trapezoid Basket Body with Weave Cutouts -->
         <path
             android:fillColor="#FFFFFFFF"
             android:fillType="evenOdd"
-            android:pathData="M14,6h36c3.31,0 6,2.69 6,6v40c0,3.31 -2.69,6 -6,6H14c-3.31,0 -6,-2.69 -6,-6V12c0,-3.31 2.69,-6 6,-6zM18,10v44h4V10h-4zM28,18v4h20v-4H28zM28,28v4h20v-4H28zM28,38v4h14v-4H28z" />
+            android:pathData="M6,24 H54 C56.2,24 57.8,25.8 57.2,28 L49.5,54 C48.8,56.5 46.5,58 44,58 H16 C13.5,58 11.2,56.5 10.5,54 L2.8,28 C2.2,25.8 3.8,24 6,24 Z M18,27 V34 H22 V27 H18 Z M38,27 V34 H42 V27 H38 Z M14,39 H46 V42 H14 V39 Z M16,47 H44 V50 H16 V47 Z" />
     </group>
 </vector>

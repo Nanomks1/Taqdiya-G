@@ -1,21 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <group
-        android:translateX="22"
-        android:translateY="22">
-        <!-- Warm Limestone Ledger Notebook & Moroccan Terracotta Spine -->
-        <path
-            android:fillColor="#FFF4EFE6"
-            android:pathData="M14,6h36c3.31,0 6,2.69 6,6v40c0,3.31 -2.69,6 -6,6H14c-3.31,0 -6,-2.69 -6,-6V12c0,-3.31 2.69,-6 6,-6z" />
-        <path
-            android:fillColor="#FFC84B31"
-            android:pathData="M18,6h6v52h-6z" />
-        <path
-            android:fillColor="#FF141E27"
-            android:pathData="M30,18h18v4h-18zM30,28h18v4h-18zM30,38h12v4h-12z" />
-    </group>
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="66dp"
+        android:height="66dp"
+        android:drawable="@drawable/img_quffa_icon_fresh"
+        android:gravity="center" />
+</layer-list>
