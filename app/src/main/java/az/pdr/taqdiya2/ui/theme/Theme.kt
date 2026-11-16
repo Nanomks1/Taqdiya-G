@@ -290,9 +290,11 @@ fun TaqdiyaTheme(
             context = context,
             fontFamilyKey = fontFamilyKey
         )
+        val perFontScale = if (fontFamilyKey == "RUBIK") 0.91f else 1.0f
         buildAppTypography(
             primaryFontFamily = resolvedFamily,
-            secondaryFontFamily = resolvedFamily
+            secondaryFontFamily = resolvedFamily,
+            fontSizeScale = perFontScale
         )
     }
 

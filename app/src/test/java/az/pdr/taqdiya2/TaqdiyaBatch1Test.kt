@@ -148,6 +148,9 @@ class TaqdiyaBatch1Test {
         assertTrue("rubik_var.ttf must contain fvar table", rubikAscii.contains("fvar"))
         val rubikFamily = az.pdr.taqdiya2.ui.theme.loadAssetFontFamilyOrFallback(context, "RUBIK")
         assertTrue(rubikFamily != androidx.compose.ui.text.font.FontFamily.SansSerif)
+        val defaultTypo = az.pdr.taqdiya2.ui.theme.buildAppTypography(rubikFamily, rubikFamily, 1.0f)
+        val rubikTypo = az.pdr.taqdiya2.ui.theme.buildAppTypography(rubikFamily, rubikFamily, 0.91f)
+        assertEquals(defaultTypo.bodyLarge.fontSize.value * 0.91f, rubikTypo.bodyLarge.fontSize.value, 0.01f)
     }
 }
 
