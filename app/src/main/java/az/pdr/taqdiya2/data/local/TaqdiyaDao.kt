@@ -174,7 +174,8 @@ interface TaqdiyaDao {
         newName: String,
         newNormalizedName: String,
         newVendorId: Long,
-        newDefaultNote: String
+        newDefaultNote: String,
+        newSecondaryVendorIdsCsv: String = ""
     ) {
         val current = getDictionaryItemById(itemId) ?: return
         val existingCollision = getDictionaryItemByNormalizedName(newNormalizedName)
@@ -184,7 +185,8 @@ interface TaqdiyaDao {
                 target = existingCollision.copy(
                     name = newName.trim(),
                     defaultVendorId = newVendorId,
-                    defaultNote = newDefaultNote.trim()
+                    defaultNote = newDefaultNote.trim(),
+                    secondaryVendorIdsCsv = newSecondaryVendorIdsCsv
                 )
             )
         } else {
@@ -193,6 +195,7 @@ interface TaqdiyaDao {
                 normalizedName = newNormalizedName,
                 defaultVendorId = newVendorId,
                 defaultNote = newDefaultNote.trim(),
+                secondaryVendorIdsCsv = newSecondaryVendorIdsCsv,
                 lastUpdated = System.currentTimeMillis()
             )
             updateDictionaryItem(updated)
@@ -224,11 +227,17 @@ interface TaqdiyaDao {
         val mergedUsage = source.usageCount + target.usageCount
         val mergedPrice = if (target.lastPriceDirhams > 0.0) target.lastPriceDirhams else source.lastPriceDirhams
         val mergedNote = if (target.defaultNote.isNotBlank()) target.defaultNote else source.defaultNote
+        val allVendors = (
+            listOf(target.defaultVendorId, source.defaultVendorId) +
+                source.secondaryVendorIdsCsv.split(",").mapNotNull { it.trim().toLongOrNull() } +
+                target.secondaryVendorIdsCsv.split(",").mapNotNull { it.trim().toLongOrNull() }
+            ).filter { it > 0L && it != target.defaultVendorId }.distinct().joinToString(",")
 
         val updatedTarget = target.copy(
             usageCount = mergedUsage,
             lastPriceDirhams = mergedPrice,
             defaultNote = mergedNote,
+            secondaryVendorIdsCsv = allVendors,
             lastUpdated = System.currentTimeMillis()
         )
         updateDictionaryItem(updatedTarget)

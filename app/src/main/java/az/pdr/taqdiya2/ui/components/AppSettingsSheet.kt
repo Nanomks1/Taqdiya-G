@@ -359,6 +359,7 @@ fun AppSettingsSheet(
                     val fontFamilies = listOf(
                         Triple("IBM_PLEX", "خط IBM Plex Arabic", "تقني وواضح للأرقام"),
                         Triple("VAZIRMATN", "خط وزير (Vazirmatn)", "متوازن ومريح للقراءة"),
+                        Triple("RUBIK", "خط روبيك (Rubik)", "عصري وهندسي أنيق"),
                         Triple("BALOO", "خط Baloo Bhaijaan 2", "ودود وبارز العناوين"),
                         Triple("SYSTEM", "خط الهاتف (النظام)", "خط جهازك الأصلي")
                     )

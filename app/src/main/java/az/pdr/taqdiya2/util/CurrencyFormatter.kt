@@ -79,7 +79,6 @@ object CurrencyFormatter {
         return "$rials ريال"
     }
 
-
     fun formatMoroccanWeightLabel(kg: Double): String {
         return when {
             abs(kg - 1.0) < 0.001 -> "كيلو (1 كغ)"
@@ -123,16 +122,93 @@ object CurrencyFormatter {
         }
     }
 
+    private val ARABIC_DIACRITICS_REGEX = Regex("[\\u064B-\\u065F\\u0670\\u0640]")
+    private val MULTI_SPACE_REGEX = Regex("\\s+")
+
+    /**
+     * Normalizes Arabic item names so orthographic variations ("أتاي" vs "اتاي",
+     * "إبزار" vs "ابزار", "مطيشة" vs "مطيشه", "لاڤوكا" vs "لافوكا", "دروݣري" vs "دروغري")
+     * resolve to the same canonical form.
+     */
     fun normalizeArabicName(input: String): String {
         return input.trim()
-            .replace(Regex("\\s+"), " ")
+            .replace(ARABIC_DIACRITICS_REGEX, "")
+            .replace(MULTI_SPACE_REGEX, " ")
             .replace('أ', 'ا')
             .replace('إ', 'ا')
             .replace('آ', 'ا')
+            .replace('ٱ', 'ا')
+            .replace('ؤ', 'و')
+            .replace('ئ', 'ي')
             .replace('ة', 'ه')
             .replace('ى', 'ي')
             .replace('ڤ', 'ف')
+            .replace('گ', 'ك')
+            .replace('ݣ', 'ك')
+            .replace('ڨ', 'ك')
             .lowercase(Locale.ROOT)
+    }
+
+    private fun stripArabicDefiniteArticle(normalized: String): String {
+        return normalized
+            .split(" ")
+            .joinToString(" ") { word ->
+                if (word.length > 3 && word.startsWith("ال")) {
+                    word.substring(2)
+                } else {
+                    word
+                }
+            }
+    }
+
+    /**
+     * Flexible Arabic search matcher:
+     * Matches "اتاي" with "أتاي" or "الأتاي", "مطيشه" with "مطيشة", "دروغري" with "دروݣري", etc.
+     */
+    fun matchesArabicQuery(target: String, query: String): Boolean {
+        val cleanQuery = query.trim()
+        if (cleanQuery.isEmpty()) return true
+        val normTarget = normalizeArabicName(target)
+        val normQuery = normalizeArabicName(cleanQuery)
+        if (normTarget.contains(normQuery)) return true
+
+        val strippedTarget = stripArabicDefiniteArticle(normTarget)
+        val strippedQuery = stripArabicDefiniteArticle(normQuery)
+        if (strippedTarget.contains(strippedQuery)) return true
+
+        // Also handle Moroccan Gaf/Ghain variation ("دروغري" vs "دروكري")
+        val ghainUnifiedTarget = strippedTarget.replace('غ', 'ك')
+        val ghainUnifiedQuery = strippedQuery.replace('غ', 'ك')
+        return ghainUnifiedTarget.contains(ghainUnifiedQuery)
+    }
+
+    // --- Multi-Vendor CSV Helpers for Dictionary Items ---
+    fun parseVendorIdsCsv(csv: String): List<Long> {
+        if (csv.isBlank()) return emptyList()
+        return csv.split(",")
+            .mapNotNull { it.trim().toLongOrNull() }
+            .distinct()
+    }
+
+    fun encodeVendorIdsCsv(vendorIds: Collection<Long>, primaryVendorId: Long): String {
+        return vendorIds
+            .filter { it > 0L && it != primaryVendorId }
+            .distinct()
+            .joinToString(",")
+    }
+
+    fun getAllVendorIdsForDictItem(defaultVendorId: Long, secondaryVendorIdsCsv: String): List<Long> {
+        return (listOf(defaultVendorId) + parseVendorIdsCsv(secondaryVendorIdsCsv)).distinct()
+    }
+
+    fun dictItemMatchesVendor(
+        defaultVendorId: Long,
+        secondaryVendorIdsCsv: String,
+        vendorId: Long?
+    ): Boolean {
+        if (vendorId == null) return true
+        if (defaultVendorId == vendorId) return true
+        return parseVendorIdsCsv(secondaryVendorIdsCsv).contains(vendorId)
     }
 
     fun parseCustomUnits(csv: String): List<String> {
@@ -151,7 +227,7 @@ object CurrencyFormatter {
     }
 
     /**
-     * Returns smart default units tailored to the specific item name and vendor specialty,
+     * Returns smart base units tailored to the specific item name and vendor specialty,
      * preceded by any user-defined custom units saved for this item.
      */
     fun getSmartUnitsForItem(
@@ -173,14 +249,14 @@ object CurrencyFormatter {
             norm.contains("جافيل") || norm.contains("زيت") || norm.contains("حليب") ||
                 norm.contains("ماء") || norm.contains("خل") || norm.contains("عصير") ||
                 norm.contains("سائل") -> listOf(
-                "قرعة", "لتر", "2 لتر", "5 لتر", "قرعة صغيرة", "قرعة كبيرة", "علبة"
+                "قرعة", "لتر", "2 لتر", "5 لتر", "علبة", "خنيشة"
             )
             // 3. Tea, Coffee, Packaged Grocery, Detergent Powder, Cheese, Butter
             norm.contains("اتاي") || norm.contains("قهوه") || norm.contains("طون") ||
                 norm.contains("فرماج") || norm.contains("جبن") || norm.contains("زبده") ||
                 norm.contains("ياغورت") || norm.contains("مسحوق") || norm.contains("صابون") ||
                 norm.contains("خميره") || norm.contains("بسكويت") || norm.contains("معجون") -> listOf(
-                "علبة", "علبة صغيرة", "علبة كبيرة", "باكيه", "خنيشة", "حبة", "2 حبات", "رابعة"
+                "علبة", "باكية", "خنيشة", "حبة", "رابعة", "نص كيلو", "كيلو"
             )
             // 4. Herbs & Greens (Rbi3, Na3na3, Karafs, Khoss)
             norm.contains("ربيع") || norm.contains("نعناع") || norm.contains("معدنوس") ||
@@ -196,29 +272,196 @@ object CurrencyFormatter {
             )
             // 6. Cleaning / Droguerie Vendor
             iconKey == "cleaning" || vendorNorm.contains("درو") || vendorNorm.contains("نظافه") -> listOf(
-                "قرعة", "علبة", "باكيه", "لتر", "2 لتر", "خنيشة", "حبة", "2 حبات"
+                "قرعة", "علبة", "باكية", "لتر", "2 لتر", "خنيشة", "حبة"
             )
             // 7. Hardware / Dozan / Mwa3en / Clothes Vendor
             iconKey == "handyman" || iconKey == "kitchen" || iconKey == "checkroom" ||
                 vendorNorm.contains("دوزان") || vendorNorm.contains("مواعن") || vendorNorm.contains("حوايج") -> listOf(
-                "حبة", "2 حبات", "علبة", "باكية", "طقم", "حجم متوسط", "حجم كبير"
+                "حبة", "علبة", "باكية", "طقم"
             )
             // 8. Butcher / Chicken / Meat
             iconKey == "set_meal" || vendorNorm.contains("كزار") || vendorNorm.contains("دجاج") ||
                 norm.contains("دجاج") || norm.contains("لحم") || norm.contains("كفته") -> listOf(
-                "كيلو", "نص كيلو", "رابعة", "2 كيلو", "دجاجة متوسطة", "بلاطو", "مطحون"
+                "كيلو", "نص كيلو", "رابعة", "2 كيلو", "دجاجة متوسطة", "مطحون"
             )
             // 9. Attar / Grocery (General: Legumes, Flour, Sugar + Packaged goods)
             iconKey == "store" || vendorNorm.contains("عطار") || vendorNorm.contains("حانوت") -> listOf(
-                "علبة", "قرعة", "باكيه", "كيلو", "نص كيلو", "رابعة", "2 كيلو", "خنيشة", "5 دراهم"
+                "علبة", "قرعة", "باكية", "كيلو", "نص كيلو", "رابعة", "2 كيلو", "خنيشة", "5 دراهم"
             )
             // 10. Vegetables & Fruits (Default Weight & Freshness notes)
             else -> listOf(
-                "كيلو", "نص كيلو", "2 كيلو", "رابعة", "3 رابعات", "3 كيلو", "ربطة", "طايبة", "حجم متوسط"
+                "كيلو", "نص كيلو", "2 كيلو", "رابعة", "3 رابعات", "3 كيلو", "ربطة", "طايبة"
             )
         }
 
         return (custom + smartDefaults).distinct()
+    }
+
+    /**
+     * Returns composable size/count/type modifiers (such as صغيرة, متوسطة, كبيرة, ×2, ×3, شعرة, مكركب)
+     * that combine with the base unit (e.g., "علبة" + "كبيرة" -> "علبة كبيرة", + "×2" -> "2 علبة كبيرة")
+     * instead of overwriting it.
+     */
+    fun getSmartUnitModifiersForItem(itemName: String): List<String> {
+        val norm = normalizeArabicName(itemName)
+        return when {
+            norm.contains("اتاي") -> listOf(
+                "صغيرة", "متوسطة", "كبيرة", "×2", "×3", "شعرة", "مكركب", "200غ", "500غ"
+            )
+            norm.contains("جافيل") || norm.contains("زيت") || norm.contains("حليب") ||
+                norm.contains("ماء") || norm.contains("سائل") || norm.contains("عصير") -> listOf(
+                "صغيرة", "متوسطة", "كبيرة", "×2", "×3", "1 لتر", "2 لتر", "5 لتر"
+            )
+            norm.contains("بيض") -> listOf(
+                "بلدي", "رومي", "كبير", "×2"
+            )
+            else -> listOf(
+                "صغيرة", "متوسطة", "كبيرة", "×2", "×3", "×4"
+            )
+        }
+    }
+
+    private val SIZE_MODIFIERS = setOf(
+        "صغيرة", "صغير", "متوسطة", "متوسط", "كبيرة", "كبير", "حجم صغير", "حجم متوسط", "حجم كبير"
+    )
+    private val TEA_TYPE_MODIFIERS = setOf("شعرة", "مكركب", "حبوب")
+    private val WEIGHT_PACK_MODIFIERS = setOf("100غ", "200غ", "250غ", "500غ", "1 لتر", "2 لتر", "5 لتر")
+    private val COUNT_PREFIX_REGEX = Regex("^(?:(\\d+)\\s*[×x]?\\s*)(.+)$")
+
+    /**
+     * Checks if a given modifier chip (e.g. "صغيرة", "كبيرة", "×2", "شعرة") is currently active in [note].
+     */
+    fun isNoteModifierActive(note: String, modifierChip: String): Boolean {
+        val clean = note.trim()
+        if (clean.isEmpty()) return false
+        if (modifierChip.startsWith("×")) {
+            val num = modifierChip.removePrefix("×").trim()
+            val match = COUNT_PREFIX_REGEX.find(clean)
+            return match?.groupValues?.getOrNull(1) == num
+        }
+        val tokens = clean.split(MULTI_SPACE_REGEX)
+        return tokens.contains(modifierChip)
+    }
+
+    /**
+     * Applies or toggles a base unit (like "علبة", "قرعة", "كيلو") while preserving any chosen
+     * size/count modifiers if appropriate, or toggling off if the exact base unit was already the whole note.
+     */
+    fun applySmartBaseUnit(currentNote: String, chosenBaseUnit: String): String {
+        val cleanCurrent = currentNote.trim()
+        if (cleanCurrent == chosenBaseUnit) {
+            return ""
+        }
+        // Keep active size/count modifiers if switching between container units (e.g. علبة -> باكية or قرعة)
+        val containerUnits = setOf("علبة", "باكية", "باكيه", "قرعة", "خنيشة", "حبة", "ربطة", "طقم")
+        if (chosenBaseUnit !in containerUnits) {
+            return chosenBaseUnit
+        }
+
+        var countPrefix: String? = null
+        var remainder = cleanCurrent
+        val countMatch = COUNT_PREFIX_REGEX.find(remainder)
+        if (countMatch != null && remainder.none { it == 'د' }) { // not "5 دراهم"
+            val firstToken = remainder.substringBefore(" ")
+            if (firstToken.all { it.isDigit() } && remainder.substringAfter(" ") in containerUnits ||
+                containerUnits.any { remainder.substringAfter(" ").startsWith(it) }
+            ) {
+                countPrefix = firstToken
+                remainder = remainder.substringAfter(" ").trim()
+            }
+        }
+
+        val tokens = remainder.split(MULTI_SPACE_REGEX).filter { it.isNotEmpty() }
+        val keptModifiers = tokens.filter {
+            it in SIZE_MODIFIERS || it in TEA_TYPE_MODIFIERS || it in WEIGHT_PACK_MODIFIERS
+        }
+
+        val parts = mutableListOf<String>()
+        if (countPrefix != null) parts.add(countPrefix)
+        parts.add(chosenBaseUnit)
+        parts.addAll(keptModifiers)
+        return parts.joinToString(" ")
+    }
+
+    /**
+     * Composes a size/count/detail modifier (e.g. "صغيرة", "كبيرة", "×2", "شعرة") onto [currentNote]
+     * without erasing the base unit (e.g. "علبة" + "كبيرة" -> "علبة كبيرة", + "×2" -> "2 علبة كبيرة").
+     */
+    fun applySmartNoteModifier(
+        currentNote: String,
+        modifierChip: String,
+        defaultContainerIfEmpty: String = "علبة"
+    ): String {
+        val clean = currentNote.trim()
+
+        // Handle count multipliers like "×2", "×3", "×4"
+        if (modifierChip.startsWith("×")) {
+            val targetCount = modifierChip.removePrefix("×").trim()
+            val tokens = clean.split(MULTI_SPACE_REGEX).filter { it.isNotEmpty() }.toMutableList()
+            if (tokens.isEmpty()) {
+                return "$targetCount $defaultContainerIfEmpty"
+            }
+            val firstIsNumber = tokens.first().all { it.isDigit() } && tokens.size >= 2
+            return if (firstIsNumber) {
+                if (tokens.first() == targetCount) {
+                    // Toggle off count prefix
+                    tokens.drop(1).joinToString(" ")
+                } else {
+                    tokens[0] = targetCount
+                    tokens.joinToString(" ")
+                }
+            } else {
+                "$targetCount ${tokens.joinToString(" ")}"
+            }
+        }
+
+        val tokens = clean.split(MULTI_SPACE_REGEX).filter { it.isNotEmpty() }.toMutableList()
+        if (tokens.isEmpty()) {
+            return if (modifierChip in SIZE_MODIFIERS) {
+                "$defaultContainerIfEmpty $modifierChip"
+            } else {
+                modifierChip
+            }
+        }
+
+        // If already active, toggle it off
+        if (tokens.contains(modifierChip)) {
+            tokens.remove(modifierChip)
+            return tokens.joinToString(" ")
+        }
+
+        // Replace mutually exclusive modifier in the same group (e.g., صغيرة <-> متوسطة <-> كبيرة)
+        when {
+            modifierChip in SIZE_MODIFIERS -> {
+                val idx = tokens.indexOfFirst { it in SIZE_MODIFIERS }
+                if (idx >= 0) {
+                    tokens[idx] = modifierChip
+                } else {
+                    tokens.add(modifierChip)
+                }
+            }
+            modifierChip in TEA_TYPE_MODIFIERS -> {
+                val idx = tokens.indexOfFirst { it in TEA_TYPE_MODIFIERS }
+                if (idx >= 0) {
+                    tokens[idx] = modifierChip
+                } else {
+                    tokens.add(modifierChip)
+                }
+            }
+            modifierChip in WEIGHT_PACK_MODIFIERS -> {
+                val idx = tokens.indexOfFirst { it in WEIGHT_PACK_MODIFIERS }
+                if (idx >= 0) {
+                    tokens[idx] = modifierChip
+                } else {
+                    tokens.add(modifierChip)
+                }
+            }
+            else -> {
+                tokens.add(modifierChip)
+            }
+        }
+
+        return tokens.joinToString(" ")
     }
 
     fun buildShareText(

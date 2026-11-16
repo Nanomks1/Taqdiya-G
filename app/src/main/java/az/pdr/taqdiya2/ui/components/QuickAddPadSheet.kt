@@ -151,7 +151,9 @@ fun QuickAddPadSheet(
     val currentVendor = vendors.firstOrNull { it.id == activeVendorId }
 
     val vendorDictionaryItems = remember(dictionaryItems, activeVendorId) {
-        val forVendor = dictionaryItems.filter { it.defaultVendorId == activeVendorId }
+        val forVendor = dictionaryItems.filter {
+            CurrencyFormatter.dictItemMatchesVendor(it.defaultVendorId, it.secondaryVendorIdsCsv, activeVendorId)
+        }
         if (forVendor.isNotEmpty()) forVendor else dictionaryItems.take(15)
     }
 
@@ -170,7 +172,9 @@ fun QuickAddPadSheet(
         if (activeTargetItem == null) null
         else {
             val norm = CurrencyFormatter.normalizeArabicName(activeTargetItem.name)
-            dictionaryItems.firstOrNull { it.normalizedName == norm }
+            dictionaryItems.firstOrNull {
+                CurrencyFormatter.normalizeArabicName(it.name) == norm || it.normalizedName == norm
+            }
         }
     }
 
@@ -192,11 +196,18 @@ fun QuickAddPadSheet(
         )
     }
 
+    val smartTargetModifiers = remember(activeTargetItem) {
+        if (activeTargetItem == null) emptyList()
+        else CurrencyFormatter.getSmartUnitModifiersForItem(activeTargetItem.name)
+    }
+
     val typedInputSmartUnits = remember(itemNameInput, currentVendor, dictionaryItems) {
         val cleanTyped = itemNameInput.trim()
         val normTyped = CurrencyFormatter.normalizeArabicName(cleanTyped)
         val matchedDict = if (normTyped.isNotEmpty()) {
-            dictionaryItems.firstOrNull { it.normalizedName == normTyped }
+            dictionaryItems.firstOrNull {
+                CurrencyFormatter.normalizeArabicName(it.name) == normTyped || it.normalizedName == normTyped
+            }
         } else null
         CurrencyFormatter.getSmartUnitsForItem(
             itemName = cleanTyped,
@@ -311,7 +322,7 @@ fun QuickAddPadSheet(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = VendorIconMapper.getIcon(vendor.iconKey),
+                                imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                                 contentDescription = vendor.name,
                                 tint = if (isSelected) {
                                     MaterialTheme.colorScheme.secondary
@@ -516,7 +527,8 @@ fun QuickAddPadSheet(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 smartQuickNotes.forEach { noteOption ->
-                                    val isNoteSelected = activeTargetItem.note == noteOption
+                                    val isNoteSelected = activeTargetItem.note.trim() == noteOption ||
+                                        activeTargetItem.note.trim().split(Regex("\\s+")).contains(noteOption)
                                     val isCustomUnit = targetCustomUnitsSet.contains(noteOption)
                                     Surface(
                                         modifier = Modifier
@@ -524,7 +536,11 @@ fun QuickAddPadSheet(
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable {
                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                onApplyQuickNote(noteOption)
+                                                val composed = CurrencyFormatter.applySmartBaseUnit(
+                                                    activeTargetItem.note,
+                                                    noteOption
+                                                )
+                                                onApplyQuickNote(composed)
                                             },
                                         color = if (isNoteSelected) {
                                             MaterialTheme.colorScheme.secondary
@@ -601,6 +617,70 @@ fun QuickAddPadSheet(
                                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                                             fontWeight = FontWeight.Bold
                                         )
+                                    }
+                                }
+                            }
+
+                            // Composable Size & Count Modifiers Row (صغيرة، متوسطة، كبيرة، ×2، ×3...)
+                            if (smartTargetModifiers.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "الحجم أو العدد (يُدمج مع الوحدة أعلاه):",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    val defaultContainer = smartQuickNotes.firstOrNull() ?: "علبة"
+                                    smartTargetModifiers.forEach { modChip ->
+                                        val isModActive = CurrencyFormatter.isNoteModifierActive(
+                                            activeTargetItem.note,
+                                            modChip
+                                        )
+                                        Surface(
+                                            modifier = Modifier
+                                                .heightIn(min = 34.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .clickable {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                    val composed = CurrencyFormatter.applySmartNoteModifier(
+                                                        currentNote = activeTargetItem.note,
+                                                        modifierChip = modChip,
+                                                        defaultContainerIfEmpty = defaultContainer
+                                                    )
+                                                    onApplyQuickNote(composed)
+                                                },
+                                            color = if (isModActive) {
+                                                MaterialTheme.colorScheme.tertiary
+                                            } else {
+                                                MaterialTheme.colorScheme.surface
+                                            },
+                                            border = BorderStroke(
+                                                1.dp,
+                                                if (isModActive) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
+                                            ),
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = modChip,
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    color = if (isModActive) {
+                                                        MaterialTheme.colorScheme.onTertiary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onSurface
+                                                    },
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }

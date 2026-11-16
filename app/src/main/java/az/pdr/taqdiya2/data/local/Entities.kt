@@ -95,7 +95,8 @@ data class DictionaryItemEntity(
     val customUnitsCsv: String = "",
     val usageCount: Int = 1,
     val lastPriceDirhams: Double = 0.0,
-    val lastUpdated: Long = System.currentTimeMillis()
+    val lastUpdated: Long = System.currentTimeMillis(),
+    val secondaryVendorIdsCsv: String = ""
 )
 
 @Entity(
@@ -135,7 +136,7 @@ data class AppSettingsEntity(
     val colorPalette: String = "TERRACOTTA",
     // وضع الحركات البصرية (Animations): "FULL" (كاملة), "LIGHT" (خفيفة), "OFF" (إطفاء)
     val animationMode: String = "LIGHT",
-    // عائلة الخط المختارة: "IBM_PLEX", "VAZIRMATN", "BALOO", "SYSTEM", "CUSTOM"
+    // عائلة الخط المختارة: "IBM_PLEX", "VAZIRMATN", "RUBIK", "BALOO", "SYSTEM"
     val fontFamilyKey: String = "IBM_PLEX",
     // أسماء ملفات الخطوط المخصصة المرفوعة يدوياً (.ttf / .otf)
     val customFontRegularName: String = "",

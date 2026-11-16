@@ -3,6 +3,8 @@ package az.pdr.taqdiya2.ui.components
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowDownward
@@ -45,6 +48,7 @@ import androidx.compose.ui.window.DialogProperties
 import az.pdr.taqdiya2.data.local.VendorEntity
 import az.pdr.taqdiya2.ui.viewmodel.UndoAction
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun VendorManagerDialog(
     vendors: List<VendorEntity>,
@@ -111,66 +115,77 @@ fun VendorManagerDialog(
                 )
 
                 if (isAddingNew || editingVendor != null) {
-                    Text(
-                        text = if (isAddingNew) "إضافة بائع جديد" else "تعديل بيانات البائع",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { nameInput = it },
-                        label = { Text("اسم البائع (مثال: مول الحوت، بائع السوق...)") },
-                        singleLine = true,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag("vendor_name_input")
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = specialtyInput,
-                        onValueChange = { specialtyInput = it },
-                        label = { Text("وصف السلع (اختياري)") },
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("vendor_specialty_input")
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "رمز البائع:",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        VendorIconMapper.availableIcons.forEach { option ->
-                            FilterChip(
-                                selected = selectedIconKey == option.key,
-                                onClick = { selectedIconKey = option.key },
-                                label = { Text(option.label) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = option.icon,
-                                        contentDescription = option.label,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            )
-                        }
-                    }
+                        Text(
+                            text = if (isAddingNew) "إضافة بائع جديد" else "تعديل بيانات البائع",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = nameInput,
+                            onValueChange = {
+                                nameInput = it
+                                if (isAddingNew) {
+                                    selectedIconKey = VendorIconMapper.inferIconKeyFromName(it, "store")
+                                }
+                            },
+                            label = { Text("اسم البائع (مثال: مول البيض، مول الحوت...)") },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("vendor_name_input")
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedTextField(
+                            value = specialtyInput,
+                            onValueChange = { specialtyInput = it },
+                            label = { Text("وصف السلع (اختياري)") },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("vendor_specialty_input")
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "رمز وأيقونة البائع:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            VendorIconMapper.availableIcons.forEach { option ->
+                                FilterChip(
+                                    selected = selectedIconKey == option.key,
+                                    onClick = { selectedIconKey = option.key },
+                                    label = { Text(option.label) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = option.icon,
+                                            contentDescription = option.label,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -202,6 +217,7 @@ fun VendorManagerDialog(
                         ) {
                             Text("حفظ البائع")
                         }
+                    }
                     }
                 } else {
                     Text(
@@ -236,7 +252,7 @@ fun VendorManagerDialog(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
-                                            imageVector = VendorIconMapper.getIcon(vendor.iconKey),
+                                            imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                                             contentDescription = vendor.name,
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(24.dp)
@@ -292,7 +308,7 @@ fun VendorManagerDialog(
                                                 editingVendor = vendor
                                                 nameInput = vendor.name
                                                 specialtyInput = vendor.specialty
-                                                selectedIconKey = vendor.iconKey
+                                                selectedIconKey = VendorIconMapper.inferIconKeyFromName(vendor.name, vendor.iconKey)
                                                 isAddingNew = false
                                             },
                                             modifier = Modifier.size(40.dp)

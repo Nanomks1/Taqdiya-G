@@ -275,7 +275,7 @@ fun TopPocketBar(
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
                                         Text(
-                                            text = "اضغط لتحديد المبلغ",
+                                            text = "حدد المبلغ",
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSecondary,
                                             fontWeight = FontWeight.Bold,

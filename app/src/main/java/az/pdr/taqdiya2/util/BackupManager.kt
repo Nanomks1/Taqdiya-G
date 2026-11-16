@@ -89,7 +89,7 @@ object BackupManager {
 
         // 1. Settings (PIN is always hashed with SHA-256 before exporting)
         val normalizedFont = when (payload.appSettings.fontFamilyKey) {
-            "VAZIRMATN", "BALOO", "SYSTEM" -> payload.appSettings.fontFamilyKey
+            "VAZIRMATN", "RUBIK", "BALOO", "SYSTEM" -> payload.appSettings.fontFamilyKey
             else -> "IBM_PLEX"
         }
         val settingsObj = JSONObject().apply {
@@ -213,6 +213,7 @@ object BackupManager {
                     put("defaultVendorId", d.defaultVendorId)
                     put("defaultNote", d.defaultNote)
                     put("customUnitsCsv", d.customUnitsCsv)
+                    put("secondaryVendorIdsCsv", d.secondaryVendorIdsCsv)
                     put("usageCount", d.usageCount)
                     put("lastPriceDirhams", CurrencyFormatter.roundMoney(d.lastPriceDirhams))
                     put("lastUpdated", d.lastUpdated)
@@ -274,7 +275,7 @@ object BackupManager {
                     colorPalette = settingsObj.optString("colorPalette", "TERRACOTTA"),
                     animationMode = settingsObj.optString("animationMode", "LIGHT"),
                     fontFamilyKey = when (val rawFont = settingsObj.optString("fontFamilyKey", "IBM_PLEX")) {
-                        "VAZIRMATN", "BALOO", "SYSTEM" -> rawFont
+                        "VAZIRMATN", "RUBIK", "BALOO", "SYSTEM" -> rawFont
                         else -> "IBM_PLEX"
                     }
                 )
@@ -399,7 +400,8 @@ object BackupManager {
                             customUnitsCsv = o.optString("customUnitsCsv", ""),
                             usageCount = o.optInt("usageCount", 1),
                             lastPriceDirhams = CurrencyFormatter.roundMoney(o.optDouble("lastPriceDirhams", 0.0)),
-                            lastUpdated = o.optLong("lastUpdated", System.currentTimeMillis())
+                            lastUpdated = o.optLong("lastUpdated", System.currentTimeMillis()),
+                            secondaryVendorIdsCsv = o.optString("secondaryVendorIdsCsv", "")
                         )
                     )
                 }

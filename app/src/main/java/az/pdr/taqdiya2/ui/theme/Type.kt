@@ -79,6 +79,31 @@ fun loadAssetFontFamilyOrFallback(
                 }
             }
 
+            "RUBIK" -> {
+                if ("rubik_var.ttf" !in availableFonts) {
+                    FontFamily.SansSerif
+                } else {
+                    val weights = listOf(
+                        FontWeight.Normal,
+                        FontWeight.Medium,
+                        FontWeight.SemiBold,
+                        FontWeight.Bold
+                    )
+                    FontFamily(
+                        weights.map { w ->
+                            Font(
+                                path = "fonts/rubik_var.ttf",
+                                assetManager = context.assets,
+                                weight = w,
+                                variationSettings = FontVariation.Settings(
+                                    FontVariation.weight(w.weight)
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
             else -> {
                 val hasIbmPlex = "ibm_plex_regular.ttf" in availableFonts &&
                     "ibm_plex_medium.ttf" in availableFonts &&

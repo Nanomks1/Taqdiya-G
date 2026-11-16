@@ -637,7 +637,7 @@ fun AllItemsPriceTrackerDialog(
 
     val filteredItems = remember(dictionaryItems, searchQuery) {
         dictionaryItems.filter { item ->
-            searchQuery.isBlank() || item.name.contains(searchQuery.trim(), ignoreCase = true)
+            searchQuery.isBlank() || CurrencyFormatter.matchesArabicQuery(item.name, searchQuery)
         }
     }
 

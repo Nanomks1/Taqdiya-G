@@ -435,7 +435,7 @@ fun AtVendorScreen(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                imageVector = VendorIconMapper.getIcon(vendor.iconKey),
+                                                imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                                                 contentDescription = vendor.name,
                                                 tint = if (isSelected) {
                                                     MaterialTheme.colorScheme.onPrimary

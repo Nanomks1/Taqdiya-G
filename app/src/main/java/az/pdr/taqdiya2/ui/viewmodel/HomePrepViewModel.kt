@@ -643,13 +643,26 @@ class HomePrepViewModel(
 
         if (normalized.isNotEmpty()) {
             val exactMatch = currentState.dictionaryItems.firstOrNull {
-                it.normalizedName == normalized
+                CurrencyFormatter.normalizeArabicName(it.name) == normalized || it.normalizedName == normalized
             } ?: currentState.dictionaryItems.firstOrNull {
-                it.normalizedName.startsWith(normalized) && normalized.length >= 2
+                normalized.length >= 2 && CurrencyFormatter.matchesArabicQuery(it.name, normalized)
             }
 
             if (exactMatch != null) {
-                val vendor = currentState.vendors.firstOrNull { it.id == exactMatch.defaultVendorId }
+                val currentVendorId = draftState.value.selectedVendorIdForInput
+                val targetVendorId = if (
+                    currentVendorId != null &&
+                    CurrencyFormatter.dictItemMatchesVendor(
+                        exactMatch.defaultVendorId,
+                        exactMatch.secondaryVendorIdsCsv,
+                        currentVendorId
+                    )
+                ) {
+                    currentVendorId
+                } else {
+                    exactMatch.defaultVendorId
+                }
+                val vendor = currentState.vendors.firstOrNull { it.id == targetVendorId }
                 if (vendor != null) {
                     matchedVendorId = vendor.id
                     matchedVendorName = vendor.name
@@ -878,26 +891,43 @@ class HomePrepViewModel(
         }
     }
 
-    fun addDictionaryEntry(name: String, vendorId: Long, defaultNote: String) {
+    fun addDictionaryEntry(
+        name: String,
+        vendorId: Long,
+        defaultNote: String,
+        secondaryVendorIds: List<Long> = emptyList()
+    ) {
         val cleanName = name.trim()
         if (cleanName.isEmpty()) return
         viewModelScope.launch {
-            repository.addOrUpdateDictionaryEntry(cleanName, vendorId, defaultNote)
+            repository.addOrUpdateDictionaryEntry(cleanName, vendorId, defaultNote, secondaryVendorIds)
             _statusMessages.tryEmit("تم حفظ «$cleanName» في القاموس الذكي")
         }
     }
 
-    fun renameDictionaryEntry(itemId: Long, newName: String, newVendorId: Long, newDefaultNote: String) {
+    fun renameDictionaryEntry(
+        itemId: Long,
+        newName: String,
+        newVendorId: Long,
+        newDefaultNote: String,
+        newSecondaryVendorIds: List<Long> = emptyList()
+    ) {
         val cleanName = newName.trim()
         if (cleanName.isEmpty()) return
         val currentState = uiState.value
         val previousEntry = currentState.dictionaryItems.firstOrNull { it.id == itemId } ?: return
         val affectedShoppingItems = currentState.shoppingItems.filter {
-            it.name.trim().equals(previousEntry.name.trim(), ignoreCase = true)
+            CurrencyFormatter.normalizeArabicName(it.name) == CurrencyFormatter.normalizeArabicName(previousEntry.name)
         }.map { it.copy() }
 
         viewModelScope.launch {
-            repository.renameDictionaryEntry(itemId, cleanName, newVendorId, newDefaultNote)
+            repository.renameDictionaryEntry(
+                itemId = itemId,
+                newName = cleanName,
+                newVendorId = newVendorId,
+                newDefaultNote = newDefaultNote,
+                newSecondaryVendorIds = newSecondaryVendorIds
+            )
             pushUndoAction(
                 UndoAction.RenamedDictionaryItem(
                     previousEntry = previousEntry,
@@ -1004,7 +1034,10 @@ class HomePrepViewModel(
                         itemId = action.previousEntry.id,
                         newName = action.previousEntry.name,
                         newVendorId = action.previousEntry.defaultVendorId,
-                        newDefaultNote = action.previousEntry.defaultNote
+                        newDefaultNote = action.previousEntry.defaultNote,
+                        newSecondaryVendorIds = CurrencyFormatter.parseVendorIdsCsv(
+                            action.previousEntry.secondaryVendorIdsCsv
+                        )
                     )
                     action.affectedItemsBeforeRename.forEach { oldItem ->
                         repository.updateShoppingItem(oldItem)
@@ -1131,6 +1164,7 @@ class HomePrepViewModel(
             repository.updateAppSettings { it.copy(fontFamilyKey = safeKey) }
             val fontLabel = when (safeKey) {
                 "VAZIRMATN" -> "خط وزير (Vazirmatn)"
+                "RUBIK" -> "خط روبيك (Rubik)"
                 "BALOO" -> "خط Baloo Bhaijaan 2"
                 "SYSTEM" -> "خط الهاتف (النظام)"
                 else -> "خط IBM Plex Arabic"

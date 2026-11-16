@@ -106,4 +106,39 @@ class TaqdiyaBatch1Test {
         assertEquals("IBM_PLEX", decoded.appSettings.fontFamilyKey)
         assertTrue(PinSecurityUtil.verifyPin("2580", decoded.appSettings.pinCode))
     }
+
+    @Test
+    fun `verify flexible arabic search composable unit modifiers multi vendor and vendor icons`() {
+        // 1. Flexible Arabic search ("اتاي" == "أتاي" == "الأتاي", "مطيشه" == "مطيشة", "دروغري" == "دروݣري")
+        assertTrue(CurrencyFormatter.matchesArabicQuery("أتاي", "اتاي"))
+        assertTrue(CurrencyFormatter.matchesArabicQuery("اتاي", "أتاي"))
+        assertTrue(CurrencyFormatter.matchesArabicQuery("أتاي", "الأتاي"))
+        assertTrue(CurrencyFormatter.matchesArabicQuery("مطيشة", "مطيشه"))
+        assertTrue(CurrencyFormatter.matchesArabicQuery("الدروݣري ومواد النظافة", "دروغري"))
+
+        // 2. Composable unit + size/count modifiers ("علبة" + "كبيرة" + "×2" -> "2 علبة كبيرة")
+        var note = CurrencyFormatter.applySmartBaseUnit("", "علبة")
+        assertEquals("علبة", note)
+        note = CurrencyFormatter.applySmartNoteModifier(note, "كبيرة", "أتاي")
+        assertEquals("علبة كبيرة", note)
+        note = CurrencyFormatter.applySmartNoteModifier(note, "×2", "أتاي")
+        assertEquals("2 علبة كبيرة", note)
+        // Switching size from "كبيرة" to "صغيرة" keeps "2 علبة" intact
+        note = CurrencyFormatter.applySmartNoteModifier(note, "صغيرة", "أتاي")
+        assertEquals("2 علبة صغيرة", note)
+
+        // 3. Multi-vendor CSV encoding and matching (e.g. جافيل in both العطار=1 and الدروݣري=5)
+        val csv = CurrencyFormatter.encodeVendorIdsCsv(listOf(1L, 5L), primaryVendorId = 5L)
+        assertEquals("1", csv)
+        assertTrue(CurrencyFormatter.dictItemMatchesVendor(5L, csv, 5L))
+        assertTrue(CurrencyFormatter.dictItemMatchesVendor(5L, csv, 1L))
+        assertFalse(CurrencyFormatter.dictItemMatchesVendor(5L, csv, 2L))
+
+        // 4. Vendor icon inference for Moroccan vendors
+        assertEquals("nutrition", az.pdr.taqdiya2.ui.components.VendorIconMapper.inferIconKeyFromName("مول الفواكه"))
+        assertEquals("set_meal", az.pdr.taqdiya2.ui.components.VendorIconMapper.inferIconKeyFromName("الكزار ومول الدجاج"))
+        assertEquals("kitchen", az.pdr.taqdiya2.ui.components.VendorIconMapper.inferIconKeyFromName("مول المواعن"))
+        assertEquals("egg", az.pdr.taqdiya2.ui.components.VendorIconMapper.inferIconKeyFromName("مول البيض"))
+    }
 }
+

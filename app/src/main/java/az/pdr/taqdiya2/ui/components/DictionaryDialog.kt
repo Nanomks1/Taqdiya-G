@@ -3,6 +3,8 @@ package az.pdr.taqdiya2.ui.components
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,9 +16,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CallMerge
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Search
@@ -47,6 +51,7 @@ import androidx.compose.ui.window.DialogProperties
 import az.pdr.taqdiya2.data.local.DictionaryItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
 import az.pdr.taqdiya2.ui.viewmodel.UndoAction
+import az.pdr.taqdiya2.util.CurrencyFormatter
 
 private enum class DictDialogMode {
     LIST,
@@ -54,6 +59,7 @@ private enum class DictDialogMode {
     MERGE
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DictionaryDialog(
     dictionaryItems: List<DictionaryItemEntity>,
@@ -61,8 +67,8 @@ fun DictionaryDialog(
     activeUndo: UndoAction?,
     onPerformUndo: (UndoAction) -> Unit,
     onDismissUndo: () -> Unit,
-    onAddEntry: (String, Long, String) -> Unit,
-    onRenameEntry: (Long, String, Long, String) -> Unit,
+    onAddEntry: (String, Long, String, List<Long>) -> Unit,
+    onRenameEntry: (Long, String, Long, String, List<Long>) -> Unit,
     onMergeEntries: (DictionaryItemEntity, DictionaryItemEntity) -> Unit,
     onDeleteEntry: (DictionaryItemEntity) -> Unit,
     onDismiss: () -> Unit
@@ -73,8 +79,8 @@ fun DictionaryDialog(
     var editingEntry by remember { mutableStateOf<DictionaryItemEntity?>(null) }
     var nameInput by remember { mutableStateOf("") }
     var noteInput by remember { mutableStateOf("") }
-    var selectedVendorId by remember {
-        mutableStateOf(vendors.firstOrNull()?.id ?: 1L)
+    var selectedVendorIds by remember {
+        mutableStateOf(listOfNotNull(vendors.firstOrNull()?.id))
     }
 
     var mergeSource by remember { mutableStateOf<DictionaryItemEntity?>(null) }
@@ -86,8 +92,10 @@ fun DictionaryDialog(
         if (searchQuery.isBlank()) {
             dictionaryItems
         } else {
-            val q = searchQuery.trim()
-            dictionaryItems.filter { it.name.contains(q, ignoreCase = true) }
+            dictionaryItems.filter { item ->
+                CurrencyFormatter.matchesArabicQuery(item.name, searchQuery) ||
+                    CurrencyFormatter.matchesArabicQuery(item.defaultNote, searchQuery)
+            }
         }
     }
 
@@ -116,7 +124,7 @@ fun DictionaryDialog(
                                 editingEntry = null
                                 nameInput = ""
                                 noteInput = ""
-                                selectedVendorId = vendors.firstOrNull()?.id ?: 1L
+                                selectedVendorIds = listOfNotNull(vendors.firstOrNull()?.id)
                                 mode = DictDialogMode.ADD_OR_EDIT
                             },
                             modifier = Modifier
@@ -172,7 +180,7 @@ fun DictionaryDialog(
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("ابحث في القاموس (مثال: لوبيا، مطيشة...)") },
+                            placeholder = { Text("ابحث بمرونة (مثال: اتاي، أتاي، جافيل...)") },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Search,
@@ -194,7 +202,15 @@ fun DictionaryDialog(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(filteredItems, key = { it.id }) { item ->
-                                val vendorName = vendorMap[item.defaultVendorId]?.name ?: "بائع عام"
+                                val allLinkedIds = CurrencyFormatter.getAllVendorIdsForDictItem(
+                                    item.defaultVendorId,
+                                    item.secondaryVendorIdsCsv
+                                )
+                                val vendorNamesText = allLinkedIds
+                                    .mapNotNull { vendorMap[it]?.name }
+                                    .ifEmpty { listOf("بائع عام") }
+                                    .joinToString(" ، ")
+
                                 OutlinedCard(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = CardDefaults.outlinedCardColors(
@@ -240,14 +256,17 @@ fun DictionaryDialog(
                                                         editingEntry = item
                                                         nameInput = item.name
                                                         noteInput = item.defaultNote
-                                                        selectedVendorId = item.defaultVendorId
+                                                        selectedVendorIds = CurrencyFormatter.getAllVendorIdsForDictItem(
+                                                            item.defaultVendorId,
+                                                            item.secondaryVendorIdsCsv
+                                                        ).ifEmpty { listOfNotNull(vendors.firstOrNull()?.id) }
                                                         mode = DictDialogMode.ADD_OR_EDIT
                                                     },
                                                     modifier = Modifier.size(38.dp)
                                                 ) {
                                                     Icon(
                                                         imageVector = Icons.Outlined.Edit,
-                                                        contentDescription = "إعادة تسمية أو تعديل",
+                                                        contentDescription = "إعادة تسمية أو تعديل البائعين",
                                                         tint = MaterialTheme.colorScheme.primary,
                                                         modifier = Modifier.size(18.dp)
                                                     )
@@ -267,7 +286,7 @@ fun DictionaryDialog(
                                         }
 
                                         Text(
-                                            text = "البائع التلقائي: $vendorName • التكرار: ${item.usageCount}",
+                                            text = "البائعون: $vendorNamesText • التكرار: ${item.usageCount}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -278,94 +297,142 @@ fun DictionaryDialog(
                     }
 
                     DictDialogMode.ADD_OR_EDIT -> {
-                        Text(
-                            text = if (editingEntry == null) {
-                                "إضافة سلعة جديدة للقاموس الذكي"
-                            } else {
-                                "إعادة تسمية السلعة أو تعديل بائعها التلقائي"
-                            },
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        OutlinedTextField(
-                            value = nameInput,
-                            onValueChange = { nameInput = it },
-                            label = { Text("اسم السلعة") },
-                            singleLine = true,
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .testTag("dict_entry_name_input")
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedTextField(
-                            value = noteInput,
-                            onValueChange = { noteInput = it },
-                            label = { Text("ملاحظة افتراضية (اختياري)") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Text(
-                            text = "البائع المخصص تلقائياً لهذه السلعة:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                .verticalScroll(rememberScrollState())
                         ) {
-                            vendors.forEach { vendor ->
-                                FilterChip(
-                                    selected = selectedVendorId == vendor.id,
-                                    onClick = { selectedVendorId = vendor.id },
-                                    label = { Text(vendor.name) }
-                                )
-                            }
-                        }
+                            Text(
+                                text = if (editingEntry == null) {
+                                    "إضافة سلعة جديدة للقاموس الذكي"
+                                } else {
+                                    "إعادة تسمية السلعة أو تحديد بائعيها"
+                                },
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(onClick = { mode = DictDialogMode.LIST }) {
-                                Text("رجوع للقاموس")
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = {
-                                    val clean = nameInput.trim()
-                                    if (clean.isNotEmpty()) {
-                                        if (editingEntry == null) {
-                                            onAddEntry(clean, selectedVendorId, noteInput)
-                                        } else {
-                                            onRenameEntry(
-                                                editingEntry!!.id,
-                                                clean,
-                                                selectedVendorId,
-                                                noteInput
+                            OutlinedTextField(
+                                value = nameInput,
+                                onValueChange = { nameInput = it },
+                                label = { Text("اسم السلعة") },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("dict_entry_name_input")
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            OutlinedTextField(
+                                value = noteInput,
+                                onValueChange = { noteInput = it },
+                                label = { Text("ملاحظة افتراضية (اختياري)") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "البائعون المخصصون لهذه السلعة (يمكنك اختيار بائع واحد أو عدة بائعين معاً):",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "ستظهر السلعة في لوحة الإضافة السريعة عند كل بائع تحدده هنا.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                vendors.forEach { vendor ->
+                                    val isSelected = selectedVendorIds.contains(vendor.id)
+                                    val isPrimary = selectedVendorIds.firstOrNull() == vendor.id
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            selectedVendorIds = if (isSelected) {
+                                                // Always keep at least one vendor selected
+                                                if (selectedVendorIds.size > 1) {
+                                                    selectedVendorIds.filterNot { it == vendor.id }
+                                                } else {
+                                                    selectedVendorIds
+                                                }
+                                            } else {
+                                                selectedVendorIds + vendor.id
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = if (isSelected) {
+                                                    Icons.Outlined.Check
+                                                } else {
+                                                    VendorIconMapper.getIcon(vendor.iconKey, vendor.name)
+                                                },
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        },
+                                        label = {
+                                            Text(
+                                                text = if (isPrimary && selectedVendorIds.size > 1) {
+                                                    "${vendor.name} (رئيسي)"
+                                                } else {
+                                                    vendor.name
+                                                }
                                             )
                                         }
-                                        mode = DictDialogMode.LIST
-                                    }
-                                },
-                                modifier = Modifier.testTag("dict_save_entry_button")
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
                             ) {
-                                Text("حفظ في القاموس")
+                                TextButton(onClick = { mode = DictDialogMode.LIST }) {
+                                    Text("رجوع للقاموس")
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = {
+                                        val clean = nameInput.trim()
+                                        if (clean.isNotEmpty()) {
+                                            val primaryId = selectedVendorIds.firstOrNull()
+                                                ?: vendors.firstOrNull()?.id
+                                                ?: 1L
+                                            val secondaryIds = selectedVendorIds.drop(1)
+                                            if (editingEntry == null) {
+                                                onAddEntry(clean, primaryId, noteInput, secondaryIds)
+                                            } else {
+                                                onRenameEntry(
+                                                    editingEntry!!.id,
+                                                    clean,
+                                                    primaryId,
+                                                    noteInput,
+                                                    secondaryIds
+                                                )
+                                            }
+                                            mode = DictDialogMode.LIST
+                                        }
+                                    },
+                                    modifier = Modifier.testTag("dict_save_entry_button")
+                                ) {
+                                    Text("حفظ في القاموس")
+                                }
                             }
                         }
                     }
@@ -451,7 +518,7 @@ fun DictionaryDialog(
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "سيتم تحويل «${src.name}» إلى «${dst.name}» وجمع عداد استخدامهما معاً (${src.usageCount + dst.usageCount} مرات).",
+                                        text = "سيتم تحويل «${src.name}» إلى «${dst.name}» وجمع عداد استخدامهما وبائعيهما معاً (${src.usageCount + dst.usageCount} مرات).",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )

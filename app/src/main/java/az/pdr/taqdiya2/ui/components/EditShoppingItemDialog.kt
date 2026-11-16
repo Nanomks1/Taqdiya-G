@@ -2,7 +2,6 @@ package az.pdr.taqdiya2.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -68,7 +67,9 @@ fun EditShoppingItemDialog(
 
     val dictEntry = remember(nameInput, dictionaryItems) {
         val norm = CurrencyFormatter.normalizeArabicName(nameInput)
-        dictionaryItems.firstOrNull { it.normalizedName == norm }
+        dictionaryItems.firstOrNull {
+            CurrencyFormatter.normalizeArabicName(it.name) == norm || it.normalizedName == norm
+        }
     }
 
     val customUnitsSet = remember(dictEntry) {
@@ -81,6 +82,10 @@ fun EditShoppingItemDialog(
             vendor = selectedVendor,
             customUnitsCsv = dictEntry?.customUnitsCsv.orEmpty()
         )
+    }
+
+    val smartModifiers = remember(nameInput) {
+        CurrencyFormatter.getSmartUnitModifiersForItem(nameInput.ifBlank { item.name })
     }
 
     AlertDialog(
@@ -113,7 +118,7 @@ fun EditShoppingItemDialog(
                 OutlinedTextField(
                     value = noteInput,
                     onValueChange = { noteInput = it },
-                    label = { Text("المقدار أو الملاحظة (مثال: علبة، كيلو، قرعة...)") },
+                    label = { Text("المقدار أو الملاحظة (مثال: علبة كبيرة، 2 كيلو...)") },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -122,8 +127,9 @@ fun EditShoppingItemDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                // 1. Base Units Row
                 Text(
-                    text = "مقادير سريعة وخاصة لـ «${nameInput.ifBlank { item.name }}»:",
+                    text = "1. اختر الوحدة أو المقدار لـ «${nameInput.ifBlank { item.name }}»:",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -136,14 +142,15 @@ fun EditShoppingItemDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     smartUnits.forEach { unitOption ->
-                        val isSelected = noteInput.trim() == unitOption
+                        val isSelected = noteInput.trim() == unitOption ||
+                            noteInput.trim().split(Regex("\\s+")).contains(unitOption)
                         val isCustom = customUnitsSet.contains(unitOption)
                         Surface(
                             modifier = Modifier
                                 .heightIn(min = 36.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable {
-                                    noteInput = if (isSelected) "" else unitOption
+                                    noteInput = CurrencyFormatter.applySmartBaseUnit(noteInput, unitOption)
                                 },
                             color = if (isSelected) {
                                 MaterialTheme.colorScheme.secondary
@@ -223,6 +230,66 @@ fun EditShoppingItemDialog(
                     }
                 }
 
+                // 2. Composable Size & Count Modifiers (صغيرة / متوسطة / كبيرة / ×2 / ×3 ...)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "2. حدد الحجم أو العدد (يُدمج تلقائياً مع الوحدة، مثل: علبة + كبيرة):",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val defaultContainer = smartUnits.firstOrNull() ?: "علبة"
+                    smartModifiers.forEach { modChip ->
+                        val isModActive = CurrencyFormatter.isNoteModifierActive(noteInput, modChip)
+                        Surface(
+                            modifier = Modifier
+                                .heightIn(min = 34.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    noteInput = CurrencyFormatter.applySmartNoteModifier(
+                                        currentNote = noteInput,
+                                        modifierChip = modChip,
+                                        defaultContainerIfEmpty = defaultContainer
+                                    )
+                                },
+                            color = if (isModActive) {
+                                MaterialTheme.colorScheme.tertiary
+                            } else {
+                                MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f)
+                            },
+                            border = BorderStroke(
+                                1.dp,
+                                if (isModActive) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = modChip,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isModActive) {
+                                        MaterialTheme.colorScheme.onTertiary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+
                 if (showAddCustomUnitInput) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
@@ -257,27 +324,47 @@ fun EditShoppingItemDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "البائع المخصص:",
+                    text = "البائع المخصص لهذه السلعة:",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     vendors.forEach { vendor ->
+                        val isLinkedInDict = dictEntry != null && CurrencyFormatter.dictItemMatchesVendor(
+                            dictEntry.defaultVendorId,
+                            dictEntry.secondaryVendorIdsCsv,
+                            vendor.id
+                        )
                         FilterChip(
                             selected = selectedVendorId == vendor.id,
                             onClick = { selectedVendorId = vendor.id },
-                            label = { Text(vendor.name) }
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = if (isLinkedInDict && selectedVendorId != vendor.id) {
+                                        "${vendor.name} ★"
+                                    } else {
+                                        vendor.name
+                                    }
+                                )
+                            }
                         )
                     }
                 }
@@ -304,4 +391,3 @@ fun EditShoppingItemDialog(
         }
     )
 }
-

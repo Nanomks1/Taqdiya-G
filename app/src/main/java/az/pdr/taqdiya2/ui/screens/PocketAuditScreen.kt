@@ -358,7 +358,7 @@ fun PocketAuditScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = VendorIconMapper.getIcon(vendor.iconKey),
+                                        imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                                         contentDescription = vendor.name,
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
@@ -897,7 +897,7 @@ private fun PocketLedgerSummaryCard(
                             text = "خرجت من البيت بـ",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
@@ -937,7 +937,7 @@ private fun PocketLedgerSummaryCard(
                             text = "مجموع ما صرفته",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f),
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(

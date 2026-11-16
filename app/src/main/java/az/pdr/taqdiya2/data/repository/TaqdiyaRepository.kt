@@ -38,7 +38,8 @@ class TaqdiyaRepository(
         val vendorId: Long,
         val usageCount: Int,
         val referencePriceDh: Double,
-        val mode: String = "WEIGHT"
+        val mode: String = "WEIGHT",
+        val secondaryVendorIds: List<Long> = emptyList()
     )
 
     suspend fun ensureInitialized() {
@@ -157,10 +158,10 @@ class TaqdiyaRepository(
                 SeedDictEntry("بنان", fawakihId, 9, 12.0, "WEIGHT"),
                 SeedDictEntry("تفاح", fawakihId, 8, 14.0, "WEIGHT"),
                 SeedDictEntry("ليمون", fawakihId, 8, 7.0, "WEIGHT"),
-                // الدروݣري والدوزان والمواعن
-                SeedDictEntry("جافيل", drogriId, 8, 6.0, "COUNT"),
-                SeedDictEntry("مسحوق الغسيل", drogriId, 7, 15.0, "COUNT"),
-                SeedDictEntry("صابون", drogriId, 6, 5.0, "COUNT"),
+                // الدروݣري والدوزان والمواعن (مع ربط جافيل والصابون والمسحوق أيضاً بالعطار/مول الحانوت)
+                SeedDictEntry("جافيل", drogriId, 8, 6.0, "COUNT", listOf(attarId)),
+                SeedDictEntry("مسحوق الغسيل", drogriId, 7, 15.0, "COUNT", listOf(attarId)),
+                SeedDictEntry("صابون", drogriId, 6, 5.0, "COUNT", listOf(attarId)),
                 SeedDictEntry("براغي", dozanId, 4, 5.0, "FIXED"),
                 SeedDictEntry("كيسان أتاي", mwaenId, 3, 25.0, "COUNT")
             )
@@ -171,10 +172,65 @@ class TaqdiyaRepository(
                     normalizedName = CurrencyFormatter.normalizeArabicName(entry.name),
                     defaultVendorId = entry.vendorId,
                     usageCount = entry.usageCount,
-                    lastPriceDirhams = entry.referencePriceDh
+                    lastPriceDirhams = entry.referencePriceDh,
+                    secondaryVendorIdsCsv = CurrencyFormatter.encodeVendorIdsCsv(entry.secondaryVendorIds, entry.vendorId)
                 )
             }
             dao.insertDictionaryItems(seedDictionary)
+        } else {
+            // Auto-upgrade any existing vendor that still had default "store" iconKey for specialized names (e.g. "مول البيض")
+            val activeVendorsList = dao.getActiveVendorsOnce()
+            for (v in activeVendorsList) {
+                if (v.iconKey == "store") {
+                    val inferred = when {
+                        v.name.contains("بيض") -> "egg"
+                        v.name.contains("حوت") || v.name.contains("سمك") -> "fish"
+                        v.name.contains("فواكه") || v.name.contains("ديسير") -> "nutrition"
+                        v.name.contains("خضر") -> "eco"
+                        v.name.contains("كزار") || v.name.contains("دجاج") -> "set_meal"
+                        v.name.contains("درو") || v.name.contains("نظاف") -> "cleaning"
+                        v.name.contains("دوزان") -> "handyman"
+                        v.name.contains("مواعن") -> "kitchen"
+                        v.name.contains("حوايج") -> "checkroom"
+                        v.name.contains("خبز") || v.name.contains("مخبز") -> "bakery"
+                        else -> "store"
+                    }
+                    if (inferred != "store") {
+                        dao.updateVendor(v.copy(iconKey = inferred))
+                    }
+                }
+            }
+
+            // Ensure shared items like جافيل / صابون / مسحوق الغسيل / بيض link both vendors if secondaryVendorIdsCsv is empty
+            val attarVendor = activeVendorsList.firstOrNull { it.name.contains("العطار") || it.name.contains("الحانوت") }
+            val drogriVendor = activeVendorsList.firstOrNull { it.name.contains("درو") || it.name.contains("نظاف") }
+            val baydVendor = activeVendorsList.firstOrNull { it.name.contains("بيض") && !it.name.contains("الكزار") }
+            if (attarVendor != null && drogriVendor != null) {
+                for (sharedName in listOf("جافيل", "صابون", "مسحوق الغسيل")) {
+                    val dictItem = dao.getDictionaryItemByNormalizedName(CurrencyFormatter.normalizeArabicName(sharedName))
+                    if (dictItem != null && dictItem.secondaryVendorIdsCsv.isBlank()) {
+                        val allIds = listOf(dictItem.defaultVendorId, attarVendor.id, drogriVendor.id)
+                        dao.updateDictionaryItem(
+                            dictItem.copy(
+                                secondaryVendorIdsCsv = CurrencyFormatter.encodeVendorIdsCsv(allIds, dictItem.defaultVendorId)
+                            )
+                        )
+                    }
+                }
+            }
+            if (baydVendor != null) {
+                val eggDict = dao.getDictionaryItemByNormalizedName(CurrencyFormatter.normalizeArabicName("بيض"))
+                if (eggDict != null) {
+                    val allIds = CurrencyFormatter.getAllVendorIdsForDictItem(
+                        eggDict.defaultVendorId,
+                        eggDict.secondaryVendorIdsCsv
+                    ) + listOfNotNull(baydVendor.id, attarVendor?.id)
+                    val newCsv = CurrencyFormatter.encodeVendorIdsCsv(allIds, eggDict.defaultVendorId)
+                    if (newCsv != eggDict.secondaryVendorIdsCsv) {
+                        dao.updateDictionaryItem(eggDict.copy(secondaryVendorIdsCsv = newCsv))
+                    }
+                }
+            }
         }
 
         // Ensure initial price history records exist so price indicator works immediately
@@ -413,9 +469,14 @@ class TaqdiyaRepository(
 
         val existingDict = dao.getDictionaryItemByNormalizedName(normalized)
         if (existingDict != null) {
+            val allVendorIds = CurrencyFormatter.getAllVendorIdsForDictItem(
+                existingDict.defaultVendorId,
+                existingDict.secondaryVendorIdsCsv
+            ) + vendorId
             dao.updateDictionaryItem(
                 existingDict.copy(
                     defaultVendorId = vendorId,
+                    secondaryVendorIdsCsv = CurrencyFormatter.encodeVendorIdsCsv(allVendorIds, vendorId),
                     defaultNote = if (cleanNote.isNotBlank()) cleanNote else existingDict.defaultNote,
                     usageCount = existingDict.usageCount + 1,
                     lastUpdated = System.currentTimeMillis()
@@ -592,9 +653,14 @@ class TaqdiyaRepository(
         val normalized = CurrencyFormatter.normalizeArabicName(item.name)
         val existingDict = dao.getDictionaryItemByNormalizedName(normalized)
         if (existingDict != null) {
+            val allVendorIds = CurrencyFormatter.getAllVendorIdsForDictItem(
+                existingDict.defaultVendorId,
+                existingDict.secondaryVendorIdsCsv
+            ) + item.vendorId
             dao.updateDictionaryItem(
                 existingDict.copy(
                     defaultVendorId = item.vendorId,
+                    secondaryVendorIdsCsv = CurrencyFormatter.encodeVendorIdsCsv(allVendorIds, item.vendorId),
                     lastUpdated = System.currentTimeMillis()
                 )
             )
@@ -781,18 +847,21 @@ class TaqdiyaRepository(
     suspend fun addOrUpdateDictionaryEntry(
         name: String,
         vendorId: Long,
-        defaultNote: String
+        defaultNote: String,
+        secondaryVendorIds: List<Long> = emptyList()
     ) {
         val cleanName = name.trim()
         if (cleanName.isEmpty()) return
         val normalized = CurrencyFormatter.normalizeArabicName(cleanName)
         val existing = dao.getDictionaryItemByNormalizedName(normalized)
+        val secondaryCsv = CurrencyFormatter.encodeVendorIdsCsv(secondaryVendorIds, vendorId)
         if (existing != null) {
             dao.updateDictionaryItem(
                 existing.copy(
                     name = cleanName,
                     defaultVendorId = vendorId,
                     defaultNote = defaultNote.trim(),
+                    secondaryVendorIdsCsv = secondaryCsv,
                     lastUpdated = System.currentTimeMillis()
                 )
             )
@@ -803,28 +872,34 @@ class TaqdiyaRepository(
                     normalizedName = normalized,
                     defaultVendorId = vendorId,
                     defaultNote = defaultNote.trim(),
+                    secondaryVendorIdsCsv = secondaryCsv,
                     usageCount = 1
                 )
             )
         }
+        triggerSilentAutoBackup()
     }
 
     suspend fun renameDictionaryEntry(
         itemId: Long,
         newName: String,
         newVendorId: Long,
-        newDefaultNote: String
+        newDefaultNote: String,
+        newSecondaryVendorIds: List<Long> = emptyList()
     ) {
         val cleanName = newName.trim()
         if (cleanName.isEmpty()) return
         val normalized = CurrencyFormatter.normalizeArabicName(cleanName)
+        val secondaryCsv = CurrencyFormatter.encodeVendorIdsCsv(newSecondaryVendorIds, newVendorId)
         dao.renameOrUpdateDictionaryItem(
             itemId = itemId,
             newName = cleanName,
             newNormalizedName = normalized,
             newVendorId = newVendorId,
-            newDefaultNote = newDefaultNote
+            newDefaultNote = newDefaultNote,
+            newSecondaryVendorIdsCsv = secondaryCsv
         )
+        triggerSilentAutoBackup()
     }
 
     suspend fun mergeDictionaryEntries(sourceId: Long, targetId: Long) {

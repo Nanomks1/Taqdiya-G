@@ -65,6 +65,7 @@ import az.pdr.taqdiya2.ui.components.VendorIconMapper
 import az.pdr.taqdiya2.ui.theme.ambientCardBorder
 import az.pdr.taqdiya2.ui.theme.ambientCardShadow
 import az.pdr.taqdiya2.ui.viewmodel.HomePrepUiState
+import az.pdr.taqdiya2.util.CurrencyFormatter
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -89,8 +90,8 @@ fun HomePrepScreen(
             !item.isDeleted &&
                 (uiState.filterVendorId == null || item.vendorId == uiState.filterVendorId) &&
                 (uiState.searchQuery.isBlank() ||
-                    item.name.contains(uiState.searchQuery.trim(), ignoreCase = true) ||
-                    item.note.contains(uiState.searchQuery.trim(), ignoreCase = true))
+                    CurrencyFormatter.matchesArabicQuery(item.name, uiState.searchQuery) ||
+                    CurrencyFormatter.matchesArabicQuery(item.note, uiState.searchQuery))
         }
     }
 
@@ -329,7 +330,7 @@ fun HomePrepScreen(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                imageVector = VendorIconMapper.getIcon(vendor.iconKey),
+                                                imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                                                 contentDescription = vendor.name,
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
@@ -558,7 +559,7 @@ private fun OversizedVendorCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = VendorIconMapper.getIcon(vendor.iconKey),
+                            imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                             contentDescription = vendor.name,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(21.dp)
