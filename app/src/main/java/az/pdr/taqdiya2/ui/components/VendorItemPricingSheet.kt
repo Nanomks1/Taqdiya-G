@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,6 +85,7 @@ fun VendorItemPricingSheet(
     fallbackLastPriceDirhams: Double,
     appSettings: AppSettingsEntity = AppSettingsEntity(),
     onOpenPriceHistory: () -> Unit,
+    onOpenMarketCalculatorSettings: (() -> Unit)? = null,
     onConfirmPurchase: (
         purchaseMode: String,
         unitPriceDirhams: Double,
@@ -297,7 +299,7 @@ fun VendorItemPricingSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = item.name,
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
@@ -314,11 +316,13 @@ fun VendorItemPricingSheet(
                     )
                 }
 
+                Spacer(modifier = Modifier.width(6.dp))
+
                 // Dirham <-> Rial Quick Toggle Pill
                 Surface(
                     modifier = Modifier
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .height(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
                         .clickable {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             val currentVal = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
@@ -335,33 +339,53 @@ fun VendorItemPricingSheet(
                         }
                         .testTag("pricing_currency_toggle"),
                     color = if (inputInRials) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.SwapHoriz,
                             contentDescription = "تبديل العملة",
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (inputInRials) "إدخال بالريال" else "إدخال بالدرهم",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            text = if (inputInRials) "بالريال" else "بالدرهم",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                if (onOpenMarketCalculatorSettings != null) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    IconButton(
+                        onClick = onOpenMarketCalculatorSettings,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .testTag("open_calculator_settings_from_sheet_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Tune,
+                            contentDescription = "إعدادات الحاسبة وربط المقادير",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 IconButton(
                     onClick = onDismiss,
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(40.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                         .testTag("close_pricing_sheet_button")
@@ -369,7 +393,8 @@ fun VendorItemPricingSheet(
                     Icon(
                         imageVector = Icons.Outlined.Close,
                         contentDescription = "إغلاق",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }

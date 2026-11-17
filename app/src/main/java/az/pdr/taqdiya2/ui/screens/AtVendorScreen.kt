@@ -104,6 +104,7 @@ fun AtVendorScreen(
     onOpenPassingExpenseClick: () -> Unit,
     onOpenItemPriceHistory: (itemName: String, vendorId: Long, fallbackPriceDh: Double) -> Unit,
     onOpenQuickPadForVendor: (Long?) -> Unit,
+    onOpenMarketCalculatorSettings: (() -> Unit)? = null,
     onReturnToHomePrep: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1068,6 +1069,7 @@ fun AtVendorScreen(
                     activePricingItem.unitPriceDirhams
                 )
             },
+            onOpenMarketCalculatorSettings = onOpenMarketCalculatorSettings,
             onConfirmPurchase = { mode, unitPriceDh, qty, cleaningDh, totalDh ->
                 onConfirmItemPurchase(
                     activePricingItem,

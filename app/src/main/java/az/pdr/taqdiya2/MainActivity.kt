@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Scale
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.FactCheck
 import androidx.compose.material.icons.outlined.Home
@@ -80,6 +81,7 @@ import az.pdr.taqdiya2.ui.components.DictionaryDialog
 import az.pdr.taqdiya2.ui.components.EditShoppingItemDialog
 import az.pdr.taqdiya2.ui.components.GlobalTactileSnackbarHost
 import az.pdr.taqdiya2.ui.components.ItemPriceHistorySheet
+import az.pdr.taqdiya2.ui.components.MarketCalculatorSettingsSheet
 import az.pdr.taqdiya2.ui.components.PassingExpenseSheet
 import az.pdr.taqdiya2.ui.components.PinLockScreen
 import az.pdr.taqdiya2.ui.components.PocketBudgetDialog
@@ -218,6 +220,7 @@ fun TaqdiyaApp(
     var showVendorManagerDialog by rememberSaveable { mutableStateOf(false) }
     var showShareDialog by rememberSaveable { mutableStateOf(false) }
     var showSettingsSheet by rememberSaveable { mutableStateOf(false) }
+    var showMarketCalculatorSettingsSheet by rememberSaveable { mutableStateOf(false) }
     var showTrashBinDialog by rememberSaveable { mutableStateOf(false) }
     var showBackupRestoreDialog by rememberSaveable { mutableStateOf(false) }
     var editingShoppingItem by remember { mutableStateOf<ShoppingItemEntity?>(null) }
@@ -318,6 +321,7 @@ fun TaqdiyaApp(
             showDictionaryDialog -> closeSubDialogAndRestoreParent { showDictionaryDialog = false }
             showVendorManagerDialog -> closeSubDialogAndRestoreParent { showVendorManagerDialog = false }
             showShareDialog -> closeSubDialogAndRestoreParent { showShareDialog = false }
+            showMarketCalculatorSettingsSheet -> closeSubDialogAndRestoreParent { showMarketCalculatorSettingsSheet = false }
             showSettingsSheet -> closeSettingsAndRestoreParent()
             showQuickAddPad -> showQuickAddPad = false
             showBudgetDialog -> showBudgetDialog = false
@@ -532,6 +536,10 @@ fun TaqdiyaApp(
                             }
                             showQuickAddPad = true
                         },
+                        onOpenMarketCalculatorSettings = {
+                            returnMenuAfterSubDialog = null
+                            showMarketCalculatorSettingsSheet = true
+                        },
                         onReturnToHomePrep = { selectedTab = 0 },
                         modifier = Modifier.padding(innerPadding)
                     )
@@ -661,6 +669,46 @@ fun TaqdiyaApp(
                                 )
                                 Text(
                                     text = "تاريخ أثمنة السلع، مقارنة الرخاء والغلاء، وإضافة سعر يدوي",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable {
+                                showToolsMenuDialog = false
+                                returnMenuAfterSubDialog = "TOOLS"
+                                showMarketCalculatorSettingsSheet = true
+                            }
+                            .testTag("menu_open_market_calculator_settings_card"),
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(16.dp),
+                        shadowElevation = 2.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Calculate,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "إعدادات السوق وحاسبة «احسب الثمن»",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "ربط المقادير بالتبويبات الثلاثة، إضافة وحذف الوحدات، وخيارات الحاسبة والسوق",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1047,6 +1095,21 @@ fun TaqdiyaApp(
             onToggleShowRial = viewModel::toggleShowRial,
             onTogglePrivacyMask = viewModel::togglePrivacyMask,
             onUpdatePrivacyMaskPocketOnly = viewModel::updatePrivacyMaskPocketOnly,
+            onSetPinCode = viewModel::setOrUpdatePinCode,
+            onRemovePinCode = viewModel::removePinCode,
+            onLockAppNow = viewModel::lockAppNow,
+            onOpenBackupRestore = {
+                showSettingsSheet = false
+                returnMenuAfterSubDialog = "SETTINGS"
+                showBackupRestoreDialog = true
+            },
+            onDismiss = { closeSettingsAndRestoreParent() }
+        )
+    }
+
+    if (showMarketCalculatorSettingsSheet) {
+        MarketCalculatorSettingsSheet(
+            settings = uiState.appSettings,
             onToggleAutoLinkMoneyToFixed = viewModel::toggleAutoLinkMoneyToFixed,
             onToggleAutoLinkCountToCount = viewModel::toggleAutoLinkCountToCount,
             onToggleAutoLinkWeightToWeight = viewModel::toggleAutoLinkWeightToWeight,
@@ -1059,15 +1122,7 @@ fun TaqdiyaApp(
             onUpdateDefaultPricingCurrencyInRials = viewModel::updateDefaultPricingCurrencyInRials,
             onToggleShowCleaningFeeOption = viewModel::toggleShowCleaningFeeOption,
             onToggleShowPriceTrendBadges = viewModel::toggleShowPriceTrendBadges,
-            onSetPinCode = viewModel::setOrUpdatePinCode,
-            onRemovePinCode = viewModel::removePinCode,
-            onLockAppNow = viewModel::lockAppNow,
-            onOpenBackupRestore = {
-                showSettingsSheet = false
-                returnMenuAfterSubDialog = "SETTINGS"
-                showBackupRestoreDialog = true
-            },
-            onDismiss = { closeSettingsAndRestoreParent() }
+            onDismiss = { closeSubDialogAndRestoreParent { showMarketCalculatorSettingsSheet = false } }
         )
     }
 
