@@ -283,21 +283,21 @@ fun HomePrepScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Horizontal Bento Tiles for Vendors with Duotone Icon Containers & Ambient Shadow
+                    // Single-Line Flexible-Width Horizontal Vendor Cards
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         uiState.vendors.forEach { vendor ->
                             val count = uiState.shoppingItems.count { it.vendorId == vendor.id && !it.isDeleted }
                             val hasItems = count > 0
-                            val bentoShape = RoundedCornerShape(18.dp)
+                            val bentoShape = RoundedCornerShape(14.dp)
                             Surface(
                                 modifier = Modifier
-                                    .widthIn(min = 148.dp, max = 215.dp)
-                                    .heightIn(min = 82.dp)
+                                    .heightIn(min = 48.dp)
                                     .ambientCardShadow(
                                         shape = bentoShape,
                                         elevation = if (hasItems) 5.dp else 3.dp
@@ -312,52 +312,25 @@ fun HomePrepScreen(
                                 border = ambientCardBorder(),
                                 shape = bentoShape
                             ) {
-                                Column(
+                                Row(
                                     modifier = Modifier
-                                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(9.dp))
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
-                                                contentDescription = vendor.name,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                        Surface(
-                                            color = if (hasItems) {
-                                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
-                                            } else {
-                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
-                                            },
-                                            shape = RoundedCornerShape(8.dp)
-                                        ) {
-                                            Text(
-                                                text = if (hasItems) "$count أغراض" else "+ أضف",
-                                                style = MaterialTheme.typography.labelMedium,
-                                                color = if (hasItems) {
-                                                    MaterialTheme.colorScheme.onSecondaryContainer
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                                },
-                                                fontWeight = FontWeight.SemiBold,
-                                                maxLines = 1,
-                                                softWrap = false,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                            )
-                                        }
+                                        Icon(
+                                            imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
+                                            contentDescription = vendor.name,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
                                     }
 
                                     Text(
@@ -365,9 +338,32 @@ fun HomePrepScreen(
                                         style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
+
+                                    Surface(
+                                        color = if (hasItems) {
+                                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f)
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+                                        },
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = if (hasItems) "$count أغراض" else "+ أضف",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = if (hasItems) {
+                                                MaterialTheme.colorScheme.onSecondaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -381,12 +381,13 @@ fun AtVendorScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Compact Horizontal Vendor Tabs (reduced vertical height to give maximum space to items list)
+                        // Single-Line Flexible-Width Horizontal Vendor Tabs
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             vendorsWithItems.forEach { vendor ->
                                 val isSelected = selectedVendor?.id == vendor.id
@@ -398,8 +399,7 @@ fun AtVendorScreen(
 
                                 Surface(
                                     modifier = Modifier
-                                        .widthIn(min = 140.dp, max = 215.dp)
-                                        .heightIn(min = 50.dp)
+                                        .heightIn(min = 48.dp)
                                         .ambientCardShadow(
                                             shape = tabShape,
                                             elevation = if (isSelected) 5.dp else 3.dp
@@ -419,7 +419,7 @@ fun AtVendorScreen(
                                     shape = tabShape
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
@@ -448,33 +448,39 @@ fun AtVendorScreen(
                                             )
                                         }
 
-                                        Column(
-                                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                                        ) {
-                                            Text(
-                                                text = vendor.name,
-                                                style = MaterialTheme.typography.titleSmall,
-                                                color = if (isSelected) {
-                                                    MaterialTheme.colorScheme.onPrimary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurface
-                                                },
-                                                fontWeight = FontWeight.Bold,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                        Text(
+                                            text = vendor.name,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = if (isSelected) {
+                                                MaterialTheme.colorScheme.onPrimary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            },
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
 
+                                        Surface(
+                                            color = when {
+                                                isSelected -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
+                                                vAllDone -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f)
+                                                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                                            },
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
                                             Text(
                                                 text = "$vBought من $vTotalCount",
                                                 style = MaterialTheme.typography.labelMedium,
                                                 color = when {
-                                                    isSelected -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.92f)
+                                                    isSelected -> MaterialTheme.colorScheme.onPrimary
                                                     vAllDone -> MaterialTheme.colorScheme.tertiary
                                                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                                                 },
                                                 fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
-                                                softWrap = false
+                                                softWrap = false,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                             )
                                         }
                                     }
