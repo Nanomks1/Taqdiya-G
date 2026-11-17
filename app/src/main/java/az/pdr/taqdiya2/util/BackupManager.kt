@@ -92,6 +92,8 @@ object BackupManager {
             "VAZIRMATN", "RUBIK", "BALOO", "SYSTEM" -> payload.appSettings.fontFamilyKey
             else -> "IBM_PLEX"
         }
+        val normalizedPalette = if (payload.appSettings.colorPalette == "VIBRANT_COBALT") "VIBRANT_COBALT" else "TERRACOTTA"
+        val normalizedAnim = if (payload.appSettings.animationMode == "OFF") "OFF" else "LIGHT"
         val settingsObj = JSONObject().apply {
             put("themeMode", payload.appSettings.themeMode)
             put("showRial", payload.appSettings.showRial)
@@ -99,8 +101,8 @@ object BackupManager {
             put("privacyMaskAmounts", payload.appSettings.privacyMaskAmounts)
             put("privacyMaskPocketOnly", payload.appSettings.privacyMaskPocketOnly)
             put("pinCode", PinSecurityUtil.normalizeForStorage(payload.appSettings.pinCode))
-            put("colorPalette", payload.appSettings.colorPalette)
-            put("animationMode", payload.appSettings.animationMode)
+            put("colorPalette", normalizedPalette)
+            put("animationMode", normalizedAnim)
             put("fontFamilyKey", normalizedFont)
         }
         root.put("appSettings", settingsObj)
@@ -272,8 +274,16 @@ object BackupManager {
                     privacyMaskAmounts = settingsObj.optBoolean("privacyMaskAmounts", false),
                     privacyMaskPocketOnly = settingsObj.optBoolean("privacyMaskPocketOnly", false),
                     pinCode = PinSecurityUtil.normalizeForStorage(settingsObj.optString("pinCode", "")),
-                    colorPalette = settingsObj.optString("colorPalette", "TERRACOTTA"),
-                    animationMode = settingsObj.optString("animationMode", "LIGHT"),
+                    colorPalette = if (settingsObj.optString("colorPalette", "TERRACOTTA") == "VIBRANT_COBALT") {
+                        "VIBRANT_COBALT"
+                    } else {
+                        "TERRACOTTA"
+                    },
+                    animationMode = if (settingsObj.optString("animationMode", "LIGHT") == "OFF") {
+                        "OFF"
+                    } else {
+                        "LIGHT"
+                    },
                     fontFamilyKey = when (val rawFont = settingsObj.optString("fontFamilyKey", "IBM_PLEX")) {
                         "VAZIRMATN", "RUBIK", "BALOO", "SYSTEM" -> rawFont
                         else -> "IBM_PLEX"

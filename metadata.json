@@ -1,6 +1,6 @@
 {
-  "name": "Remix Taqdiya-G",
-  "description": "Imported from GitHub: Nanomks1/Taqdiya-G",
+  "name": "كناش التقدية",
+  "description": "كناش التقدية المغربي - إدارة النواقص وميزانية الجيب والأثمنة بدون إنترنت",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

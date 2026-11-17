@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -39,6 +42,7 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -105,8 +109,10 @@ class MainActivity : ComponentActivity() {
         val cachedPrivacyMask = bootPrefs.getBoolean("privacyMaskAmounts", false)
         val cachedPrivacyPocketOnly = bootPrefs.getBoolean("privacyMaskPocketOnly", false)
 
-        val cachedColorPalette = bootPrefs.getString("colorPalette", "TERRACOTTA") ?: "TERRACOTTA"
-        val cachedAnimationMode = bootPrefs.getString("animationMode", "LIGHT") ?: "LIGHT"
+        val rawCachedPalette = bootPrefs.getString("colorPalette", "TERRACOTTA") ?: "TERRACOTTA"
+        val cachedColorPalette = if (rawCachedPalette == "VIBRANT_COBALT") "VIBRANT_COBALT" else "TERRACOTTA"
+        val rawCachedAnim = bootPrefs.getString("animationMode", "LIGHT") ?: "LIGHT"
+        val cachedAnimationMode = if (rawCachedAnim == "OFF") "OFF" else "LIGHT"
         val rawCachedFontKey = bootPrefs.getString("fontFamilyKey", "IBM_PLEX") ?: "IBM_PLEX"
         val cachedFontFamilyKey = when (rawCachedFontKey) {
             "CAIRO", "TAJAWAL", "CUSTOM", "" -> "IBM_PLEX"
@@ -367,85 +373,96 @@ fun TaqdiyaApp(
             GlobalTactileSnackbarHost(hostState = snackbarHostState)
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp
             ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = {
-                        Icon(
-                            imageVector = if (selectedTab == 0) Icons.Filled.Home else Icons.Outlined.Home,
-                            contentDescription = "التحضير",
-                            modifier = Modifier.size(26.dp)
-                        )
-                    },
-                    label = {
-                        Text(
-                            text = "التحضير",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    },
-                    modifier = Modifier.testTag("nav_tab_home_prep")
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = {
-                        BadgedBox(
-                            badge = {
-                                if (activeMissingItems.isNotEmpty()) {
-                                    Badge(
-                                        containerColor = MaterialTheme.colorScheme.secondary,
-                                        contentColor = MaterialTheme.colorScheme.onSecondary
-                                    ) {
-                                        Text(activeMissingItems.size.toString())
+                NavigationBar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(NavigationBarDefaults.windowInsets)
+                        .height(60.dp),
+                    windowInsets = WindowInsets(0, 0, 0, 0),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp
+                ) {
+                    NavigationBarItem(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        icon = {
+                            Icon(
+                                imageVector = if (selectedTab == 0) Icons.Filled.Home else Icons.Outlined.Home,
+                                contentDescription = "التحضير",
+                                modifier = Modifier.size(22.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = "التحضير",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        },
+                        modifier = Modifier.testTag("nav_tab_home_prep")
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        icon = {
+                            BadgedBox(
+                                badge = {
+                                    if (activeMissingItems.isNotEmpty()) {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.secondary,
+                                            contentColor = MaterialTheme.colorScheme.onSecondary
+                                        ) {
+                                            Text(activeMissingItems.size.toString())
+                                        }
                                     }
                                 }
+                            ) {
+                                Icon(
+                                    imageVector = if (selectedTab == 1) Icons.Filled.Scale else Icons.Outlined.Scale,
+                                    contentDescription = "عند البائع",
+                                    modifier = Modifier.size(22.dp)
+                                )
                             }
-                        ) {
-                            Icon(
-                                imageVector = if (selectedTab == 1) Icons.Filled.Scale else Icons.Outlined.Scale,
-                                contentDescription = "عند البائع",
-                                modifier = Modifier.size(26.dp)
+                        },
+                        label = {
+                            Text(
+                                text = "عند البائع",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
-                        }
-                    },
-                    label = {
-                        Text(
-                            text = "عند البائع",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    },
-                    modifier = Modifier.testTag("nav_tab_at_vendor")
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = {
-                        Icon(
-                            imageVector = if (selectedTab == 2) Icons.Filled.FactCheck else Icons.Outlined.FactCheck,
-                            contentDescription = "جرد الجيب",
-                            modifier = Modifier.size(26.dp)
-                        )
-                    },
-                    label = {
-                        Text(
-                            text = "جرد الجيب",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    },
-                    modifier = Modifier.testTag("nav_tab_pocket_audit")
-                )
+                        },
+                        modifier = Modifier.testTag("nav_tab_at_vendor")
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        icon = {
+                            Icon(
+                                imageVector = if (selectedTab == 2) Icons.Filled.FactCheck else Icons.Outlined.FactCheck,
+                                contentDescription = "جرد الجيب",
+                                modifier = Modifier.size(22.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = "جرد الجيب",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        },
+                        modifier = Modifier.testTag("nav_tab_pocket_audit")
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -534,24 +551,15 @@ fun TaqdiyaApp(
             }
         }
 
-        when (animMode) {
-            "OFF" -> renderTabContent(selectedTab)
-            "FULL" -> {
-                androidx.compose.animation.AnimatedContent(
-                    targetState = selectedTab,
-                    label = "full_tab_transition"
-                ) { targetTab ->
-                    renderTabContent(targetTab)
-                }
-            }
-            else -> {
-                androidx.compose.animation.Crossfade(
-                    targetState = selectedTab,
-                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 150),
-                    label = "light_tab_crossfade"
-                ) { targetTab ->
-                    renderTabContent(targetTab)
-                }
+        if (animMode == "OFF") {
+            renderTabContent(selectedTab)
+        } else {
+            androidx.compose.animation.Crossfade(
+                targetState = selectedTab,
+                animationSpec = androidx.compose.animation.core.tween(durationMillis = 140),
+                label = "light_tab_crossfade"
+            ) { targetTab ->
+                renderTabContent(targetTab)
             }
         }
     }

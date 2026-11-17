@@ -242,10 +242,18 @@ private val RoyalPlumDarkColorScheme = darkColorScheme(
 
 fun resolveColorScheme(colorPalette: String, darkTheme: Boolean): ColorScheme {
     return when (colorPalette) {
-        "CALM_SAGE" -> if (darkTheme) CalmSageDarkColorScheme else CalmSageLightColorScheme
         "VIBRANT_COBALT" -> if (darkTheme) VibrantCobaltDarkColorScheme else VibrantCobaltLightColorScheme
-        "ROYAL_PLUM" -> if (darkTheme) RoyalPlumDarkColorScheme else RoyalPlumLightColorScheme
         else -> if (darkTheme) TerracottaDarkColorScheme else TerracottaLightColorScheme
+    }
+}
+
+fun resolveUiScalePercent(uiScaleMode: String): Int {
+    return when (uiScaleMode.trim().uppercase()) {
+        "SMALL", "COMPACT" -> 88
+        "NORMAL", "" -> 100
+        "LARGE" -> 112
+        "EXTRA_LARGE" -> 122
+        else -> uiScaleMode.trim().removeSuffix("%").toIntOrNull()?.coerceIn(85, 122) ?: 100
     }
 }
 
@@ -290,24 +298,20 @@ fun TaqdiyaTheme(
             context = context,
             fontFamilyKey = fontFamilyKey
         )
-        val perFontScale = if (fontFamilyKey == "RUBIK") 0.91f else 1.0f
         buildAppTypography(
             primaryFontFamily = resolvedFamily,
             secondaryFontFamily = resolvedFamily,
-            fontSizeScale = perFontScale
+            fontSizeScale = 1.0f
         )
     }
 
     val baseDensity = LocalDensity.current
-    val fontScaleMultiplier = when (uiScaleMode) {
-        "LARGE" -> 1.08f
-        "EXTRA_LARGE" -> 1.16f
-        else -> 1.0f
-    }
-    val effectiveFontScale = if (uiScaleMode == "NORMAL") {
+    val scalePercent = resolveUiScalePercent(uiScaleMode)
+    val fontScaleMultiplier = scalePercent / 100f
+    val effectiveFontScale = if (scalePercent == 100) {
         baseDensity.fontScale
     } else {
-        (baseDensity.fontScale * fontScaleMultiplier).coerceAtMost(1.26f)
+        (baseDensity.fontScale * fontScaleMultiplier).coerceIn(0.75f, 1.35f)
     }
     val scaledDensity = Density(
         density = baseDensity.density,

@@ -360,14 +360,34 @@ fun HomePrepScreen(
                                         }
                                     }
 
-                                    Text(
-                                        text = vendor.name,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(2.5.dp)
+                                                .height(14.dp)
+                                                .clip(RoundedCornerShape(2.dp))
+                                                .background(
+                                                    MaterialTheme.colorScheme.primary.copy(
+                                                        alpha = if (hasItems) 0.85f else 0.45f
+                                                    )
+                                                )
+                                        )
+                                        Text(
+                                            text = vendor.name,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = if (hasItems) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.88f)
+                                            },
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -463,16 +483,16 @@ fun HomePrepScreen(
             }
         }
 
-        // Pinned Bottom Thumb-Zone Action Bar
+        // Pinned Bottom Thumb-Zone Action Bar (Compact height to maximize list area)
         Surface(
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 8.dp,
+            shadowElevation = 6.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
                 Button(
                     onClick = {
@@ -481,24 +501,24 @@ fun HomePrepScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 54.dp)
+                        .heightIn(min = 44.dp)
                         .testTag("open_quick_pad_main_button"),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
-                    shape = RoundedCornerShape(18.dp)
+                    shape = RoundedCornerShape(14.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.GridView,
                         contentDescription = null,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "لوحة الإضافة السريعة باللمس (+)",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -541,7 +561,7 @@ private fun OversizedVendorCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Balanced Vendor Header (38.dp duotone container so vendor name never wraps awkwardly)
+            // Balanced Vendor Header with subtle identity accent bar and primary-colored vendor title
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -555,7 +575,7 @@ private fun OversizedVendorCard(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -565,12 +585,20 @@ private fun OversizedVendorCard(
                             modifier = Modifier.size(21.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .width(3.dp)
+                            .height(26.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.72f))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
                             text = vendor.name,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
@@ -578,7 +606,7 @@ private fun OversizedVendorCard(
                         Text(
                             text = "${items.size} أغراض مسجلة",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f),
                             fontWeight = FontWeight.Normal
                         )
                         if (kotlin.math.abs(vendor.pendingBalanceDirhams) > 0.009) {
@@ -650,7 +678,7 @@ private fun OversizedVendorCard(
             Spacer(modifier = Modifier.height(12.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
 
-            // Clean Item Rows (Colored Dot + Bold Item Name + Soft Medium Note Badge)
+            // Clean Item Rows (Subtle Halo Dot + High-Contrast Bold Item Name + Soft Medium Note Badge)
             items.forEachIndexed { index, item ->
                 if (index > 0) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
@@ -675,10 +703,18 @@ private fun OversizedVendorCard(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
+                                    .size(12.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+                            }
 
                             Text(
                                 text = item.name,

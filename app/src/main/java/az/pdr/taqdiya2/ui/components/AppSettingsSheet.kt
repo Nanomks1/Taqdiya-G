@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Backspace
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.BrightnessAuto
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.outlined.FormatSize
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -60,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.AppSettingsEntity
+import az.pdr.taqdiya2.ui.theme.resolveUiScalePercent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -174,7 +177,7 @@ fun AppSettingsSheet(
                 }
             }
 
-            // 1.5 Color Palette (نسق الألوان — زمرد وعنبر، ياقوتي ومرجاني، كتان وطين حديث، سلايت وبنفسجي)
+            // 1.5 Color Palette (نسق الألوان — زمرد وعنبر، ياقوتي ومرجاني فقط)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "نسق الألوان (يدعم النهاري والليلي):",
@@ -182,20 +185,17 @@ fun AppSettingsSheet(
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
+                val normalizedPalette = if (settings.colorPalette == "VIBRANT_COBALT") "VIBRANT_COBALT" else "TERRACOTTA"
                 val palettes = listOf(
                     Triple("TERRACOTTA", "زمرد وعنبر", Pair(androidx.compose.ui.graphics.Color(0xFF0A6847), androidx.compose.ui.graphics.Color(0xFFD97706))),
-                    Triple("VIBRANT_COBALT", "ياقوتي ومرجاني", Pair(androidx.compose.ui.graphics.Color(0xFF1E40AF), androidx.compose.ui.graphics.Color(0xFFEA580C))),
-                    Triple("CALM_SAGE", "كتان وطين حديث", Pair(androidx.compose.ui.graphics.Color(0xFFB43B0E), androidx.compose.ui.graphics.Color(0xFF15803D))),
-                    Triple("ROYAL_PLUM", "سلايت وبنفسجي", Pair(androidx.compose.ui.graphics.Color(0xFF4338CA), androidx.compose.ui.graphics.Color(0xFF0D9488)))
+                    Triple("VIBRANT_COBALT", "ياقوتي ومرجاني", Pair(androidx.compose.ui.graphics.Color(0xFF1E40AF), androidx.compose.ui.graphics.Color(0xFFEA580C)))
                 )
-                FlowRow(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    maxItemsInEachRow = 2
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     palettes.forEach { (paletteKey, label, swatchPair) ->
-                        val isSelected = settings.colorPalette == paletteKey
+                        val isSelected = normalizedPalette == paletteKey
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
@@ -247,7 +247,7 @@ fun AppSettingsSheet(
                 }
             }
 
-            // 1.8 Animation Mode (حركات خفيفة / كاملة / إطفاء)
+            // 1.8 Animation Mode (حركات خفيفة وسريعة / إطفاء الحركات فقط)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "المؤثرات الحركية وسرعة الانتقال:",
@@ -255,6 +255,7 @@ fun AppSettingsSheet(
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
+                val isAnimOff = settings.animationMode == "OFF"
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -262,25 +263,16 @@ fun AppSettingsSheet(
                     ScaleOptionTile(
                         title = "خفيفة وسريعة",
                         badge = "موصى به",
-                        selected = settings.animationMode == "LIGHT",
+                        selected = !isAnimOff,
                         onClick = { onUpdateAnimationMode("LIGHT") },
                         modifier = Modifier
                             .weight(1f)
                             .testTag("anim_mode_light_button")
                     )
                     ScaleOptionTile(
-                        title = "حركات كاملة",
-                        badge = "ناعمة",
-                        selected = settings.animationMode == "FULL",
-                        onClick = { onUpdateAnimationMode("FULL") },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("anim_mode_full_button")
-                    )
-                    ScaleOptionTile(
                         title = "إطفاء الحركات",
                         badge = "فوري",
-                        selected = settings.animationMode == "OFF",
+                        selected = isAnimOff,
                         onClick = { onUpdateAnimationMode("OFF") },
                         modifier = Modifier
                             .weight(1f)
@@ -289,54 +281,234 @@ fun AppSettingsSheet(
                 }
             }
 
-            // 2. Font & Button Size Scaling + Font Family & Custom .ttf/.otf Importer
+            // 2. Font & Button Size Scaling (85% to 122% via - / + buttons & quick chips) + Font Family
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Outlined.FormatSize,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "2. حجم الخط ونوع الخطوط",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
+                val currentScalePercent = resolveUiScalePercent(settings.uiScaleMode)
+                val scaleDescription = when {
+                    currentScalePercent <= 90 -> "مدمج وصغير"
+                    currentScalePercent <= 97 -> "متوسط مدمج"
+                    currentScalePercent <= 103 -> "عادي واضح"
+                    currentScalePercent <= 114 -> "كبير للسوق"
+                    else -> "ضخم جداً"
                 }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ScaleOptionTile(
-                        title = "عادي واضح",
-                        badge = "100%",
-                        selected = settings.uiScaleMode == "NORMAL",
-                        onClick = { onUpdateUiScaleMode("NORMAL") },
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.FormatSize,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "2. حجم الخط ونوع الخطوط",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (currentScalePercent != 100) {
+                        Surface(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onUpdateUiScaleMode("100") }
+                                .testTag("ui_scale_reset_100_button"),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "إعادة لـ 100%",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Tactile (- / +) Stepper Bar from 85% to 122%
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
                         modifier = Modifier
-                            .weight(1f)
-                            .testTag("ui_scale_normal_button")
-                    )
-                    ScaleOptionTile(
-                        title = "كبير للسوق",
-                        badge = "112%",
-                        selected = settings.uiScaleMode == "LARGE",
-                        onClick = { onUpdateUiScaleMode("LARGE") },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("ui_scale_large_button")
-                    )
-                    ScaleOptionTile(
-                        title = "ضخم جداً",
-                        badge = "122%",
-                        selected = settings.uiScaleMode == "EXTRA_LARGE",
-                        onClick = { onUpdateUiScaleMode("EXTRA_LARGE") },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("ui_scale_xl_button")
-                    )
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Decrease (-) Button
+                            val canDecrease = currentScalePercent > 85
+                            Surface(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable(enabled = canDecrease) {
+                                        val nextVal = when {
+                                            currentScalePercent > 100 && currentScalePercent - 3 < 100 -> 100
+                                            else -> (currentScalePercent - 3).coerceAtLeast(85)
+                                        }
+                                        onUpdateUiScaleMode(nextVal.toString())
+                                    }
+                                    .testTag("ui_scale_decrease_button"),
+                                color = if (canDecrease) {
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Remove,
+                                        contentDescription = "تصغير الخط",
+                                        tint = if (canDecrease) {
+                                            MaterialTheme.colorScheme.onSecondaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                        },
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+
+                            // Center Live Percentage & Range Info
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "$currentScalePercent%",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.testTag("ui_scale_percent_text")
+                                    )
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = scaleDescription,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "تحكم مرن من 85% إلى 122% بأزرار (- / +)",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            // Increase (+) Button
+                            val canIncrease = currentScalePercent < 122
+                            Surface(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable(enabled = canIncrease) {
+                                        val nextVal = when {
+                                            currentScalePercent < 100 && currentScalePercent + 3 > 100 -> 100
+                                            else -> (currentScalePercent + 3).coerceAtMost(122)
+                                        }
+                                        onUpdateUiScaleMode(nextVal.toString())
+                                    }
+                                    .testTag("ui_scale_increase_button"),
+                                color = if (canIncrease) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Add,
+                                        contentDescription = "تكبير الخط",
+                                        tint = if (canIncrease) {
+                                            MaterialTheme.colorScheme.onPrimary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                        },
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Quick 1-Tap Jump Presets (85% | 92% | 100% | 112% | 122%)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val quickStops = listOf(
+                                Triple(85, "85%", "ui_scale_85_button"),
+                                Triple(92, "92%", "ui_scale_92_button"),
+                                Triple(100, "100%", "ui_scale_normal_button"),
+                                Triple(112, "112%", "ui_scale_large_button"),
+                                Triple(122, "122%", "ui_scale_xl_button")
+                            )
+                            quickStops.forEach { (pct, label, tag) ->
+                                val isPresetSelected = currentScalePercent == pct
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { onUpdateUiScaleMode(pct.toString()) }
+                                        .testTag(tag),
+                                    color = if (isPresetSelected) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                                    },
+                                    border = if (isPresetSelected) {
+                                        BorderStroke(1.5.dp, MaterialTheme.colorScheme.secondary)
+                                    } else {
+                                        null
+                                    },
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(vertical = 6.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = if (isPresetSelected) {
+                                                MaterialTheme.colorScheme.onSecondaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Font Family Selector (IBM Plex | Vazirmatn | Baloo Bhaijaan 2 | System)

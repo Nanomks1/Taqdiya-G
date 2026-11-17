@@ -50,11 +50,20 @@ class TaqdiyaRepository(
         } else {
             val normalizedPin = PinSecurityUtil.normalizeForStorage(existingSettings.pinCode)
             val normalizedFont = if (existingSettings.fontFamilyKey == "CUSTOM") "IBM_PLEX" else existingSettings.fontFamilyKey
-            if (normalizedPin != existingSettings.pinCode || normalizedFont != existingSettings.fontFamilyKey) {
+            val normalizedPalette = if (existingSettings.colorPalette == "VIBRANT_COBALT") "VIBRANT_COBALT" else "TERRACOTTA"
+            val normalizedAnim = if (existingSettings.animationMode == "OFF") "OFF" else "LIGHT"
+            if (
+                normalizedPin != existingSettings.pinCode ||
+                normalizedFont != existingSettings.fontFamilyKey ||
+                normalizedPalette != existingSettings.colorPalette ||
+                normalizedAnim != existingSettings.animationMode
+            ) {
                 dao.upsertAppSettings(
                     existingSettings.copy(
                         pinCode = normalizedPin,
                         fontFamilyKey = normalizedFont,
+                        colorPalette = normalizedPalette,
+                        animationMode = normalizedAnim,
                         customFontRegularName = "",
                         customFontMediumName = "",
                         customFontBoldName = ""

@@ -140,7 +140,7 @@ class TaqdiyaBatch1Test {
         assertEquals("kitchen", az.pdr.taqdiya2.ui.components.VendorIconMapper.inferIconKeyFromName("مول المواعن"))
         assertEquals("egg", az.pdr.taqdiya2.ui.components.VendorIconMapper.inferIconKeyFromName("مول البيض"))
 
-        // 5. Verify full Arabic Rubik variable font is bundled in assets/fonts/rubik_var.ttf
+        // 5. Verify full Arabic Rubik variable font is bundled in assets/fonts/rubik_var.ttf and uses 1.0f default scale
         val context = ApplicationProvider.getApplicationContext<Context>()
         val rubikBytes = context.assets.open("fonts/rubik_var.ttf").use { it.readBytes() }
         assertTrue("rubik_var.ttf must be the full variable font (>200KB)", rubikBytes.size > 200_000)
@@ -149,8 +149,13 @@ class TaqdiyaBatch1Test {
         val rubikFamily = az.pdr.taqdiya2.ui.theme.loadAssetFontFamilyOrFallback(context, "RUBIK")
         assertTrue(rubikFamily != androidx.compose.ui.text.font.FontFamily.SansSerif)
         val defaultTypo = az.pdr.taqdiya2.ui.theme.buildAppTypography(rubikFamily, rubikFamily, 1.0f)
-        val rubikTypo = az.pdr.taqdiya2.ui.theme.buildAppTypography(rubikFamily, rubikFamily, 0.91f)
-        assertEquals(defaultTypo.bodyLarge.fontSize.value * 0.91f, rubikTypo.bodyLarge.fontSize.value, 0.01f)
+        assertEquals(17.0f, defaultTypo.bodyLarge.fontSize.value, 0.01f)
+        assertEquals(85, az.pdr.taqdiya2.ui.theme.resolveUiScalePercent("85"))
+        assertEquals(100, az.pdr.taqdiya2.ui.theme.resolveUiScalePercent("NORMAL"))
+        assertEquals(112, az.pdr.taqdiya2.ui.theme.resolveUiScalePercent("LARGE"))
+        assertEquals(122, az.pdr.taqdiya2.ui.theme.resolveUiScalePercent("EXTRA_LARGE"))
+        assertEquals(85, az.pdr.taqdiya2.ui.theme.resolveUiScalePercent("70"))
+        assertEquals(122, az.pdr.taqdiya2.ui.theme.resolveUiScalePercent("140"))
     }
 
     @Test

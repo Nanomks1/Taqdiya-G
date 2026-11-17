@@ -1122,38 +1122,28 @@ class HomePrepViewModel(
     }
 
     fun updateUiScaleMode(uiScaleMode: String) {
+        val resolvedPct = az.pdr.taqdiya2.ui.theme.resolveUiScalePercent(uiScaleMode)
+        val normalizedMode = resolvedPct.toString()
         viewModelScope.launch {
-            repository.updateAppSettings { it.copy(uiScaleMode = uiScaleMode) }
-            val scaleLabel = when (uiScaleMode) {
-                "LARGE" -> "الحجم الكبير للسوق (112%)"
-                "EXTRA_LARGE" -> "الحجم الضخم جداً (122%)"
-                else -> "الحجم العادي الواضح (100%)"
-            }
-            _statusMessages.tryEmit("تم ضبط حجم الخط والأزرار: $scaleLabel")
+            repository.updateAppSettings { it.copy(uiScaleMode = normalizedMode) }
+            _statusMessages.tryEmit("تم ضبط حجم الخط على $resolvedPct%")
         }
     }
 
     fun updateColorPalette(colorPalette: String) {
+        val safePalette = if (colorPalette == "VIBRANT_COBALT") "VIBRANT_COBALT" else "TERRACOTTA"
         viewModelScope.launch {
-            repository.updateAppSettings { it.copy(colorPalette = colorPalette) }
-            val paletteLabel = when (colorPalette) {
-                "VIBRANT_COBALT" -> "ياقوتي ومرجاني"
-                "CALM_SAGE" -> "كتان وطين حديث"
-                "ROYAL_PLUM" -> "سلايت وبنفسجي"
-                else -> "زمرد وعنبر"
-            }
+            repository.updateAppSettings { it.copy(colorPalette = safePalette) }
+            val paletteLabel = if (safePalette == "VIBRANT_COBALT") "ياقوتي ومرجاني" else "زمرد وعنبر"
             _statusMessages.tryEmit("تم تفعيل نسق الألوان: $paletteLabel")
         }
     }
 
     fun updateAnimationMode(animationMode: String) {
+        val safeAnim = if (animationMode == "OFF") "OFF" else "LIGHT"
         viewModelScope.launch {
-            repository.updateAppSettings { it.copy(animationMode = animationMode) }
-            val animLabel = when (animationMode) {
-                "FULL" -> "حركات كاملة وسلسة"
-                "OFF" -> "إطفاء الحركات (أقصى سرعة)"
-                else -> "حركات خفيفة وسريعة"
-            }
+            repository.updateAppSettings { it.copy(animationMode = safeAnim) }
+            val animLabel = if (safeAnim == "OFF") "إطفاء الحركات (أقصى سرعة)" else "حركات خفيفة وسريعة"
             _statusMessages.tryEmit("تم ضبط المؤثرات الحركية: $animLabel")
         }
     }
