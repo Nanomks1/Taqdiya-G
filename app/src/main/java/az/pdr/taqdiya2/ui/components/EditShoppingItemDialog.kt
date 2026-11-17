@@ -101,6 +101,7 @@ fun EditShoppingItemDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = 420.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 OutlinedTextField(
@@ -324,10 +325,10 @@ fun EditShoppingItemDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "البائع المخصص لهذه السلعة:",
+                    text = "3. البائع المخصص لهذه السلعة (اضغط لنقل الغرض لبائع آخر):",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold
@@ -337,35 +338,64 @@ fun EditShoppingItemDialog(
 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     vendors.forEach { vendor ->
+                        val isVendorSelected = selectedVendorId == vendor.id
                         val isLinkedInDict = dictEntry != null && CurrencyFormatter.dictItemMatchesVendor(
                             dictEntry.defaultVendorId,
                             dictEntry.secondaryVendorIdsCsv,
                             vendor.id
                         )
-                        FilterChip(
-                            selected = selectedVendorId == vendor.id,
-                            onClick = { selectedVendorId = vendor.id },
-                            leadingIcon = {
+                        Surface(
+                            modifier = Modifier
+                                .heightIn(min = 36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable { selectedVendorId = vendor.id }
+                                .testTag("edit_item_vendor_chip_${vendor.id}"),
+                            color = if (isVendorSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            border = BorderStroke(
+                                width = if (isVendorSelected) 1.5.dp else 1.dp,
+                                color = if (isVendorSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
                                 Icon(
                                     imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                                     contentDescription = null,
+                                    tint = if (isVendorSelected) {
+                                        MaterialTheme.colorScheme.onPrimary
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
                                     modifier = Modifier.size(16.dp)
                                 )
-                            },
-                            label = {
                                 Text(
-                                    text = if (isLinkedInDict && selectedVendorId != vendor.id) {
+                                    text = if (isLinkedInDict && !isVendorSelected) {
                                         "${vendor.name} ★"
                                     } else {
                                         vendor.name
-                                    }
+                                    },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isVendorSelected) {
+                                        MaterialTheme.colorScheme.onPrimary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
-                        )
+                        }
                     }
                 }
             }

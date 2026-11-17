@@ -494,20 +494,45 @@ class TaqdiyaRepository(
             )
         }
 
+        val noteIntent = CurrencyFormatter.parseShoppingNoteIntent(
+            itemName = cleanName,
+            note = cleanNote,
+            fallbackPurchaseMode = "WEIGHT"
+        )
+        val initialQty = when (noteIntent.inferredMode) {
+            "COUNT" -> (noteIntent.explicitCount ?: 1).toDouble()
+            "WEIGHT" -> noteIntent.explicitWeightKg ?: 1.0
+            else -> 1.0
+        }
+
         // Prevent duplicate unpurchased items with the same normalized name in the active round
         val existingUnpurchased = dao.getItemsForRoundOnce(roundId).firstOrNull {
             !it.isDeleted && !it.isPurchased &&
                 CurrencyFormatter.normalizeArabicName(it.name) == normalized
         }
         if (existingUnpurchased != null) {
+            val effectiveNote = if (cleanNote.isNotBlank()) cleanNote else existingUnpurchased.note
+            val mergedIntent = CurrencyFormatter.parseShoppingNoteIntent(
+                itemName = cleanName,
+                note = effectiveNote,
+                fallbackPurchaseMode = existingUnpurchased.purchaseMode
+            )
+            val mergedQty = when (mergedIntent.inferredMode) {
+                "COUNT" -> (mergedIntent.explicitCount ?: 1).toDouble()
+                "WEIGHT" -> mergedIntent.explicitWeightKg ?: existingUnpurchased.quantity.takeIf { it > 0.0 } ?: 1.0
+                else -> 1.0
+            }
             val updatedExisting = existingUnpurchased.copy(
                 vendorId = vendorId,
-                note = if (cleanNote.isNotBlank()) cleanNote else existingUnpurchased.note,
-                unitPriceDirhams = if (existingUnpurchased.unitPriceDirhams > 0.0) {
-                    existingUnpurchased.unitPriceDirhams
-                } else {
-                    existingDict?.lastPriceDirhams ?: 0.0
-                }
+                note = effectiveNote,
+                purchaseMode = mergedIntent.inferredMode,
+                quantity = mergedQty,
+                unitPriceDirhams = mergedIntent.explicitMoneyDirhams
+                    ?: if (existingUnpurchased.unitPriceDirhams > 0.0) {
+                        existingUnpurchased.unitPriceDirhams
+                    } else {
+                        existingDict?.lastPriceDirhams ?: 0.0
+                    }
             )
             dao.updateShoppingItem(updatedExisting)
             return updatedExisting
@@ -518,7 +543,9 @@ class TaqdiyaRepository(
             vendorId = vendorId,
             name = cleanName,
             note = cleanNote,
-            unitPriceDirhams = existingDict?.lastPriceDirhams ?: 0.0
+            purchaseMode = noteIntent.inferredMode,
+            quantity = initialQty,
+            unitPriceDirhams = noteIntent.explicitMoneyDirhams ?: existingDict?.lastPriceDirhams ?: 0.0
         )
         val newId = dao.insertShoppingItem(item)
         triggerSilentAutoBackup()
@@ -649,18 +676,38 @@ class TaqdiyaRepository(
     }
 
     suspend fun updateShoppingItem(item: ShoppingItemEntity) {
-        dao.updateShoppingItem(item)
-        val normalized = CurrencyFormatter.normalizeArabicName(item.name)
+        val syncedItem = if (!item.isPurchased) {
+            val intent = CurrencyFormatter.parseShoppingNoteIntent(
+                itemName = item.name,
+                note = item.note,
+                fallbackPurchaseMode = item.purchaseMode
+            )
+            val syncedQty = when (intent.inferredMode) {
+                "COUNT" -> (intent.explicitCount ?: 1).toDouble()
+                "WEIGHT" -> intent.explicitWeightKg ?: item.quantity.takeIf { it > 0.0 } ?: 1.0
+                else -> 1.0
+            }
+            item.copy(
+                purchaseMode = intent.inferredMode,
+                quantity = syncedQty,
+                unitPriceDirhams = intent.explicitMoneyDirhams ?: item.unitPriceDirhams
+            )
+        } else {
+            item
+        }
+        dao.updateShoppingItem(syncedItem)
+        val normalized = CurrencyFormatter.normalizeArabicName(syncedItem.name)
         val existingDict = dao.getDictionaryItemByNormalizedName(normalized)
         if (existingDict != null) {
             val allVendorIds = CurrencyFormatter.getAllVendorIdsForDictItem(
                 existingDict.defaultVendorId,
                 existingDict.secondaryVendorIdsCsv
-            ) + item.vendorId
+            ) + syncedItem.vendorId
             dao.updateDictionaryItem(
                 existingDict.copy(
-                    defaultVendorId = item.vendorId,
-                    secondaryVendorIdsCsv = CurrencyFormatter.encodeVendorIdsCsv(allVendorIds, item.vendorId),
+                    defaultVendorId = syncedItem.vendorId,
+                    secondaryVendorIdsCsv = CurrencyFormatter.encodeVendorIdsCsv(allVendorIds, syncedItem.vendorId),
+                    defaultNote = if (syncedItem.note.isNotBlank()) syncedItem.note.trim() else existingDict.defaultNote,
                     lastUpdated = System.currentTimeMillis()
                 )
             )

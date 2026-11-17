@@ -491,6 +491,7 @@ fun TaqdiyaApp(
                         onConfirmItemPurchase = viewModel::confirmItemPurchase,
                         onUnmarkItemPurchased = viewModel::unmarkItemPurchased,
                         onDeleteItemClick = viewModel::deleteShoppingItem,
+                        onEditItemClick = { editingShoppingItem = it },
                         onConfirmVendorPayment = viewModel::confirmVendorPayment,
                         onResetVendorPaymentAndBasket = viewModel::resetVendorPaymentAndBasket,
                         onUpdateVendorPendingBalance = viewModel::updateVendorPendingBalance,

@@ -94,46 +94,53 @@ fun VendorItemPricingSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val haptic = LocalHapticFeedback.current
 
-    // Determine smart initial mode and quantity from item state or note
-    val initialMode = remember(item) {
+    // Determine smart initial mode, quantity, and price from item state or note intent
+    val noteIntent = remember(item) {
+        CurrencyFormatter.parseShoppingNoteIntent(
+            itemName = item.name,
+            note = item.note,
+            fallbackPurchaseMode = item.purchaseMode.ifBlank { "WEIGHT" }
+        )
+    }
+
+    val initialMode = remember(item, noteIntent, itemPriceHistory) {
         when {
             item.isPurchased -> item.purchaseMode
-            item.name.contains("بيض") || item.note.contains("بلاطو") || item.note.contains("بيض") -> "COUNT"
-            item.name.contains("ربيع") || item.name.contains("نعناع") || item.name.contains("كمون") -> "FIXED"
-            else -> item.purchaseMode.ifBlank { "WEIGHT" }
+            noteIntent.explicitMoneyDirhams != null -> "FIXED"
+            noteIntent.explicitCount != null -> "COUNT"
+            noteIntent.explicitWeightKg != null -> "WEIGHT"
+            item.note.isNotBlank() -> noteIntent.inferredMode
+            itemPriceHistory.isNotEmpty() -> itemPriceHistory.maxByOrNull { it.recordedAt }?.purchaseMode ?: noteIntent.inferredMode
+            else -> noteIntent.inferredMode
         }
     }
 
-    val initialQuantity = remember(item, initialMode) {
+    val initialQuantity = remember(item, initialMode, noteIntent) {
         if (item.isPurchased && item.quantity > 0.0) {
             item.quantity
         } else if (initialMode == "COUNT") {
-            when {
-                item.note.contains("30") || item.note.contains("بلاطو") -> 30.0
-                item.note.contains("15") -> 15.0
-                item.note.contains("10") -> 10.0
-                else -> 1.0
-            }
+            (noteIntent.explicitCount ?: 1).toDouble()
+        } else if (initialMode == "WEIGHT") {
+            noteIntent.explicitWeightKg ?: 1.0
         } else {
-            when {
-                item.note.contains("نص رابعة") -> 0.125
-                item.note.contains("3 رابعات") -> 0.75
-                item.note.contains("رابعة") -> 0.25
-                item.note.contains("نص كيلو") -> 0.5
-                item.note.contains("2 كيلو") -> 2.0
-                else -> 1.0
-            }
+            1.0
         }
     }
 
     var selectedMode by remember { mutableStateOf(initialMode) }
     var inputInRials by remember { mutableStateOf(false) }
 
-    val initialPriceDirhams = remember(item) {
+    val initialPriceDirhams = remember(item, initialMode, noteIntent, itemPriceHistory) {
         if (item.isPurchased && item.totalDirhams > 0.0) {
             if (item.purchaseMode == "FIXED") item.totalDirhams else item.unitPriceDirhams
+        } else if (initialMode == "FIXED" && noteIntent.explicitMoneyDirhams != null) {
+            noteIntent.explicitMoneyDirhams
         } else {
-            item.unitPriceDirhams
+            val modeHistoryPrice = itemPriceHistory
+                .filter { it.purchaseMode == initialMode && it.unitPriceDirhams > 0.0 }
+                .maxByOrNull { it.recordedAt }
+                ?.unitPriceDirhams
+            modeHistoryPrice ?: item.unitPriceDirhams
         }
     }
 
@@ -358,12 +365,12 @@ fun VendorItemPricingSheet(
             // 2. Three Large Purchase Mode Tabs (WEIGHT | FIXED | COUNT)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 val modes = listOf(
                     "WEIGHT" to "1. بالوزن",
                     "FIXED" to "2. مبلغ مقطوع",
-                    "COUNT" to "3. بالعدد / البيض"
+                    "COUNT" to "3. بالعدد / العلبة"
                 )
                 modes.forEach { (modeKey, label) ->
                     val isSelected = selectedMode == modeKey
@@ -391,12 +398,12 @@ fun VendorItemPricingSheet(
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Box(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = label,
-                                style = MaterialTheme.typography.labelLarge,
+                                style = MaterialTheme.typography.labelMedium,
                                 color = if (isSelected) {
                                     MaterialTheme.colorScheme.onSecondaryContainer
                                 } else {
@@ -756,7 +763,11 @@ fun VendorItemPricingSheet(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = if (inputInRials) "ثمن الحبة (بالريال)" else "ثمن الحبة/القطعة (درهم)",
+                                    text = if (inputInRials) {
+                                        "ثمن ${noteIntent.unitNoun} (بالريال)"
+                                    } else {
+                                        "ثمن ${noteIntent.unitNoun} (درهم)"
+                                    },
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -835,14 +846,29 @@ fun VendorItemPricingSheet(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    val countPresets = listOf(
-                        1 to "قطعة (1)",
-                        2 to "قطعتان (2)",
-                        6 to "6 حبات",
-                        10 to "10 بيضات",
-                        15 to "15 بيضة",
-                        30 to "بلاطو (30)"
-                    )
+                    val isEggLike = item.name.contains("بيض") || item.note.contains("بلاطو") || item.note.contains("بيض")
+                    val singularUnit = noteIntent.unitNoun.removePrefix("ال").let {
+                        if (it == "حبة/القطعة" || it.isBlank()) "قطعة" else it
+                    }
+                    val countPresets = if (isEggLike) {
+                        listOf(
+                            1 to "بيضة (1)",
+                            2 to "بيضتان (2)",
+                            6 to "6 بيضات",
+                            10 to "10 بيضات",
+                            15 to "15 بيضة",
+                            30 to "بلاطو (30)"
+                        )
+                    } else {
+                        listOf(
+                            1 to "1 $singularUnit",
+                            2 to "2 $singularUnit",
+                            3 to "3 ${noteIntent.unitPluralLabel}",
+                            4 to "4 ${noteIntent.unitPluralLabel}",
+                            6 to "6 ${noteIntent.unitPluralLabel}",
+                            10 to "10 ${noteIntent.unitPluralLabel}"
+                        )
+                    }
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -896,14 +922,16 @@ fun VendorItemPricingSheet(
                 selectedMode,
                 itemPriceHistory,
                 item.id,
-                fallbackLastPriceDirhams
+                fallbackLastPriceDirhams,
+                noteIntent
             ) {
                 PriceTrendAnalyzer.evaluateItemPrice(
                     currentUnitPriceDirhams = unitOrFixedPriceDirhams,
                     purchaseMode = selectedMode,
                     itemHistory = itemPriceHistory,
                     excludeShoppingItemId = if (item.isPurchased) item.id else null,
-                    fallbackLastPriceDirhams = fallbackLastPriceDirhams
+                    fallbackLastPriceDirhams = fallbackLastPriceDirhams,
+                    unitSuffixOverride = if (selectedMode == "COUNT") noteIntent.unitSuffix else null
                 )
             }
 

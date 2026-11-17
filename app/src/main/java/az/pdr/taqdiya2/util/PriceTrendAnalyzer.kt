@@ -33,22 +33,32 @@ object PriceTrendAnalyzer {
         purchaseMode: String,
         itemHistory: List<PriceHistoryEntity>,
         excludeShoppingItemId: Long? = null,
-        fallbackLastPriceDirhams: Double = 0.0
+        fallbackLastPriceDirhams: Double = 0.0,
+        unitSuffixOverride: String? = null
     ): PriceEvaluation {
-        val comparableHistory = itemHistory
+        val validHistory = itemHistory
             .filter { record ->
                 record.unitPriceDirhams > 0.0 &&
-                    (excludeShoppingItemId == null || record.shoppingItemId != excludeShoppingItemId) &&
-                    record.purchaseMode == purchaseMode
+                    (excludeShoppingItemId == null || record.shoppingItemId != excludeShoppingItemId)
             }
             .sortedByDescending { it.recordedAt }
 
-        val effectivePrices: List<Double> = if (comparableHistory.isNotEmpty()) {
-            comparableHistory.map { it.unitPriceDirhams }
-        } else if (fallbackLastPriceDirhams > 0.0) {
-            listOf(fallbackLastPriceDirhams)
-        } else {
-            emptyList()
+        val comparableHistory = validHistory.filter { it.purchaseMode == purchaseMode }
+
+        val (effectivePrices, effectiveMode) = when {
+            comparableHistory.isNotEmpty() -> {
+                comparableHistory.map { it.unitPriceDirhams } to purchaseMode
+            }
+            validHistory.isNotEmpty() && currentUnitPriceDirhams <= 0.0 -> {
+                val latestMode = validHistory.first().purchaseMode
+                validHistory.filter { it.purchaseMode == latestMode }.map { it.unitPriceDirhams } to latestMode
+            }
+            validHistory.isEmpty() && fallbackLastPriceDirhams > 0.0 -> {
+                listOf(fallbackLastPriceDirhams) to purchaseMode
+            }
+            else -> {
+                emptyList<Double>() to purchaseMode
+            }
         }
 
         if (effectivePrices.isEmpty()) {
@@ -72,9 +82,11 @@ object PriceTrendAnalyzer {
         val avgPrice = CurrencyFormatter.roundMoney(effectivePrices.average())
         val minPrice = effectivePrices.minOrNull() ?: lastPrice
         val maxPrice = effectivePrices.maxOrNull() ?: lastPrice
-        val unitSuffix = when (purchaseMode) {
-            "WEIGHT" -> "/كغ"
-            "COUNT" -> "/حبة"
+        val unitSuffix = when {
+            effectiveMode == "FIXED" -> ""
+            !unitSuffixOverride.isNullOrBlank() && effectiveMode == purchaseMode -> unitSuffixOverride
+            effectiveMode == "WEIGHT" -> "/كغ"
+            effectiveMode == "COUNT" -> "/حبة"
             else -> ""
         }
 

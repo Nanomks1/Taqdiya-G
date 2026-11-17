@@ -152,5 +152,74 @@ class TaqdiyaBatch1Test {
         val rubikTypo = az.pdr.taqdiya2.ui.theme.buildAppTypography(rubikFamily, rubikFamily, 0.91f)
         assertEquals(defaultTypo.bodyLarge.fontSize.value * 0.91f, rubikTypo.bodyLarge.fontSize.value, 0.01f)
     }
+
+    @Test
+    fun `verify smart note intent parser and price trend unit suffixes`() {
+        // 1. Monetary note ("التحميرة" with "5 دراهم") -> FIXED mode + 5.0 DH
+        val tahmiraMoney = CurrencyFormatter.parseShoppingNoteIntent("التحميرة", "5 دراهم")
+        assertEquals("FIXED", tahmiraMoney.inferredMode)
+        assertEquals(5.0, tahmiraMoney.explicitMoneyDirhams ?: 0.0, 0.001)
+        assertEquals("", tahmiraMoney.unitSuffix)
+
+        // 2. Monetary note in Rials ("كمون" with "100 ريال") -> FIXED mode + 5.0 DH
+        val kamounRials = CurrencyFormatter.parseShoppingNoteIntent("كمون", "100 ريال")
+        assertEquals("FIXED", kamounRials.inferredMode)
+        assertEquals(5.0, kamounRials.explicitMoneyDirhams ?: 0.0, 0.001)
+
+        // 3. Spice with explicit weight ("التحميرة" with "رابعة") -> WEIGHT mode + 0.25 kg
+        val tahmiraWeight = CurrencyFormatter.parseShoppingNoteIntent("التحميرة", "رابعة")
+        assertEquals("WEIGHT", tahmiraWeight.inferredMode)
+        assertEquals(0.25, tahmiraWeight.explicitWeightKg ?: 0.0, 0.001)
+        assertEquals("/كغ", tahmiraWeight.unitSuffix)
+
+        // 4. Container count note ("أتاي" with "2 علبة كبيرة") -> COUNT mode + 2 + "العلبة"
+        val atayBox = CurrencyFormatter.parseShoppingNoteIntent("أتاي", "2 علبة كبيرة")
+        assertEquals("COUNT", atayBox.inferredMode)
+        assertEquals(2, atayBox.explicitCount)
+        assertEquals("العلبة", atayBox.unitNoun)
+        assertEquals("/علبة", atayBox.unitSuffix)
+
+        // 5. Bottle note ("جافيل" with "قرعة") -> COUNT mode + 1 + "القرعة"
+        val javelBottle = CurrencyFormatter.parseShoppingNoteIntent("جافيل", "قرعة")
+        assertEquals("COUNT", javelBottle.inferredMode)
+        assertEquals(1, javelBottle.explicitCount)
+        assertEquals("القرعة", javelBottle.unitNoun)
+        assertEquals("/قرعة", javelBottle.unitSuffix)
+
+        // 6. Zucchini ("قرعة خضراء" with "نص كيلو") -> WEIGHT mode + 0.5 kg (not confused with bottle!)
+        val zucchini = CurrencyFormatter.parseShoppingNoteIntent("قرعة خضراء", "نص كيلو")
+        assertEquals("WEIGHT", zucchini.inferredMode)
+        assertEquals(0.5, zucchini.explicitWeightKg ?: 0.0, 0.001)
+
+        // 7. Verify PriceTrendAnalyzer never labels FIXED history as "/كغ"
+        val fixedHistory = listOf(
+            az.pdr.taqdiya2.data.local.PriceHistoryEntity(
+                id = 1L,
+                itemName = "التحميرة",
+                normalizedName = CurrencyFormatter.normalizeArabicName("التحميرة"),
+                vendorId = 1L,
+                vendorName = "العطار",
+                purchaseMode = "FIXED",
+                unitPriceDirhams = 5.0,
+                quantity = 1.0,
+                totalPaidDirhams = 5.0
+            )
+        )
+        val evalFixed = az.pdr.taqdiya2.util.PriceTrendAnalyzer.evaluateItemPrice(
+            currentUnitPriceDirhams = 5.0,
+            purchaseMode = "FIXED",
+            itemHistory = fixedHistory,
+            fallbackLastPriceDirhams = 5.0
+        )
+        assertFalse("FIXED evaluation must not contain /كغ", evalFixed.recommendationText.contains("/كغ"))
+
+        val evalPreview = az.pdr.taqdiya2.util.PriceTrendAnalyzer.evaluateItemPrice(
+            currentUnitPriceDirhams = 0.0,
+            purchaseMode = "FIXED",
+            itemHistory = fixedHistory,
+            fallbackLastPriceDirhams = 5.0
+        )
+        assertEquals("المعتاد: 5 درهم", evalPreview.badgeLabel)
+    }
 }
 

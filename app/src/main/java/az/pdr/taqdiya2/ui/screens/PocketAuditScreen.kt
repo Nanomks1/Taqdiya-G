@@ -413,7 +413,25 @@ fun PocketAuditScreen(
                             }
                         }
 
-                        if (vPayment != null && vPayment.forgivenDiscountDirhams > 0.0) {
+                        if (vPayment != null && abs(vPayment.calculatedTotalDirhams - vCalcTotal) > 0.009) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { paymentDialogVendor = vendor }
+                                    .testTag("audit_vendor_drift_warning_${vendor.id}"),
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                    text = "تنبيه: تغير مجموع القفة إلى ${CurrencyFormatter.formatDirhams(vCalcTotal)} بعد تأكيد الدفع (${CurrencyFormatter.formatDirhams(vPayment.actualPaidDirhams)}) — اضغط لتحديث الدفع",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                        } else if (vPayment != null && vPayment.forgivenDiscountDirhams > 0.0) {
                             Surface(
                                 color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.65f),
                                 shape = RoundedCornerShape(10.dp)
@@ -476,13 +494,18 @@ fun PocketAuditScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             if (vPurchased.isNotEmpty() || vPayment != null) {
+                                val isOutOfSync = vPayment != null && abs(vPayment.calculatedTotalDirhams - vCalcTotal) > 0.009
                                 Surface(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(40.dp)
                                         .clip(RoundedCornerShape(10.dp))
                                         .clickable { paymentDialogVendor = vendor },
-                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                                    color = if (isOutOfSync) {
+                                        MaterialTheme.colorScheme.secondary
+                                    } else {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                    },
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
                                     Row(
@@ -493,14 +516,26 @@ fun PocketAuditScreen(
                                         Icon(
                                             imageVector = Icons.Outlined.Payments,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            tint = if (isOutOfSync) {
+                                                MaterialTheme.colorScheme.onSecondary
+                                            } else {
+                                                MaterialTheme.colorScheme.onPrimaryContainer
+                                            },
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = if (vPayment != null) "تعديل الدفع" else "تأكيد الدفع",
+                                            text = when {
+                                                isOutOfSync -> "تحديث الدفع الآن"
+                                                vPayment != null -> "تعديل الدفع"
+                                                else -> "تأكيد الدفع"
+                                            },
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            color = if (isOutOfSync) {
+                                                MaterialTheme.colorScheme.onSecondary
+                                            } else {
+                                                MaterialTheme.colorScheme.onPrimaryContainer
+                                            },
                                             fontWeight = FontWeight.SemiBold,
                                             maxLines = 1,
                                             softWrap = false
