@@ -360,34 +360,14 @@ fun HomePrepScreen(
                                         }
                                     }
 
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .width(2.5.dp)
-                                                .height(14.dp)
-                                                .clip(RoundedCornerShape(2.dp))
-                                                .background(
-                                                    MaterialTheme.colorScheme.primary.copy(
-                                                        alpha = if (hasItems) 0.85f else 0.45f
-                                                    )
-                                                )
-                                        )
-                                        Text(
-                                            text = vendor.name,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = if (hasItems) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.88f)
-                                            },
-                                            fontWeight = FontWeight.Bold,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
+                                    Text(
+                                        text = vendor.name,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                             }
                         }
@@ -585,20 +565,12 @@ private fun OversizedVendorCard(
                             modifier = Modifier.size(21.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .width(3.dp)
-                            .height(26.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.72f))
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
                             text = vendor.name,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
@@ -606,7 +578,7 @@ private fun OversizedVendorCard(
                         Text(
                             text = "${items.size} أغراض مسجلة",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                             fontWeight = FontWeight.Normal
                         )
                         if (kotlin.math.abs(vendor.pendingBalanceDirhams) > 0.009) {
@@ -703,22 +675,14 @@ private fun OversizedVendorCard(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(RoundedCornerShape(3.dp))
-                                        .background(MaterialTheme.colorScheme.primary)
-                                )
-                            }
+                                    .size(7.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
 
                             Text(
                                 text = item.name,
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold
                             )

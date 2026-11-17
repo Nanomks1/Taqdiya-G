@@ -298,21 +298,17 @@ fun TaqdiyaTheme(
             context = context,
             fontFamilyKey = fontFamilyKey
         )
+        val fontSizeScale = if (fontFamilyKey == "RUBIK") 0.91f else 1.0f
         buildAppTypography(
             primaryFontFamily = resolvedFamily,
             secondaryFontFamily = resolvedFamily,
-            fontSizeScale = 1.0f
+            fontSizeScale = fontSizeScale
         )
     }
 
     val baseDensity = LocalDensity.current
     val scalePercent = resolveUiScalePercent(uiScaleMode)
-    val fontScaleMultiplier = scalePercent / 100f
-    val effectiveFontScale = if (scalePercent == 100) {
-        baseDensity.fontScale
-    } else {
-        (baseDensity.fontScale * fontScaleMultiplier).coerceIn(0.75f, 1.35f)
-    }
+    val effectiveFontScale = (scalePercent / 100f).coerceIn(0.85f, 1.22f)
     val scaledDensity = Density(
         density = baseDensity.density,
         fontScale = effectiveFontScale
