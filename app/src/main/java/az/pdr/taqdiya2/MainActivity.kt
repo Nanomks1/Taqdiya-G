@@ -251,6 +251,12 @@ fun TaqdiyaApp(
 
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == 1) {
+            viewModel.onEnterMarketTab()
+        }
+    }
+
     // Keep Home Screen AppWidget automatically synchronized with live pocket balance, missing items, and Day/Night theme
     LaunchedEffect(
         uiState.remainingPocketDirhams,
@@ -1041,6 +1047,18 @@ fun TaqdiyaApp(
             onToggleShowRial = viewModel::toggleShowRial,
             onTogglePrivacyMask = viewModel::togglePrivacyMask,
             onUpdatePrivacyMaskPocketOnly = viewModel::updatePrivacyMaskPocketOnly,
+            onToggleAutoLinkMoneyToFixed = viewModel::toggleAutoLinkMoneyToFixed,
+            onToggleAutoLinkCountToCount = viewModel::toggleAutoLinkCountToCount,
+            onToggleAutoLinkWeightToWeight = viewModel::toggleAutoLinkWeightToWeight,
+            onUpdateDefaultPricingTab = viewModel::updateDefaultPricingTab,
+            onToggleEnableQuickFixedBuyButton = viewModel::toggleEnableQuickFixedBuyButton,
+            onAddUnitToPricingTab = viewModel::addUnitToPricingTab,
+            onRemoveUnitFromPricingTab = viewModel::removeUnitFromPricingTab,
+            onResetPricingTabUnitsToDefaults = viewModel::resetPricingTabUnitsToDefaults,
+            onToggleAutoKeepScreenAwakeInMarket = viewModel::toggleAutoKeepScreenAwakeInMarket,
+            onUpdateDefaultPricingCurrencyInRials = viewModel::updateDefaultPricingCurrencyInRials,
+            onToggleShowCleaningFeeOption = viewModel::toggleShowCleaningFeeOption,
+            onToggleShowPriceTrendBadges = viewModel::toggleShowPriceTrendBadges,
             onSetPinCode = viewModel::setOrUpdatePinCode,
             onRemovePinCode = viewModel::removePinCode,
             onLockAppNow = viewModel::lockAppNow,

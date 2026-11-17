@@ -50,7 +50,7 @@ fun EditShoppingItemDialog(
     item: ShoppingItemEntity,
     vendors: List<VendorEntity>,
     dictionaryItems: List<DictionaryItemEntity> = emptyList(),
-    onAddCustomUnit: (String, Long, String) -> Unit = { _, _, _ -> },
+    onAddCustomUnit: (String, Long, String, String?) -> Unit = { _, _, _, _ -> },
     onRemoveCustomUnit: (String, String) -> Unit = { _, _ -> },
     onDismiss: () -> Unit,
     onSave: (String, String, Long) -> Unit
@@ -60,6 +60,7 @@ fun EditShoppingItemDialog(
     var selectedVendorId by remember { mutableStateOf(item.vendorId) }
     var showAddCustomUnitInput by remember { mutableStateOf(false) }
     var customUnitText by remember { mutableStateOf("") }
+    var customUnitTargetTab by remember { mutableStateOf("COUNT") }
 
     val selectedVendor = remember(vendors, selectedVendorId) {
         vendors.firstOrNull { it.id == selectedVendorId }
@@ -293,6 +294,62 @@ fun EditShoppingItemDialog(
 
                 if (showAddCustomUnitInput) {
                     Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "ربط هذا المقدار في حاسبة الثمن بـ:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val tabChoices = listOf(
+                            "COUNT" to "3. بالعدد / العلبة",
+                            "WEIGHT" to "1. بالوزن",
+                            "FIXED" to "2. مبلغ مقطوع"
+                        )
+                        tabChoices.forEach { (tabKey, tabLabel) ->
+                            val isTabSelected = customUnitTargetTab == tabKey
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { customUnitTargetTab = tabKey },
+                                color = if (isTabSelected) {
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                border = BorderStroke(
+                                    width = if (isTabSelected) 1.5.dp else 1.dp,
+                                    color = if (isTabSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = tabLabel,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (isTabSelected) {
+                                            MaterialTheme.colorScheme.onSecondaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -311,7 +368,7 @@ fun EditShoppingItemDialog(
                                 val cleanUnit = customUnitText.trim()
                                 val targetName = nameInput.trim().ifEmpty { item.name }
                                 if (cleanUnit.isNotEmpty()) {
-                                    onAddCustomUnit(targetName, selectedVendorId, cleanUnit)
+                                    onAddCustomUnit(targetName, selectedVendorId, cleanUnit, customUnitTargetTab)
                                     noteInput = cleanUnit
                                     customUnitText = ""
                                     showAddCustomUnitInput = false

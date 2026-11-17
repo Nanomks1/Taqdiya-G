@@ -974,7 +974,8 @@ class TaqdiyaRepository(
     suspend fun addCustomUnitForItem(
         itemName: String,
         vendorId: Long,
-        customUnit: String
+        customUnit: String,
+        targetPricingTab: String? = null
     ) {
         val cleanName = itemName.trim()
         val cleanUnit = customUnit.trim()
@@ -999,6 +1000,76 @@ class TaqdiyaRepository(
                     customUnitsCsv = CurrencyFormatter.encodeCustomUnits(listOf(cleanUnit)),
                     usageCount = 1
                 )
+            )
+        }
+
+        if (!targetPricingTab.isNullOrBlank()) {
+            addUnitToPricingTab(cleanUnit, targetPricingTab)
+        }
+    }
+
+    suspend fun addUnitToPricingTab(unit: String, tabMode: String): AppSettingsEntity {
+        val cleanUnit = unit.trim().replace("|", "")
+        if (cleanUnit.isEmpty()) return getAppSettingsOnce()
+        val normTarget = CurrencyFormatter.normalizeArabicName(cleanUnit)
+        return updateAppSettings { s ->
+            val wList = CurrencyFormatter.parseCustomUnits(s.weightUnitsCsv)
+                .filterNot { CurrencyFormatter.normalizeArabicName(it) == normTarget }
+            val fList = CurrencyFormatter.parseCustomUnits(s.fixedUnitsCsv)
+                .filterNot { CurrencyFormatter.normalizeArabicName(it) == normTarget }
+            val cList = CurrencyFormatter.parseCustomUnits(s.countUnitsCsv)
+                .filterNot { CurrencyFormatter.normalizeArabicName(it) == normTarget }
+
+            when (tabMode) {
+                "WEIGHT" -> s.copy(
+                    weightUnitsCsv = CurrencyFormatter.encodeCustomUnits(wList + cleanUnit),
+                    fixedUnitsCsv = CurrencyFormatter.encodeCustomUnits(fList),
+                    countUnitsCsv = CurrencyFormatter.encodeCustomUnits(cList)
+                )
+                "FIXED" -> s.copy(
+                    weightUnitsCsv = CurrencyFormatter.encodeCustomUnits(wList),
+                    fixedUnitsCsv = CurrencyFormatter.encodeCustomUnits(fList + cleanUnit),
+                    countUnitsCsv = CurrencyFormatter.encodeCustomUnits(cList)
+                )
+                else -> s.copy(
+                    weightUnitsCsv = CurrencyFormatter.encodeCustomUnits(wList),
+                    fixedUnitsCsv = CurrencyFormatter.encodeCustomUnits(fList),
+                    countUnitsCsv = CurrencyFormatter.encodeCustomUnits(cList + cleanUnit)
+                )
+            }
+        }
+    }
+
+    suspend fun removeUnitFromPricingTab(unit: String, tabMode: String): AppSettingsEntity {
+        val normTarget = CurrencyFormatter.normalizeArabicName(unit.trim())
+        if (normTarget.isEmpty()) return getAppSettingsOnce()
+        return updateAppSettings { s ->
+            when (tabMode) {
+                "WEIGHT" -> {
+                    val wList = CurrencyFormatter.parseCustomUnits(s.weightUnitsCsv)
+                        .filterNot { CurrencyFormatter.normalizeArabicName(it) == normTarget }
+                    s.copy(weightUnitsCsv = CurrencyFormatter.encodeCustomUnits(wList))
+                }
+                "FIXED" -> {
+                    val fList = CurrencyFormatter.parseCustomUnits(s.fixedUnitsCsv)
+                        .filterNot { CurrencyFormatter.normalizeArabicName(it) == normTarget }
+                    s.copy(fixedUnitsCsv = CurrencyFormatter.encodeCustomUnits(fList))
+                }
+                else -> {
+                    val cList = CurrencyFormatter.parseCustomUnits(s.countUnitsCsv)
+                        .filterNot { CurrencyFormatter.normalizeArabicName(it) == normTarget }
+                    s.copy(countUnitsCsv = CurrencyFormatter.encodeCustomUnits(cList))
+                }
+            }
+        }
+    }
+
+    suspend fun resetPricingTabUnitsToDefaults(): AppSettingsEntity {
+        return updateAppSettings { s ->
+            s.copy(
+                weightUnitsCsv = AppSettingsEntity.DEFAULT_WEIGHT_UNITS_CSV,
+                fixedUnitsCsv = AppSettingsEntity.DEFAULT_FIXED_UNITS_CSV,
+                countUnitsCsv = AppSettingsEntity.DEFAULT_COUNT_UNITS_CSV
             )
         }
     }
@@ -1037,7 +1108,9 @@ class TaqdiyaRepository(
 
     // --- Batch 5: App Settings & Privacy Preferences ---
     suspend fun getAppSettingsOnce(): AppSettingsEntity {
-        return dao.getAppSettingsOnce() ?: AppSettingsEntity().also { dao.upsertAppSettings(it) }
+        val loaded = dao.getAppSettingsOnce() ?: AppSettingsEntity().also { dao.upsertAppSettings(it) }
+        CurrencyFormatter.currentNoteMappingSettings = loaded
+        return loaded
     }
 
     suspend fun updateAppSettings(transform: (AppSettingsEntity) -> AppSettingsEntity): AppSettingsEntity {
@@ -1049,6 +1122,7 @@ class TaqdiyaRepository(
             fontFamilyKey = if (transformed.fontFamilyKey == "CUSTOM") "IBM_PLEX" else transformed.fontFamilyKey
         )
         dao.upsertAppSettings(updated)
+        CurrencyFormatter.currentNoteMappingSettings = updated
         triggerSilentAutoBackup()
         return updated
     }

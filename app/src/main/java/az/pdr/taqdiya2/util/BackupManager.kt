@@ -104,6 +104,18 @@ object BackupManager {
             put("colorPalette", normalizedPalette)
             put("animationMode", normalizedAnim)
             put("fontFamilyKey", normalizedFont)
+            put("autoLinkMoneyToFixed", payload.appSettings.autoLinkMoneyToFixed)
+            put("autoLinkCountToCount", payload.appSettings.autoLinkCountToCount)
+            put("autoLinkWeightToWeight", payload.appSettings.autoLinkWeightToWeight)
+            put("defaultPricingTab", payload.appSettings.defaultPricingTab)
+            put("enableQuickFixedBuyButton", payload.appSettings.enableQuickFixedBuyButton)
+            put("weightUnitsCsv", payload.appSettings.weightUnitsCsv)
+            put("fixedUnitsCsv", payload.appSettings.fixedUnitsCsv)
+            put("countUnitsCsv", payload.appSettings.countUnitsCsv)
+            put("autoKeepScreenAwakeInMarket", payload.appSettings.autoKeepScreenAwakeInMarket)
+            put("defaultPricingCurrencyInRials", payload.appSettings.defaultPricingCurrencyInRials)
+            put("showCleaningFeeOption", payload.appSettings.showCleaningFeeOption)
+            put("showPriceTrendBadges", payload.appSettings.showPriceTrendBadges)
         }
         root.put("appSettings", settingsObj)
 
@@ -287,7 +299,22 @@ object BackupManager {
                     fontFamilyKey = when (val rawFont = settingsObj.optString("fontFamilyKey", "IBM_PLEX")) {
                         "VAZIRMATN", "RUBIK", "BALOO", "SYSTEM" -> rawFont
                         else -> "IBM_PLEX"
-                    }
+                    },
+                    autoLinkMoneyToFixed = settingsObj.optBoolean("autoLinkMoneyToFixed", true),
+                    autoLinkCountToCount = settingsObj.optBoolean("autoLinkCountToCount", true),
+                    autoLinkWeightToWeight = settingsObj.optBoolean("autoLinkWeightToWeight", true),
+                    defaultPricingTab = when (val tab = settingsObj.optString("defaultPricingTab", "WEIGHT")) {
+                        "FIXED", "COUNT", "WEIGHT" -> tab
+                        else -> "WEIGHT"
+                    },
+                    enableQuickFixedBuyButton = settingsObj.optBoolean("enableQuickFixedBuyButton", true),
+                    weightUnitsCsv = settingsObj.optString("weightUnitsCsv", AppSettingsEntity.DEFAULT_WEIGHT_UNITS_CSV),
+                    fixedUnitsCsv = settingsObj.optString("fixedUnitsCsv", AppSettingsEntity.DEFAULT_FIXED_UNITS_CSV),
+                    countUnitsCsv = settingsObj.optString("countUnitsCsv", AppSettingsEntity.DEFAULT_COUNT_UNITS_CSV),
+                    autoKeepScreenAwakeInMarket = settingsObj.optBoolean("autoKeepScreenAwakeInMarket", true),
+                    defaultPricingCurrencyInRials = settingsObj.optBoolean("defaultPricingCurrencyInRials", false),
+                    showCleaningFeeOption = settingsObj.optBoolean("showCleaningFeeOption", true),
+                    showPriceTrendBadges = settingsObj.optBoolean("showPriceTrendBadges", true)
                 )
             } else {
                 AppSettingsEntity()

@@ -226,5 +226,88 @@ class TaqdiyaBatch1Test {
         )
         assertEquals("المعتاد: 5 درهم", evalPreview.badgeLabel)
     }
+
+    @Test
+    fun `verify batch 2 custom unit to tab mapping and rule toggles and backup`() {
+        // 1. Any monetary amount ("50 درهم", "200 ريال") maps to FIXED when autoLinkMoneyToFixed is enabled
+        val fiftyDh = CurrencyFormatter.parseShoppingNoteIntent("تقدية متنوعة", "50 درهم")
+        assertEquals("FIXED", fiftyDh.inferredMode)
+        assertEquals(50.0, fiftyDh.explicitMoneyDirhams ?: 0.0, 0.001)
+
+        // 2. Disabling autoLinkMoneyToFixed stops automatic money-to-FIXED linking and uses defaultPricingTab
+        val disabledMoneySettings = AppSettingsEntity(
+            autoLinkMoneyToFixed = false,
+            defaultPricingTab = "COUNT"
+        )
+        val fiftyDhDisabled = CurrencyFormatter.parseShoppingNoteIntent(
+            itemName = "تقدية متنوعة",
+            note = "50 درهم",
+            fallbackPurchaseMode = disabledMoneySettings.defaultPricingTab,
+            settings = disabledMoneySettings
+        )
+        assertEquals(null, fiftyDhDisabled.explicitMoneyDirhams)
+        assertEquals("COUNT", fiftyDhDisabled.inferredMode)
+
+        // 3. Adding a custom unit ("طاسة") to COUNT tab maps "2 طاسة" -> COUNT mode with unitNoun "الطاسة"
+        val customTabSettings = AppSettingsEntity(
+            countUnitsCsv = "${AppSettingsEntity.DEFAULT_COUNT_UNITS_CSV},طاسة",
+            weightUnitsCsv = "${AppSettingsEntity.DEFAULT_WEIGHT_UNITS_CSV},قفة كبيرة",
+            fixedUnitsCsv = "${AppSettingsEntity.DEFAULT_FIXED_UNITS_CSV},حفنة"
+        )
+        val tassaIntent = CurrencyFormatter.parseShoppingNoteIntent(
+            itemName = "لبن",
+            note = "2 طاسة",
+            settings = customTabSettings
+        )
+        assertEquals("COUNT", tassaIntent.inferredMode)
+        assertEquals(2, tassaIntent.explicitCount)
+        assertEquals("الطاسة", tassaIntent.unitNoun)
+        assertEquals("/طاسة", tassaIntent.unitSuffix)
+
+        val quffaWeightIntent = CurrencyFormatter.parseShoppingNoteIntent(
+            itemName = "بطاطا",
+            note = "قفة كبيرة",
+            settings = customTabSettings
+        )
+        assertEquals("WEIGHT", quffaWeightIntent.inferredMode)
+
+        val hafnaFixedIntent = CurrencyFormatter.parseShoppingNoteIntent(
+            itemName = "زريعة",
+            note = "حفنة",
+            settings = customTabSettings
+        )
+        assertEquals("FIXED", hafnaFixedIntent.inferredMode)
+
+        // 4. Verify BackupManager preserves all Batch 2 settings
+        val payload = FullBackupPayload(
+            exportedAt = 1700000000000L,
+            vendors = emptyList(),
+            rounds = emptyList(),
+            shoppingItems = emptyList(),
+            vendorPayments = emptyList(),
+            passingExpenses = emptyList(),
+            dictionaryItems = emptyList(),
+            priceHistory = emptyList(),
+            appSettings = customTabSettings.copy(
+                defaultPricingTab = "COUNT",
+                enableQuickFixedBuyButton = false,
+                autoKeepScreenAwakeInMarket = false,
+                defaultPricingCurrencyInRials = true,
+                showCleaningFeeOption = false,
+                showPriceTrendBadges = false
+            )
+        )
+        val json = BackupManager.encodeToJson(payload)
+        val restored = BackupManager.decodeFromJson(json).getOrThrow().appSettings
+        assertEquals("COUNT", restored.defaultPricingTab)
+        assertFalse(restored.enableQuickFixedBuyButton)
+        assertFalse(restored.autoKeepScreenAwakeInMarket)
+        assertTrue(restored.defaultPricingCurrencyInRials)
+        assertFalse(restored.showCleaningFeeOption)
+        assertFalse(restored.showPriceTrendBadges)
+        assertTrue(restored.countUnitsCsv.contains("طاسة"))
+        assertTrue(restored.weightUnitsCsv.contains("قفة كبيرة"))
+        assertTrue(restored.fixedUnitsCsv.contains("حفنة"))
+    }
 }
 

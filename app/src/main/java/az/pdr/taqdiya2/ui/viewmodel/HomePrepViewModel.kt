@@ -257,6 +257,7 @@ class HomePrepViewModel(
         CurrencyFormatter.showRialState = resolvedSettings.showRial
         CurrencyFormatter.privacyMaskState = resolvedSettings.privacyMaskAmounts
         CurrencyFormatter.privacyMaskPocketOnlyState = resolvedSettings.privacyMaskPocketOnly
+        CurrencyFormatter.currentNoteMappingSettings = resolvedSettings
         SettingsAndTrashStreams(
             appSettings = resolvedSettings,
             deletedShoppingItems = delItems,
@@ -403,9 +404,17 @@ class HomePrepViewModel(
         draftState.value = draftState.value.copy(selectedMarketVendorId = vendorId)
     }
 
+    fun onEnterMarketTab() {
+        val autoAwake = uiState.value.appSettings.autoKeepScreenAwakeInMarket
+        draftState.value = draftState.value.copy(keepScreenAwakeInMarket = autoAwake)
+    }
+
     fun toggleKeepScreenAwake() {
         val next = !draftState.value.keepScreenAwakeInMarket
         draftState.value = draftState.value.copy(keepScreenAwakeInMarket = next)
+        viewModelScope.launch {
+            repository.updateAppSettings { it.copy(autoKeepScreenAwakeInMarket = next) }
+        }
         _statusMessages.tryEmit(
             if (next) "تم تفعيل إبقاء الشاشة مضاءة أثناء التسوق"
             else "تم إيقاف إبقاء الشاشة مضاءة"
@@ -778,13 +787,24 @@ class HomePrepViewModel(
         }
     }
 
-    fun addCustomUnitForItem(itemName: String, vendorId: Long, customUnit: String) {
+    fun addCustomUnitForItem(
+        itemName: String,
+        vendorId: Long,
+        customUnit: String,
+        targetPricingTab: String? = null
+    ) {
         val cleanName = itemName.trim()
         val cleanUnit = customUnit.trim()
         if (cleanName.isEmpty() || cleanUnit.isEmpty()) return
         viewModelScope.launch {
-            repository.addCustomUnitForItem(cleanName, vendorId, cleanUnit)
-            _statusMessages.tryEmit("تمت إضافة المقدار «$cleanUnit» لـ «$cleanName»")
+            repository.addCustomUnitForItem(cleanName, vendorId, cleanUnit, targetPricingTab)
+            val tabSuffix = when (targetPricingTab) {
+                "WEIGHT" -> " وربطه بتبويب «1. بالوزن»"
+                "FIXED" -> " وربطه بتبويب «2. مبلغ مقطوع»"
+                "COUNT" -> " وربطه بتبويب «3. بالعدد / العلبة»"
+                else -> ""
+            }
+            _statusMessages.tryEmit("تمت إضافة المقدار «$cleanUnit» لـ «$cleanName»$tabSuffix")
         }
     }
 
@@ -1257,6 +1277,138 @@ class HomePrepViewModel(
         }
     }
 
+    // --- Batch 2: Market & Note-to-Tab Mapping Controls ---
+    fun toggleAutoLinkMoneyToFixed() {
+        viewModelScope.launch {
+            val updated = repository.updateAppSettings { it.copy(autoLinkMoneyToFixed = !it.autoLinkMoneyToFixed) }
+            _statusMessages.tryEmit(
+                if (updated.autoLinkMoneyToFixed) "تم تفعيل ربط المبالغ المالية تلقائياً بتبويب «2. مبلغ مقطوع»"
+                else "تم إيقاف الربط التلقائي للمبالغ المالية"
+            )
+        }
+    }
+
+    fun toggleAutoLinkCountToCount() {
+        viewModelScope.launch {
+            val updated = repository.updateAppSettings { it.copy(autoLinkCountToCount = !it.autoLinkCountToCount) }
+            _statusMessages.tryEmit(
+                if (updated.autoLinkCountToCount) "تم تفعيل ربط العبوات والأعداد تلقائياً بتبويب «3. بالعدد / العلبة»"
+                else "تم إيقاف الربط التلقائي للعبوات والأعداد"
+            )
+        }
+    }
+
+    fun toggleAutoLinkWeightToWeight() {
+        viewModelScope.launch {
+            val updated = repository.updateAppSettings { it.copy(autoLinkWeightToWeight = !it.autoLinkWeightToWeight) }
+            _statusMessages.tryEmit(
+                if (updated.autoLinkWeightToWeight) "تم تفعيل ربط الأوزان تلقائياً بتبويب «1. بالوزن»"
+                else "تم إيقاف الربط التلقائي للأوزان"
+            )
+        }
+    }
+
+    fun updateDefaultPricingTab(tabMode: String) {
+        val safeTab = when (tabMode) {
+            "FIXED", "COUNT", "WEIGHT" -> tabMode
+            else -> "WEIGHT"
+        }
+        viewModelScope.launch {
+            repository.updateAppSettings { it.copy(defaultPricingTab = safeTab) }
+            val label = when (safeTab) {
+                "FIXED" -> "2. مبلغ مقطوع"
+                "COUNT" -> "3. بالعدد / العلبة"
+                else -> "1. بالوزن"
+            }
+            _statusMessages.tryEmit("تم ضبط التبويب الافتراضي للحاسبة على: $label")
+        }
+    }
+
+    fun toggleEnableQuickFixedBuyButton() {
+        viewModelScope.launch {
+            val updated = repository.updateAppSettings {
+                it.copy(enableQuickFixedBuyButton = !it.enableQuickFixedBuyButton)
+            }
+            _statusMessages.tryEmit(
+                if (updated.enableQuickFixedBuyButton) "تم إظهار زر الشراء السريع بلمسة واحدة (✓ د.م)"
+                else "تم إخفاء زر الشراء السريع بلمسة واحدة"
+            )
+        }
+    }
+
+    fun addUnitToPricingTab(unit: String, tabMode: String) {
+        val clean = unit.trim()
+        if (clean.isEmpty()) return
+        viewModelScope.launch {
+            repository.addUnitToPricingTab(clean, tabMode)
+            val tabLabel = when (tabMode) {
+                "WEIGHT" -> "1. بالوزن"
+                "FIXED" -> "2. مبلغ مقطوع"
+                else -> "3. بالعدد / العلبة"
+            }
+            _statusMessages.tryEmit("تم ربط المقدار «$clean» بتبويب «$tabLabel»")
+        }
+    }
+
+    fun removeUnitFromPricingTab(unit: String, tabMode: String) {
+        val clean = unit.trim()
+        if (clean.isEmpty()) return
+        viewModelScope.launch {
+            repository.removeUnitFromPricingTab(clean, tabMode)
+            _statusMessages.tryEmit("تمت إزالة «$clean» من القائمة")
+        }
+    }
+
+    fun resetPricingTabUnitsToDefaults() {
+        viewModelScope.launch {
+            repository.resetPricingTabUnitsToDefaults()
+            _statusMessages.tryEmit("تمت استعادة المقادير الافتراضية لجميع التبويبات")
+        }
+    }
+
+    fun toggleAutoKeepScreenAwakeInMarket() {
+        viewModelScope.launch {
+            val updated = repository.updateAppSettings {
+                it.copy(autoKeepScreenAwakeInMarket = !it.autoKeepScreenAwakeInMarket)
+            }
+            draftState.value = draftState.value.copy(keepScreenAwakeInMarket = updated.autoKeepScreenAwakeInMarket)
+            _statusMessages.tryEmit(
+                if (updated.autoKeepScreenAwakeInMarket) "سيتم إبقاء الشاشة مضاءة تلقائياً عند فتح «عند البائع»"
+                else "تم إيقاف الإضاءة التلقائية للشاشة عند البائع"
+            )
+        }
+    }
+
+    fun updateDefaultPricingCurrencyInRials(inRials: Boolean) {
+        viewModelScope.launch {
+            repository.updateAppSettings { it.copy(defaultPricingCurrencyInRials = inRials) }
+            _statusMessages.tryEmit(
+                if (inRials) "تم ضبط عملة الإدخال الافتراضية في الحاسبة على: الريال"
+                else "تم ضبط عملة الإدخال الافتراضية في الحاسبة على: الدرهم"
+            )
+        }
+    }
+
+    fun toggleShowCleaningFeeOption() {
+        viewModelScope.launch {
+            val updated = repository.updateAppSettings { it.copy(showCleaningFeeOption = !it.showCleaningFeeOption) }
+            _statusMessages.tryEmit(
+                if (updated.showCleaningFeeOption) "تم إظهار خيار «ثمن التنقية» للسمك والدجاج"
+                else "تم إخفاء خيار «ثمن التنقية»"
+            )
+        }
+    }
+
+    fun toggleShowPriceTrendBadges() {
+        viewModelScope.launch {
+            val updated = repository.updateAppSettings { it.copy(showPriceTrendBadges = !it.showPriceTrendBadges) }
+            _statusMessages.tryEmit(
+                if (updated.showPriceTrendBadges) "تم إظهار مؤشر الغلاء والرخاء في البطاقات والحاسبة"
+                else "تم إخفاء مؤشر الغلاء والرخاء"
+            )
+        }
+    }
+
     // --- Trash Bin Recovery & Permanent Deletion ---
     fun restoreFromTrashShoppingItem(item: ShoppingItemEntity) {
         viewModelScope.launch {
@@ -1318,6 +1470,7 @@ class HomePrepViewModel(
             CurrencyFormatter.showRialState = payload.appSettings.showRial
             CurrencyFormatter.privacyMaskState = payload.appSettings.privacyMaskAmounts
             CurrencyFormatter.privacyMaskPocketOnlyState = payload.appSettings.privacyMaskPocketOnly
+            CurrencyFormatter.currentNoteMappingSettings = payload.appSettings
             "تم استرجاع النسخة الاحتياطية بنجاح (${payload.vendors.size} بائعين، ${payload.dictionaryItems.size} سلعة في القاموس، ${payload.shoppingItems.size} أغراض)"
         }
     }

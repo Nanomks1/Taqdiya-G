@@ -18,7 +18,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         PriceHistoryEntity::class,
         AppSettingsEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -80,6 +80,23 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN autoLinkMoneyToFixed INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN autoLinkCountToCount INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN autoLinkWeightToWeight INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN defaultPricingTab TEXT NOT NULL DEFAULT 'WEIGHT'")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN enableQuickFixedBuyButton INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN weightUnitsCsv TEXT NOT NULL DEFAULT '${AppSettingsEntity.DEFAULT_WEIGHT_UNITS_CSV}'")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN fixedUnitsCsv TEXT NOT NULL DEFAULT '${AppSettingsEntity.DEFAULT_FIXED_UNITS_CSV}'")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN countUnitsCsv TEXT NOT NULL DEFAULT '${AppSettingsEntity.DEFAULT_COUNT_UNITS_CSV}'")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN autoKeepScreenAwakeInMarket INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN defaultPricingCurrencyInRials INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN showCleaningFeeOption INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN showPriceTrendBadges INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -95,7 +112,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_5_6,
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9
+                        MIGRATION_8_9,
+                        MIGRATION_9_10
                     )
                     .build()
                 INSTANCE = instance

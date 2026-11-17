@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.pdr.taqdiya2.data.local.AppSettingsEntity
 import az.pdr.taqdiya2.data.local.PriceHistoryEntity
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.util.CurrencyFormatter
@@ -81,6 +82,7 @@ fun VendorItemPricingSheet(
     vendorName: String,
     itemPriceHistory: List<PriceHistoryEntity>,
     fallbackLastPriceDirhams: Double,
+    appSettings: AppSettingsEntity = AppSettingsEntity(),
     onOpenPriceHistory: () -> Unit,
     onConfirmPurchase: (
         purchaseMode: String,
@@ -95,23 +97,27 @@ fun VendorItemPricingSheet(
     val haptic = LocalHapticFeedback.current
 
     // Determine smart initial mode, quantity, and price from item state or note intent
-    val noteIntent = remember(item) {
+    val fallbackMode = appSettings.defaultPricingTab.let {
+        if (it == "WEIGHT" || it == "FIXED" || it == "COUNT") it else "WEIGHT"
+    }
+    val noteIntent = remember(item, appSettings) {
         CurrencyFormatter.parseShoppingNoteIntent(
             itemName = item.name,
             note = item.note,
-            fallbackPurchaseMode = item.purchaseMode.ifBlank { "WEIGHT" }
+            fallbackPurchaseMode = item.purchaseMode.ifBlank { fallbackMode },
+            settings = appSettings
         )
     }
 
-    val initialMode = remember(item, noteIntent, itemPriceHistory) {
+    val initialMode = remember(item, noteIntent, itemPriceHistory, fallbackMode) {
         when {
             item.isPurchased -> item.purchaseMode
             noteIntent.explicitMoneyDirhams != null -> "FIXED"
             noteIntent.explicitCount != null -> "COUNT"
             noteIntent.explicitWeightKg != null -> "WEIGHT"
             item.note.isNotBlank() -> noteIntent.inferredMode
-            itemPriceHistory.isNotEmpty() -> itemPriceHistory.maxByOrNull { it.recordedAt }?.purchaseMode ?: noteIntent.inferredMode
-            else -> noteIntent.inferredMode
+            itemPriceHistory.isNotEmpty() -> itemPriceHistory.maxByOrNull { it.recordedAt }?.purchaseMode ?: fallbackMode
+            else -> fallbackMode
         }
     }
 
@@ -128,7 +134,7 @@ fun VendorItemPricingSheet(
     }
 
     var selectedMode by remember { mutableStateOf(initialMode) }
-    var inputInRials by remember { mutableStateOf(false) }
+    var inputInRials by remember { mutableStateOf(appSettings.defaultPricingCurrencyInRials) }
 
     val initialPriceDirhams = remember(item, initialMode, noteIntent, itemPriceHistory) {
         if (item.isPurchased && item.totalDirhams > 0.0) {
@@ -146,7 +152,15 @@ fun VendorItemPricingSheet(
 
     var priceText by remember {
         mutableStateOf(
-            if (initialPriceDirhams > 0.0) CurrencyFormatter.formatAmountPlain(initialPriceDirhams) else "0"
+            if (initialPriceDirhams > 0.0) {
+                if (appSettings.defaultPricingCurrencyInRials) {
+                    CurrencyFormatter.dirhamsToRials(initialPriceDirhams).toString()
+                } else {
+                    CurrencyFormatter.formatAmountPlain(initialPriceDirhams)
+                }
+            } else {
+                "0"
+            }
         )
     }
     var replacePriceOnNextTap by remember { mutableStateOf(true) }
@@ -163,8 +177,8 @@ fun VendorItemPricingSheet(
     }
     var replaceCountOnNextTap by remember { mutableStateOf(true) }
 
-    val canHaveCleaningFee = remember(vendorName, item.name) {
-        shouldShowCleaningFee(vendorName, item.name)
+    val canHaveCleaningFee = remember(vendorName, item.name, appSettings.showCleaningFeeOption) {
+        appSettings.showCleaningFeeOption && shouldShowCleaningFee(vendorName, item.name)
     }
 
     var cleaningFeeDirhams by remember(canHaveCleaningFee) {
@@ -598,8 +612,8 @@ fun VendorItemPricingSheet(
                         }
                     }
 
-                    val showCleaningFeeRow = remember(vendorName, item.name) {
-                        shouldShowCleaningFee(vendorName = vendorName, itemName = item.name)
+                    val showCleaningFeeRow = remember(vendorName, item.name, appSettings.showCleaningFeeOption) {
+                        appSettings.showCleaningFeeOption && shouldShowCleaningFee(vendorName = vendorName, itemName = item.name)
                     }
 
                     if (showCleaningFeeRow) {
@@ -935,12 +949,14 @@ fun VendorItemPricingSheet(
                 )
             }
 
-            PriceIndicatorBanner(
-                evaluation = livePriceEvaluation,
-                onOpenHistoryClick = onOpenPriceHistory
-            )
+            if (appSettings.showPriceTrendBadges) {
+                PriceIndicatorBanner(
+                    evaluation = livePriceEvaluation,
+                    onOpenHistoryClick = onOpenPriceHistory
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // 4. Built-in Oversized Tactile Numpad
             val numpadRows = listOf(

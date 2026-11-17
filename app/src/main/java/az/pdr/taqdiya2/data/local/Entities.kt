@@ -141,7 +141,27 @@ data class AppSettingsEntity(
     // أسماء ملفات الخطوط المخصصة المرفوعة يدوياً (.ttf / .otf)
     val customFontRegularName: String = "",
     val customFontMediumName: String = "",
-    val customFontBoldName: String = ""
-)
-
-
+    val customFontBoldName: String = "",
+    // إعدادات ربط المقادير بحاسبة الثمن ("احسب الثمن") وخيارات السوق
+    val autoLinkMoneyToFixed: Boolean = true,
+    val autoLinkCountToCount: Boolean = true,
+    val autoLinkWeightToWeight: Boolean = true,
+    val defaultPricingTab: String = "WEIGHT",
+    val enableQuickFixedBuyButton: Boolean = true,
+    val weightUnitsCsv: String = DEFAULT_WEIGHT_UNITS_CSV,
+    val fixedUnitsCsv: String = DEFAULT_FIXED_UNITS_CSV,
+    val countUnitsCsv: String = DEFAULT_COUNT_UNITS_CSV,
+    val autoKeepScreenAwakeInMarket: Boolean = true,
+    val defaultPricingCurrencyInRials: Boolean = false,
+    val showCleaningFeeOption: Boolean = true,
+    val showPriceTrendBadges: Boolean = true
+) {
+    companion object {
+        const val DEFAULT_WEIGHT_UNITS_CSV =
+            "كيلو,نص كيلو,2 كيلو,3 كيلو,رابعة,نص رابعة,3 رابعات,غرام"
+        const val DEFAULT_FIXED_UNITS_CSV =
+            "5 دراهم,10 دراهم,20 درهم,درهم,ريال"
+        const val DEFAULT_COUNT_UNITS_CSV =
+            "حبة,علبة,قرعة,باكية,بلاطو,خنيشة,ربطة,قبطة,كيس,حك,بيدوزة,كأس,قطعة,شاصية,خنشة"
+    }
+}

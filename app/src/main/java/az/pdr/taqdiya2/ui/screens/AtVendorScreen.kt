@@ -692,7 +692,8 @@ fun AtVendorScreen(
                         val noteIntent = CurrencyFormatter.parseShoppingNoteIntent(
                             itemName = item.name,
                             note = item.note,
-                            fallbackPurchaseMode = item.purchaseMode
+                            fallbackPurchaseMode = item.purchaseMode.ifBlank { uiState.appSettings.defaultPricingTab },
+                            settings = uiState.appSettings
                         )
                         val usualEval = PriceTrendAnalyzer.evaluateItemPrice(
                             currentUnitPriceDirhams = 0.0,
@@ -704,8 +705,9 @@ fun AtVendorScreen(
                         WaitingMarketItemCard(
                             item = item,
                             usualPriceEvaluation = usualEval,
-                            explicitMoneyDirhams = noteIntent.explicitMoneyDirhams,
+                            explicitMoneyDirhams = if (uiState.appSettings.enableQuickFixedBuyButton) noteIntent.explicitMoneyDirhams else null,
                             showRial = uiState.appSettings.showRial,
+                            showPriceTrendBadge = uiState.appSettings.showPriceTrendBadges,
                             onOpenPricing = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 pricingItem = item
@@ -753,7 +755,8 @@ fun AtVendorScreen(
                             val noteIntent = CurrencyFormatter.parseShoppingNoteIntent(
                                 itemName = item.name,
                                 note = item.note,
-                                fallbackPurchaseMode = item.purchaseMode
+                                fallbackPurchaseMode = item.purchaseMode,
+                                settings = uiState.appSettings
                             )
                             val paidCompareUnit = if (item.purchaseMode == "FIXED") item.totalDirhams else item.unitPriceDirhams
                             val paidEvaluation = PriceTrendAnalyzer.evaluateItemPrice(
@@ -768,6 +771,7 @@ fun AtVendorScreen(
                                 item = item,
                                 priceEvaluation = paidEvaluation,
                                 showRial = uiState.appSettings.showRial,
+                                showPriceTrendBadge = uiState.appSettings.showPriceTrendBadges,
                                 onEditPricing = {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     pricingItem = item
@@ -1056,6 +1060,7 @@ fun AtVendorScreen(
             vendorName = selectedVendor.name,
             itemPriceHistory = itemHistory,
             fallbackLastPriceDirhams = activePricingItem.unitPriceDirhams,
+            appSettings = uiState.appSettings,
             onOpenPriceHistory = {
                 onOpenItemPriceHistory(
                     activePricingItem.name,
@@ -1116,6 +1121,7 @@ private fun WaitingMarketItemCard(
     usualPriceEvaluation: PriceEvaluation,
     explicitMoneyDirhams: Double? = null,
     showRial: Boolean = true,
+    showPriceTrendBadge: Boolean = true,
     onOpenPricing: () -> Unit,
     onQuickBuyFixed: (Double) -> Unit = {},
     onEditItem: () -> Unit = {},
@@ -1282,7 +1288,7 @@ private fun WaitingMarketItemCard(
             }
 
             // Bottom Row (Full Card Width): Usual Price + History Link — never truncated!
-            if (usualPriceEvaluation.referenceUsualDirhams > 0.0) {
+            if (showPriceTrendBadge && usualPriceEvaluation.referenceUsualDirhams > 0.0) {
                 val rialUsualSuffix = if (showRial) {
                     " (${CurrencyFormatter.formatRials(usualPriceEvaluation.referenceUsualDirhams)})"
                 } else {
@@ -1346,6 +1352,7 @@ private fun PurchasedMarketItemCard(
     item: ShoppingItemEntity,
     priceEvaluation: PriceEvaluation,
     showRial: Boolean = true,
+    showPriceTrendBadge: Boolean = true,
     onEditPricing: () -> Unit,
     onEditItemDetails: () -> Unit = {},
     onOpenPriceHistory: () -> Unit,
@@ -1404,11 +1411,13 @@ private fun PurchasedMarketItemCard(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.align(Alignment.CenterVertically)
                             )
-                            Box(modifier = Modifier.align(Alignment.CenterVertically)) {
-                                PriceTrendBadge(
-                                    evaluation = priceEvaluation,
-                                    onClick = onOpenPriceHistory
-                                )
+                            if (showPriceTrendBadge) {
+                                Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                                    PriceTrendBadge(
+                                        evaluation = priceEvaluation,
+                                        onClick = onOpenPriceHistory
+                                    )
+                                }
                             }
                         }
                         Text(

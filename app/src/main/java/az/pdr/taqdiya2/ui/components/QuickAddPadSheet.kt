@@ -97,7 +97,7 @@ fun QuickAddPadSheet(
     onToggleTile: (DictionaryItemEntity, Long?) -> Unit,
     onApplyQuickNote: (String) -> Unit,
     onClearTargetItem: () -> Unit,
-    onAddCustomUnit: (String, Long, String) -> Unit,
+    onAddCustomUnit: (String, Long, String, String?) -> Unit,
     onRemoveCustomUnit: (String, String) -> Unit,
     onItemNameChanged: (String) -> Unit,
     onItemNoteChanged: (String) -> Unit,
@@ -116,6 +116,7 @@ fun QuickAddPadSheet(
     var isNoteFieldFocused by remember { mutableStateOf(false) }
     var showAddCustomUnitForTarget by remember { mutableStateOf(false) }
     var newCustomUnitText by remember { mutableStateOf("") }
+    var newCustomUnitTargetTab by remember { mutableStateOf("COUNT") }
     val isImeOpen = WindowInsets.isImeVisible
     var wasImeOpen by remember { mutableStateOf(false) }
     val isTypingMode = isNameFieldFocused || isNoteFieldFocused || isImeOpen
@@ -687,6 +688,62 @@ fun QuickAddPadSheet(
 
                             if (showAddCustomUnitForTarget) {
                                 Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "ربط هذا المقدار في حاسبة الثمن بـ:",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    val tabChoices = listOf(
+                                        "COUNT" to "3. بالعدد / العلبة",
+                                        "WEIGHT" to "1. بالوزن",
+                                        "FIXED" to "2. مبلغ مقطوع"
+                                    )
+                                    tabChoices.forEach { (tabKey, tabLabel) ->
+                                        val isTabSelected = newCustomUnitTargetTab == tabKey
+                                        Surface(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .clickable { newCustomUnitTargetTab = tabKey }
+                                                .testTag("custom_unit_target_tab_$tabKey"),
+                                            color = if (isTabSelected) {
+                                                MaterialTheme.colorScheme.secondaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.surface
+                                            },
+                                            border = BorderStroke(
+                                                width = if (isTabSelected) 1.5.dp else 1.dp,
+                                                color = if (isTabSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
+                                            ),
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = tabLabel,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = if (isTabSelected) {
+                                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onSurface
+                                                    },
+                                                    fontWeight = FontWeight.Bold,
+                                                    maxLines = 1,
+                                                    softWrap = false
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -707,7 +764,8 @@ fun QuickAddPadSheet(
                                                 onAddCustomUnit(
                                                     activeTargetItem.name,
                                                     activeTargetItem.vendorId,
-                                                    cleanUnit
+                                                    cleanUnit,
+                                                    newCustomUnitTargetTab
                                                 )
                                                 onApplyQuickNote(cleanUnit)
                                                 newCustomUnitText = ""

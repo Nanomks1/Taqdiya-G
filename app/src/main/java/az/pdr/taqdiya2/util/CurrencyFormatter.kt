@@ -3,6 +3,7 @@ package az.pdr.taqdiya2.util
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import az.pdr.taqdiya2.data.local.AppSettingsEntity
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
 import java.util.Locale
@@ -15,6 +16,7 @@ object CurrencyFormatter {
     var showRialState by mutableStateOf(true)
     var privacyMaskState by mutableStateOf(false)
     var privacyMaskPocketOnlyState by mutableStateOf(false)
+    var currentNoteMappingSettings by mutableStateOf(AppSettingsEntity())
 
     fun dirhamsToRials(dirhams: Double): Long {
         return (dirhams * RIALS_PER_DIRHAM).roundToLong()
@@ -164,6 +166,72 @@ object CurrencyFormatter {
     )
     private val LEADING_COUNT_REGEX = Regex("^(?:[×x]?\\s*(\\d+)|(\\d+)\\s*[×x]?)\\b")
 
+    private fun noteContainsConfiguredUnit(normNote: String, rawUnit: String): Boolean {
+        val normUnit = normalizeArabicName(rawUnit)
+        if (normUnit.isEmpty() || normNote.isEmpty()) return false
+        if (normNote == normUnit) return true
+        val tokens = normNote.split(" ")
+        val unitTokens = normUnit.split(" ")
+        if (unitTokens.size == 1) {
+            val u = unitTokens[0]
+            return tokens.any { token ->
+                token == u ||
+                    token == "ال$u" ||
+                    (u == "علبه" && (token == "علب" || token == "علبتين")) ||
+                    (u == "قرعه" && (token == "قراعي" || token == "قرعتين")) ||
+                    (u == "باكيه" && (token == "باكيات" || token == "باكيتين")) ||
+                    (u == "خنيشه" && (token == "خنيشات" || token == "خنيشتين")) ||
+                    (u == "حبه" && (token == "حبات" || token == "حبتين")) ||
+                    (u == "قطعه" && (token == "قطع" || token == "قطعتين")) ||
+                    (u == "ربطه" && (token == "ربطات" || token == "ربطتين"))
+            }
+        }
+        return normNote.contains(normUnit)
+    }
+
+    private fun resolveCountNounAndPlural(matchedUnitRaw: String, normNote: String, isEggItem: Boolean): Triple<String, String, String> {
+        val normU = normalizeArabicName(matchedUnitRaw)
+        return when {
+            normU.contains("علبه") || normU.contains("علب") -> Triple("العلبة", "علب", "/علبة")
+            normU.contains("قرعه") || normU.contains("قراعي") || normNote.contains("لتر") -> Triple("القرعة", "قراعي", "/قرعة")
+            normU.contains("باكيه") || normU.contains("باكيات") -> Triple("الباكية", "باكيات", "/باكية")
+            normU.contains("خنيشه") || normU.contains("خنيشات") -> Triple("الخنيشة", "خنيشات", "/خنيشة")
+            normU.contains("كيس") -> Triple("الكيس", "أكياس", "/كيس")
+            normU.contains("حك") -> Triple("الحك", "حكوك", "/حك")
+            normU.contains("قنينه") -> Triple("القنينة", "قنينات", "/قنينة")
+            normU.contains("شبكه") -> Triple("الشبكة", "شبكات", "/شبكة")
+            normU.contains("طقم") -> Triple("الطقم", "أطقم", "/طقم")
+            isEggItem || normU.contains("بلاطو") || normU.contains("بيض") -> Triple("البيضة", "بيضات", "/بيضة")
+            normU.contains("حبه") || normU.contains("قطعه") || normU.isBlank() -> Triple("الحبة/القطعة", "قطع/حبات", "/حبة")
+            else -> {
+                val clean = matchedUnitRaw.trim().removePrefix("ال")
+                Triple("ال$clean", clean, "/$clean")
+            }
+        }
+    }
+
+    private fun extractExplicitCountFromNote(cleanNote: String, normNote: String, hasEggTray: Boolean): Int {
+        return when {
+            normNote.contains("نص بلاطو") || normNote.contains("نصف بلاطو") -> 15
+            hasEggTray -> 30
+            else -> {
+                val eggMatch = EXPLICIT_EGG_COUNT_REGEX.find(cleanNote)
+                val leadingMatch = LEADING_COUNT_REGEX.find(cleanNote)
+                val leadVal = leadingMatch?.let { m ->
+                    (m.groupValues[1].ifEmpty { m.groupValues[2] }).toIntOrNull()
+                }
+                when {
+                    eggMatch != null -> eggMatch.groupValues[1].toIntOrNull() ?: 1
+                    leadVal != null && leadVal > 0 -> leadVal
+                    normNote.contains("علبتين") || normNote.contains("قرعتين") ||
+                        normNote.contains("باكيتين") || normNote.contains("حبتين") ||
+                        normNote.contains("ربطتين") -> 2
+                    else -> 1
+                }
+            }
+        }
+    }
+
     /**
      * Analyzes the item's name and note to infer the best calculator purchaseMode
      * ("WEIGHT", "FIXED", or "COUNT") and extract any explicit monetary amount, weight, or count.
@@ -171,14 +239,24 @@ object CurrencyFormatter {
     fun parseShoppingNoteIntent(
         itemName: String,
         note: String,
-        fallbackPurchaseMode: String = "WEIGHT"
+        fallbackPurchaseMode: String = "WEIGHT",
+        settings: AppSettingsEntity = currentNoteMappingSettings
     ): ShoppingNoteIntent {
         val cleanNote = note.trim()
         val normNote = normalizeArabicName(cleanNote)
         val normName = normalizeArabicName(itemName)
 
-        // 1. Check for explicit monetary amount in note (e.g. "5 دراهم", "10 درهم", "100 ريال")
-        if (cleanNote.isNotEmpty()) {
+        val weightUnits = parseCustomUnits(settings.weightUnitsCsv)
+        val fixedUnits = parseCustomUnits(settings.fixedUnitsCsv)
+        val countUnits = parseCustomUnits(settings.countUnitsCsv)
+
+        val safeDefaultTab = when (settings.defaultPricingTab) {
+            "FIXED", "COUNT", "WEIGHT" -> settings.defaultPricingTab
+            else -> "WEIGHT"
+        }
+
+        // 1. Check for explicit monetary amount in note (e.g. "5 دراهم", "50 درهم", "100 ريال")
+        if (cleanNote.isNotEmpty() && settings.autoLinkMoneyToFixed) {
             val dhMatch = DIRHAM_NOTE_REGEX.find(cleanNote)
             if (dhMatch != null) {
                 val dhVal = dhMatch.groupValues[1].replace(',', '.').toDoubleOrNull()
@@ -214,28 +292,52 @@ object CurrencyFormatter {
                     unitSuffix = ""
                 )
             }
+            val matchedFixedUnit = fixedUnits
+                .sortedByDescending { it.length }
+                .firstOrNull { noteContainsConfiguredUnit(normNote, it) }
+            if (matchedFixedUnit != null) {
+                return ShoppingNoteIntent(
+                    inferredMode = "FIXED",
+                    unitNoun = "المبلغ",
+                    unitPluralLabel = "",
+                    unitSuffix = ""
+                )
+            }
         }
 
         // 2. Check for explicit Weight in note (e.g., "نص كيلو", "رابعة", "نص رابعة", "3 رابعات", "2 كيلو", "250غ")
-        if (cleanNote.isNotEmpty()) {
+        if (cleanNote.isNotEmpty() && settings.autoLinkWeightToWeight) {
+            val matchedWeightUnit = weightUnits
+                .sortedByDescending { it.length }
+                .firstOrNull { noteContainsConfiguredUnit(normNote, it) }
+            val hasContainerInCount = countUnits.any { noteContainsConfiguredUnit(normNote, it) }
+
             val weightFromNote: Double? = when {
-                normNote.contains("نص رابعه") || normNote.contains("نصف رابعه") -> 0.125
-                normNote.contains("3 رابعات") || normNote.contains("ثلاث رابعات") -> 0.75
-                normNote.contains("رابعه") -> 0.25
-                normNote.contains("نص كيلو") || normNote.contains("نصف كيلو") -> 0.5
+                (normNote.contains("نص رابعه") || normNote.contains("نصف رابعه")) &&
+                    (matchedWeightUnit != null || weightUnits.any { normalizeArabicName(it).contains("رابعه") }) -> 0.125
+                (normNote.contains("3 رابعات") || normNote.contains("ثلاث رابعات")) &&
+                    (matchedWeightUnit != null || weightUnits.any { normalizeArabicName(it).contains("رابعه") }) -> 0.75
+                normNote.contains("رابعه") &&
+                    weightUnits.any { normalizeArabicName(it).contains("رابعه") } -> 0.25
+                (normNote.contains("نص كيلو") || normNote.contains("نصف كيلو")) &&
+                    weightUnits.any { normalizeArabicName(it).contains("كيلو") } -> 0.5
                 else -> {
                     val kiloMatch = KILO_NOTE_REGEX.find(cleanNote)
                     val gramMatch = GRAM_NOTE_REGEX.find(cleanNote)
                     when {
-                        kiloMatch != null -> kiloMatch.groupValues[1].replace(',', '.').toDoubleOrNull()
-                        normNote.contains("كيلو") -> 1.0
-                        // Only treat pure gram notes as WEIGHT when no container word ("علبة", "باكية", "قرعة") is present
-                        gramMatch != null &&
-                            !normNote.contains("علبه") &&
-                            !normNote.contains("باكيه") &&
-                            !normNote.contains("قرعه") &&
-                            !normNote.contains("خنيشه") -> {
+                        kiloMatch != null && weightUnits.any { normalizeArabicName(it).contains("كيلو") } ->
+                            kiloMatch.groupValues[1].replace(',', '.').toDoubleOrNull()
+                        normNote.contains("كيلو") && weightUnits.any { normalizeArabicName(it).contains("كيلو") } -> 1.0
+                        gramMatch != null && !hasContainerInCount &&
+                            weightUnits.any { normalizeArabicName(it).contains("غرام") } -> {
                             gramMatch.groupValues[1].toDoubleOrNull()?.let { it / 1000.0 }
+                        }
+                        matchedWeightUnit != null -> {
+                            val leadingMatch = LEADING_COUNT_REGEX.find(cleanNote)
+                            val leadVal = leadingMatch?.let { m ->
+                                (m.groupValues[1].ifEmpty { m.groupValues[2] }).toDoubleOrNull()
+                            }
+                            leadVal ?: 1.0
                         }
                         else -> null
                     }
@@ -253,65 +355,70 @@ object CurrencyFormatter {
         }
 
         // 3. Check for Count / Container / Tray in note or item name
-        val hasEggTray = normNote.contains("بلاطو") || normName.contains("بلاطو")
-        val isEggItem = normName.contains("بيض") || normNote.contains("بيض")
-        val hasBox = normNote.contains("علبه") || normNote.contains("علب")
-        val hasPack = normNote.contains("باكيه") || normNote.contains("باكيات")
-        val hasBottle = normNote.contains("قرعه") || normNote.contains("قراعي") ||
-            (normName.contains("قرعه") && !normName.contains("خضراء") && !normName.contains("حمراء") && !normName.contains("سلوي"))
-        val hasSachet = normNote.contains("خنيشه") || normNote.contains("خنيشات") || normNote.contains("كيس")
-        val hasPiece = normNote.contains("حبه") || normNote.contains("حبات") || normNote.contains("قطعه") || normNote.contains("طقم")
-        val hasLiterBottle = (normNote.contains("لتر") || normNote.contains("يترو")) &&
-            (normName.contains("زيت") || normName.contains("حليب") || normName.contains("جافيل") || normName.contains("ماء") || normName.contains("عصير") || normName.contains("سائل"))
+        if (settings.autoLinkCountToCount) {
+            val matchedCountUnit = countUnits
+                .sortedByDescending { it.length }
+                .firstOrNull { noteContainsConfiguredUnit(normNote, it) }
 
-        if (hasEggTray || isEggItem || hasBox || hasPack || hasBottle || hasSachet || hasPiece || hasLiterBottle) {
-            val (unitNoun, unitPlural, unitSuffix) = when {
-                hasBox -> Triple("العلبة", "علب", "/علبة")
-                hasBottle || hasLiterBottle -> Triple("القرعة", "قراعي", "/قرعة")
-                hasPack -> Triple("الباكية", "باكيات", "/باكية")
-                hasSachet -> Triple("الخنيشة", "خنيشات", "/خنيشة")
-                normNote.contains("طقم") -> Triple("الطقم", "أطقم", "/طقم")
-                isEggItem || hasEggTray -> Triple("البيضة", "بيضات", "/بيضة")
-                else -> Triple("الحبة/القطعة", "قطع/حبات", "/حبة")
-            }
+            val hasEggTray = (normNote.contains("بلاطو") || normName.contains("بلاطو")) &&
+                countUnits.any { normalizeArabicName(it).contains("بلاطو") }
+            val isEggItem = normName.contains("بيض") || normNote.contains("بيض")
+            val hasBottleInName = normName.contains("قرعه") &&
+                !normName.contains("خضراء") && !normName.contains("حمراء") && !normName.contains("سلوي") &&
+                countUnits.any { normalizeArabicName(it).contains("قرعه") }
+            val hasLiterBottle = (normNote.contains("لتر") || normNote.contains("يترو")) &&
+                (normName.contains("زيت") || normName.contains("حليب") || normName.contains("جافيل") ||
+                    normName.contains("ماء") || normName.contains("عصير") || normName.contains("سائل"))
 
-            val explicitCount: Int = when {
-                normNote.contains("نص بلاطو") || normNote.contains("نصف بلاطو") -> 15
-                hasEggTray -> 30
-                else -> {
-                    val eggMatch = EXPLICIT_EGG_COUNT_REGEX.find(cleanNote)
-                    val leadingMatch = LEADING_COUNT_REGEX.find(cleanNote)
-                    val leadVal = leadingMatch?.let { m ->
-                        (m.groupValues[1].ifEmpty { m.groupValues[2] }).toIntOrNull()
-                    }
-                    when {
-                        eggMatch != null -> eggMatch.groupValues[1].toIntOrNull() ?: 1
-                        leadVal != null && leadVal > 0 -> leadVal
-                        normNote.contains("علبتين") || normNote.contains("قرعتين") ||
-                            normNote.contains("باكيتين") || normNote.contains("حبتين") -> 2
-                        else -> 1
-                    }
+            if (matchedCountUnit != null || hasEggTray || (isEggItem && cleanNote.isNotEmpty()) || hasBottleInName || hasLiterBottle) {
+                val effectiveUnitRaw = matchedCountUnit ?: when {
+                    hasBottleInName || hasLiterBottle -> "قرعة"
+                    hasEggTray || isEggItem -> "بيضة"
+                    else -> "حبة"
                 }
-            }
+                val (unitNoun, unitPlural, unitSuffix) = resolveCountNounAndPlural(effectiveUnitRaw, normNote, isEggItem || hasEggTray)
+                val explicitCount = extractExplicitCountFromNote(cleanNote, normNote, hasEggTray)
 
-            return ShoppingNoteIntent(
-                inferredMode = "COUNT",
-                explicitCount = explicitCount,
-                unitNoun = unitNoun,
-                unitPluralLabel = unitPlural,
-                unitSuffix = unitSuffix
-            )
+                return ShoppingNoteIntent(
+                    inferredMode = "COUNT",
+                    explicitCount = explicitCount,
+                    unitNoun = unitNoun,
+                    unitPluralLabel = unitPlural,
+                    unitSuffix = unitSuffix
+                )
+            }
         }
 
-        // 4. Check for bundle / herbs / spices defaulting to FIXED when no weight is specified
-        val isHerbBundle = normNote.contains("ربطه") || normNote.contains("ربطات") || normNote.contains("قبطه") ||
-            normName.contains("ربيع") || normName.contains("نعناع") || normName.contains("معدنوس") ||
-            normName.contains("قزبور") || normName.contains("كرافس") || normName.contains("شيبه")
-        val isSpiceDefaultFixed = normName.contains("كمون") || normName.contains("ابزار") ||
-            normName.contains("تحميره") || normName.contains("خرقوم") || normName.contains("سكنجبير") ||
-            normName.contains("راس الحانوت") || normName.contains("عطريه")
+        // 4. Check for bundle / herbs / spices defaulting to FIXED when no weight/count is specified
+        if (settings.autoLinkMoneyToFixed) {
+            val isHerbItem = (normName.contains("ربيع") || normName.contains("نعناع") || normName.contains("معدنوس") ||
+                normName.contains("قزبور") || normName.contains("كرافس") || normName.contains("شيبه")) &&
+                cleanNote.isEmpty()
+            val isSpiceDefaultFixed = (normName.contains("كمون") || normName.contains("ابزار") ||
+                normName.contains("تحميره") || normName.contains("خرقوم") || normName.contains("سكنجبير") ||
+                normName.contains("راس الحانوت") || normName.contains("عطريه")) &&
+                cleanNote.isEmpty()
 
-        if (isHerbBundle || isSpiceDefaultFixed || fallbackPurchaseMode == "FIXED") {
+            if (isHerbItem || isSpiceDefaultFixed) {
+                return ShoppingNoteIntent(
+                    inferredMode = "FIXED",
+                    unitNoun = "المبلغ",
+                    unitPluralLabel = "",
+                    unitSuffix = ""
+                )
+            }
+        }
+
+        val effectiveFallbackMode = if (cleanNote.isEmpty()) {
+            safeDefaultTab
+        } else {
+            when (fallbackPurchaseMode) {
+                "FIXED", "COUNT", "WEIGHT" -> fallbackPurchaseMode
+                else -> safeDefaultTab
+            }
+        }
+
+        if (effectiveFallbackMode == "FIXED") {
             return ShoppingNoteIntent(
                 inferredMode = "FIXED",
                 unitNoun = "المبلغ",
@@ -320,7 +427,7 @@ object CurrencyFormatter {
             )
         }
 
-        if (fallbackPurchaseMode == "COUNT") {
+        if (effectiveFallbackMode == "COUNT") {
             return ShoppingNoteIntent(
                 inferredMode = "COUNT",
                 explicitCount = 1,
@@ -429,14 +536,14 @@ object CurrencyFormatter {
 
     fun parseCustomUnits(csv: String): List<String> {
         if (csv.isBlank()) return emptyList()
-        return csv.split("|")
+        return csv.split('|', ',')
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .distinct()
     }
 
     fun encodeCustomUnits(units: List<String>): String {
-        return units.map { it.trim().replace("|", "") }
+        return units.map { it.trim().replace("|", "").replace(",", "") }
             .filter { it.isNotEmpty() }
             .distinct()
             .joinToString("|")
