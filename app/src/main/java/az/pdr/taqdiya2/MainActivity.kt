@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -391,7 +392,7 @@ fun TaqdiyaApp(
                     modifier = Modifier
                         .fillMaxWidth()
                         .windowInsetsPadding(NavigationBarDefaults.windowInsets)
-                        .height(60.dp),
+                        .heightIn(min = 64.dp),
                     windowInsets = WindowInsets(0, 0, 0, 0),
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp
@@ -403,13 +404,13 @@ fun TaqdiyaApp(
                             Icon(
                                 imageVector = if (selectedTab == 0) Icons.Filled.Home else Icons.Outlined.Home,
                                 contentDescription = "التحضير",
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(23.dp)
                             )
                         },
                         label = {
                             Text(
                                 text = "التحضير",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false
@@ -436,14 +437,14 @@ fun TaqdiyaApp(
                                 Icon(
                                     imageVector = if (selectedTab == 1) Icons.Filled.Scale else Icons.Outlined.Scale,
                                     contentDescription = "عند البائع",
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(23.dp)
                                 )
                             }
                         },
                         label = {
                             Text(
                                 text = "عند البائع",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false
@@ -458,13 +459,13 @@ fun TaqdiyaApp(
                             Icon(
                                 imageVector = if (selectedTab == 2) Icons.Filled.FactCheck else Icons.Outlined.FactCheck,
                                 contentDescription = "جرد الجيب",
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(23.dp)
                             )
                         },
                         label = {
                             Text(
                                 text = "جرد الجيب",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false

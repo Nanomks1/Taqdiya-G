@@ -172,12 +172,13 @@ fun buildAppTypography(
     secondaryFontFamily: FontFamily = primaryFontFamily,
     fontSizeScale: Float = 1.0f
 ): Typography {
+    val smallTextScale = maxOf(fontSizeScale, 0.96f)
     return Typography(
         headlineLarge = TextStyle(
             fontFamily = primaryFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = (28f * fontSizeScale).sp,
-            lineHeight = (36f * fontSizeScale).sp,
+            fontSize = (27f * fontSizeScale).sp,
+            lineHeight = (35f * fontSizeScale).sp,
             fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
@@ -185,8 +186,8 @@ fun buildAppTypography(
         headlineMedium = TextStyle(
             fontFamily = primaryFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = (24f * fontSizeScale).sp,
-            lineHeight = (32f * fontSizeScale).sp,
+            fontSize = (23f * fontSizeScale).sp,
+            lineHeight = (31f * fontSizeScale).sp,
             fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
@@ -203,7 +204,7 @@ fun buildAppTypography(
         titleLarge = TextStyle(
             fontFamily = primaryFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = (19f * fontSizeScale).sp,
+            fontSize = (18.5f * fontSizeScale).sp,
             lineHeight = (26f * fontSizeScale).sp,
             fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
@@ -221,8 +222,8 @@ fun buildAppTypography(
         titleSmall = TextStyle(
             fontFamily = primaryFontFamily,
             fontWeight = FontWeight.SemiBold,
-            fontSize = (15f * fontSizeScale).sp,
-            lineHeight = (22f * fontSizeScale).sp,
+            fontSize = (15.5f * smallTextScale).sp,
+            lineHeight = (22f * smallTextScale).sp,
             fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
@@ -239,17 +240,17 @@ fun buildAppTypography(
         bodyMedium = TextStyle(
             fontFamily = secondaryFontFamily,
             fontWeight = FontWeight.Normal,
-            fontSize = (15f * fontSizeScale).sp,
-            lineHeight = (21f * fontSizeScale).sp,
+            fontSize = (15f * smallTextScale).sp,
+            lineHeight = (21f * smallTextScale).sp,
             fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
         bodySmall = TextStyle(
             fontFamily = secondaryFontFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = (13f * fontSizeScale).sp,
-            lineHeight = (19f * fontSizeScale).sp,
+            fontWeight = FontWeight.Medium,
+            fontSize = (13.5f * smallTextScale).sp,
+            lineHeight = (19f * smallTextScale).sp,
             fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
@@ -257,26 +258,26 @@ fun buildAppTypography(
         labelLarge = TextStyle(
             fontFamily = primaryFontFamily,
             fontWeight = FontWeight.SemiBold,
-            fontSize = (15f * fontSizeScale).sp,
-            lineHeight = (21f * fontSizeScale).sp,
+            fontSize = (15f * smallTextScale).sp,
+            lineHeight = (21f * smallTextScale).sp,
             fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
         labelMedium = TextStyle(
             fontFamily = primaryFontFamily,
-            fontWeight = FontWeight.Medium,
-            fontSize = (13f * fontSizeScale).sp,
-            lineHeight = (18f * fontSizeScale).sp,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = (13.5f * smallTextScale).sp,
+            lineHeight = (19f * smallTextScale).sp,
             fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle
         ),
         labelSmall = TextStyle(
             fontFamily = primaryFontFamily,
-            fontWeight = FontWeight.Medium,
-            fontSize = (11f * fontSizeScale).sp,
-            lineHeight = (16f * fontSizeScale).sp,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = (12.5f * smallTextScale).sp,
+            lineHeight = (17f * smallTextScale).sp,
             fontFeatureSettings = "tnum",
             platformStyle = ArabicPlatformStyle,
             lineHeightStyle = ArabicLineHeightStyle

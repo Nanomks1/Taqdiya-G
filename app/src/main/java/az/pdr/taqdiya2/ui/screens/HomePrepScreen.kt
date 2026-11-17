@@ -417,7 +417,7 @@ fun HomePrepScreen(
                                     Surface(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .height(58.dp)
+                                            .heightIn(min = 56.dp)
                                             .clip(RoundedCornerShape(14.dp))
                                             .clickable {
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -428,15 +428,15 @@ fun HomePrepScreen(
                                         shape = RoundedCornerShape(14.dp)
                                     ) {
                                         Box(
-                                            modifier = Modifier.padding(horizontal = 8.dp),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
                                                 text = "+ ${dictItem.name}",
-                                                style = MaterialTheme.typography.titleMedium,
+                                                style = MaterialTheme.typography.titleSmall,
                                                 color = MaterialTheme.colorScheme.onSurface,
                                                 fontWeight = FontWeight.Bold,
-                                                maxLines = 1,
+                                                maxLines = 2,
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                         }
@@ -553,8 +553,8 @@ private fun OversizedVendorCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(11.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -562,11 +562,11 @@ private fun OversizedVendorCard(
                             imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                             contentDescription = vendor.name,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(21.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             text = vendor.name,
                             style = MaterialTheme.typography.titleMedium,
@@ -578,18 +578,18 @@ private fun OversizedVendorCard(
                         Text(
                             text = "${items.size} أغراض مسجلة",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                            fontWeight = FontWeight.Normal
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
                         )
                         if (kotlin.math.abs(vendor.pendingBalanceDirhams) > 0.009) {
                             val isVendorOwingMe = vendor.pendingBalanceDirhams > 0.0
                             val absPending = kotlin.math.abs(vendor.pendingBalanceDirhams)
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Surface(
                                 color = if (isVendorOwingMe) {
-                                    MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f)
+                                    MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.75f)
                                 } else {
-                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
+                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.75f)
                                 },
                                 shape = RoundedCornerShape(8.dp)
                             ) {
@@ -599,7 +599,7 @@ private fun OversizedVendorCard(
                                     } else {
                                         "بقا ليه عندي: ${az.pdr.taqdiya2.util.CurrencyFormatter.formatDirhams(absPending)}"
                                     },
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = if (isVendorOwingMe) {
                                         MaterialTheme.colorScheme.onTertiaryContainer
                                     } else {

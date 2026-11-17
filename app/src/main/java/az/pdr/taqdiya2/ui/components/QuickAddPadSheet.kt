@@ -389,10 +389,10 @@ fun QuickAddPadSheet(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
+                    columns = GridCells.Adaptive(minSize = 98.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 135.dp, max = 205.dp),
+                        .heightIn(min = 140.dp, max = 220.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(vertical = 2.dp)
@@ -456,7 +456,7 @@ fun QuickAddPadSheet(
                                             MaterialTheme.colorScheme.onSurface
                                         },
                                         fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
+                                        maxLines = 2,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 }

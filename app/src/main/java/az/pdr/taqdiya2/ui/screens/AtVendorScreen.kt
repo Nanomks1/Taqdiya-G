@@ -278,26 +278,26 @@ fun AtVendorScreen(
                 // 1. Top Market Header: Active Vendors Strip + Passing Expense + Keep Screen Awake Toggle
                 item(key = "market_vendor_selector") {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = "بائعو جولة اليوم (${vendorsWithItems.size}):",
+                                text = "بائعو الجولة (${vendorsWithItems.size}):",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             )
 
-                            Spacer(modifier = Modifier.width(8.dp))
-
                             Row(
-                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                modifier = Modifier
+                                    .align(Alignment.CenterVertically)
+                                    .horizontalScroll(rememberScrollState()),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -466,13 +466,13 @@ fun AtVendorScreen(
 
                                             Text(
                                                 text = "$vBought من $vTotalCount",
-                                                style = MaterialTheme.typography.labelSmall,
+                                                style = MaterialTheme.typography.labelMedium,
                                                 color = when {
-                                                    isSelected -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                                                    isSelected -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.92f)
                                                     vAllDone -> MaterialTheme.colorScheme.tertiary
                                                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                                                 },
-                                                fontWeight = FontWeight.Medium,
+                                                fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
                                                 softWrap = false
                                             )
@@ -970,9 +970,9 @@ fun AtVendorScreen(
                                     },
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(42.dp)
+                                        .heightIn(min = 42.dp)
                                         .testTag("open_confirm_vendor_payment_button"),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = when {
                                             isConfirmedPaymentOutOfSync -> MaterialTheme.colorScheme.secondary
@@ -1013,7 +1013,7 @@ fun AtVendorScreen(
 
                                 Surface(
                                     modifier = Modifier
-                                        .height(42.dp)
+                                        .heightIn(min = 42.dp)
                                         .clip(RoundedCornerShape(12.dp))
                                         .clickable {
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1024,7 +1024,7 @@ fun AtVendorScreen(
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
@@ -1146,117 +1146,66 @@ private fun WaitingMarketItemCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // Row 1: Full-width Item Name + Note Badge on the right, and compact Edit/Delete icons on the left
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Right Side: Item Name (Bold) + Note Badge (Medium)
                 FlowRow(
                     modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
-                        text = item.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    )
+                    Row(
+                        modifier = Modifier.align(Alignment.CenterVertically),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                        Text(
+                            text = item.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                     if (item.note.isNotBlank()) {
                         Surface(
                             modifier = Modifier.align(Alignment.CenterVertically),
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f),
                             shape = RoundedCornerShape(9.dp)
                         ) {
                             Text(
                                 text = item.note,
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontWeight = FontWeight.Medium,
-                                maxLines = 1,
-                                softWrap = false,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-                // Left Side: 1-Tap Quick Buy (if monetary note) + "احسب الثمن" + Edit/Move Vendor + Delete
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    if (explicitMoneyDirhams != null && explicitMoneyDirhams > 0.0) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.tertiary,
-                            shape = RoundedCornerShape(13.dp),
-                            modifier = Modifier
-                                .heightIn(min = 40.dp)
-                                .clip(RoundedCornerShape(13.dp))
-                                .clickable { onQuickBuyFixed(explicitMoneyDirhams) }
-                                .testTag("market_quick_buy_fixed_${item.id}")
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.CheckCircle,
-                                    contentDescription = "شراء سريع بـ ${CurrencyFormatter.formatDirhams(explicitMoneyDirhams)}",
-                                    tint = MaterialTheme.colorScheme.onTertiary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "${CurrencyFormatter.formatAmountPlain(explicitMoneyDirhams)} د.م",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onTertiary,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
-                    }
-
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(13.dp),
-                        modifier = Modifier.heightIn(min = 40.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Calculate,
-                                contentDescription = "احسب الثمن",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = if (explicitMoneyDirhams != null) "حاسبة" else "احسب الثمن",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
-                    }
-
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(18.dp))
+                            .size(34.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
                             .clickable(onClick = onEditItem)
                             .testTag("market_edit_waiting_item_${item.id}"),
@@ -1272,8 +1221,8 @@ private fun WaitingMarketItemCard(
 
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(18.dp))
+                            .size(34.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
                             .clickable(onClick = onDeleteItem)
                             .testTag("market_delete_waiting_item_${item.id}"),
@@ -1289,7 +1238,81 @@ private fun WaitingMarketItemCard(
                 }
             }
 
-            // Bottom Row (Full Card Width): Usual Price + History Link — never truncated!
+            // Row 2: Dedicated Market Purchase Action Bar (Never crowds the item name!)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (explicitMoneyDirhams != null && explicitMoneyDirhams > 0.0) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.tertiary,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onQuickBuyFixed(explicitMoneyDirhams) }
+                            .testTag("market_quick_buy_fixed_${item.id}")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = "شراء سريع بـ ${CurrencyFormatter.formatDirhams(explicitMoneyDirhams)}",
+                                tint = MaterialTheme.colorScheme.onTertiary,
+                                modifier = Modifier.size(17.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "شراء بـ ${CurrencyFormatter.formatAmountPlain(explicitMoneyDirhams)} د.م",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onTertiary,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
+                }
+
+                Surface(
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClick = onOpenPricing)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Calculate,
+                            contentDescription = "احسب الثمن",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(17.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "احسب الثمن",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                }
+            }
+
+            // Row 3 (Full Card Width): Usual Price + History Link — never truncated!
             if (showPriceTrendBadge && usualPriceEvaluation.referenceUsualDirhams > 0.0) {
                 val rialUsualSuffix = if (showRial) {
                     " (${CurrencyFormatter.formatRials(usualPriceEvaluation.referenceUsualDirhams)})"
@@ -1308,7 +1331,7 @@ private fun WaitingMarketItemCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -1321,7 +1344,7 @@ private fun WaitingMarketItemCard(
                                 imageVector = Icons.Outlined.History,
                                 contentDescription = "سجل الأثمنة",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(15.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "${usualPriceEvaluation.badgeLabel}$rialUsualSuffix",
@@ -1335,7 +1358,7 @@ private fun WaitingMarketItemCard(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "سجل الأثمنة",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -1408,7 +1431,7 @@ private fun PurchasedMarketItemCard(
                         ) {
                             Text(
                                 text = item.name,
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.align(Alignment.CenterVertically)
@@ -1426,7 +1449,7 @@ private fun PurchasedMarketItemCard(
                             text = CurrencyFormatter.formatPurchaseDetails(item),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Normal
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
@@ -1436,7 +1459,7 @@ private fun PurchasedMarketItemCard(
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = CurrencyFormatter.formatDirhams(item.totalDirhams),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.tertiary,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -1447,7 +1470,7 @@ private fun PurchasedMarketItemCard(
                             text = CurrencyFormatter.formatRials(item.totalDirhams),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             softWrap = false
                         )

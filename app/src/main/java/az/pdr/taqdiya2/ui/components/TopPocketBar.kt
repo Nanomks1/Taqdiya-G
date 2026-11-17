@@ -226,8 +226,8 @@ fun TopPocketBar(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(9.dp))
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -235,24 +235,24 @@ fun TopPocketBar(
                                 imageVector = Icons.Outlined.AccountBalanceWallet,
                                 contentDescription = "ميزانية الجيب",
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(9.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
 
                         val isPocketUnset = initialPocketDirhams <= 0.0 && totalActualSpentDirhams <= 0.0
 
-                        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
                                 text = when {
                                     privacyMaskAmounts -> "الباقي في الجيب (مخفي)"
                                     isPocketUnset -> "لم تحدد مبلغ الجيب بعد"
                                     else -> "الباقي في الجيب الآن"
                                 },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.88f),
-                                fontWeight = FontWeight.Medium,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.96f),
+                                fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -272,16 +272,16 @@ fun TopPocketBar(
                                     )
                                     Surface(
                                         color = MaterialTheme.colorScheme.secondary,
-                                        shape = RoundedCornerShape(7.dp)
+                                        shape = RoundedCornerShape(8.dp)
                                     ) {
                                         Text(
                                             text = "حدد المبلغ",
-                                            style = MaterialTheme.typography.labelSmall,
+                                            style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSecondary,
                                             fontWeight = FontWeight.Bold,
                                             maxLines = 1,
                                             softWrap = false,
-                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                         )
                                     }
                                 }
@@ -302,16 +302,16 @@ fun TopPocketBar(
                                     if (showRial) {
                                         Surface(
                                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
-                                            shape = RoundedCornerShape(7.dp)
+                                            shape = RoundedCornerShape(8.dp)
                                         ) {
                                             Text(
                                                 text = CurrencyFormatter.formatPocketRials(remainingPocketDirhams),
-                                                style = MaterialTheme.typography.labelSmall,
+                                                style = MaterialTheme.typography.labelMedium,
                                                 color = MaterialTheme.colorScheme.onPrimary,
                                                 fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
                                                 softWrap = false,
-                                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                             )
                                         }
                                     }
@@ -324,13 +324,13 @@ fun TopPocketBar(
 
                     // Left side: Privacy Eye & Edit Budget Buttons
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(9.dp))
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(
                                     if (privacyMaskAmounts) {
                                         MaterialTheme.colorScheme.secondary
@@ -350,14 +350,14 @@ fun TopPocketBar(
                                 } else {
                                     MaterialTheme.colorScheme.onPrimary
                                 },
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(17.dp)
                             )
                         }
 
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(9.dp))
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -365,7 +365,7 @@ fun TopPocketBar(
                                 imageVector = Icons.Outlined.Edit,
                                 contentDescription = "تعديل ميزانية الجيب",
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(15.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }

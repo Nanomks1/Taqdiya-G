@@ -309,9 +309,10 @@ fun TaqdiyaTheme(
     val baseDensity = LocalDensity.current
     val scalePercent = resolveUiScalePercent(uiScaleMode)
     val effectiveFontScale = (scalePercent / 100f).coerceIn(0.85f, 1.22f)
+    val uiElementScale = (1f + (effectiveFontScale - 1f) * 0.25f).coerceIn(0.95f, 1.06f)
     val scaledDensity = Density(
-        density = baseDensity.density,
-        fontScale = effectiveFontScale
+        density = baseDensity.density * uiElementScale,
+        fontScale = effectiveFontScale / uiElementScale
     )
 
     CompositionLocalProvider(

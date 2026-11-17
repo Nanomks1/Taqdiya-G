@@ -174,10 +174,10 @@ fun PocketAuditScreen(
                         containerColor = MaterialTheme.colorScheme.secondary,
                         contentColor = MaterialTheme.colorScheme.onSecondary
                     ),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
-                        .height(44.dp)
+                        .heightIn(min = 44.dp)
                         .testTag("audit_add_passing_expense_button")
                 ) {
                     Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -402,9 +402,9 @@ fun PocketAuditScreen(
                                     if (uiState.appSettings.showRial) {
                                         Text(
                                             text = CurrencyFormatter.formatRials(vActualPaid),
-                                            style = MaterialTheme.typography.labelSmall,
+                                            style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.secondary,
-                                            fontWeight = FontWeight.Medium,
+                                            fontWeight = FontWeight.SemiBold,
                                             maxLines = 1,
                                             softWrap = false
                                         )
@@ -498,7 +498,7 @@ fun PocketAuditScreen(
                                 Surface(
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(40.dp)
+                                        .heightIn(min = 40.dp)
                                         .clip(RoundedCornerShape(10.dp))
                                         .clickable { paymentDialogVendor = vendor },
                                     color = if (isOutOfSync) {
@@ -509,7 +509,7 @@ fun PocketAuditScreen(
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.Center
                                     ) {
@@ -547,14 +547,14 @@ fun PocketAuditScreen(
                             Surface(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(40.dp)
+                                    .heightIn(min = 40.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable { pendingBalanceDialogVendor = vendor },
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
@@ -879,10 +879,13 @@ private fun PocketLedgerSummaryCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(38.dp)
                             .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)),
                         contentAlignment = Alignment.Center
@@ -891,21 +894,22 @@ private fun PocketLedgerSummaryCard(
                             imageVector = Icons.Outlined.AccountBalanceWallet,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(21.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "كشف جرد الجيب",
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "اشتريت $purchasedItemsCount أغراض • بقي $waitingItemsCount في القائمة",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
@@ -946,9 +950,9 @@ private fun PocketLedgerSummaryCard(
                         if (showRial) {
                             Text(
                                 text = CurrencyFormatter.formatPocketRials(uiState.initialPocketDirhams),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -971,7 +975,7 @@ private fun PocketLedgerSummaryCard(
                         Text(
                             text = "مجموع ما صرفته",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.92f),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -987,9 +991,9 @@ private fun PocketLedgerSummaryCard(
                         if (showRial) {
                             Text(
                                 text = CurrencyFormatter.formatRials(uiState.totalActualSpentDirhams),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
                                 softWrap = false
                             )
