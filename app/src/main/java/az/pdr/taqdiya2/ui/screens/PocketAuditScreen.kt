@@ -75,8 +75,12 @@ import az.pdr.taqdiya2.ui.components.CalmTintedCardButton
 import az.pdr.taqdiya2.ui.components.ConfirmVendorPaymentSheet
 import az.pdr.taqdiya2.ui.components.VendorIconMapper
 import az.pdr.taqdiya2.ui.components.VendorPendingBalanceSheet
+import az.pdr.taqdiya2.ui.theme.LocalIsDarkTheme
 import az.pdr.taqdiya2.ui.theme.ambientCardBorder
 import az.pdr.taqdiya2.ui.theme.ambientCardShadow
+import az.pdr.taqdiya2.ui.theme.heroPrimaryContainerColor
+import az.pdr.taqdiya2.ui.theme.heroPrimaryContentColor
+import az.pdr.taqdiya2.ui.theme.heroPrimaryDarkBorder
 import az.pdr.taqdiya2.ui.viewmodel.HomePrepUiState
 import az.pdr.taqdiya2.util.CurrencyFormatter
 import java.text.SimpleDateFormat
@@ -285,14 +289,18 @@ fun PocketAuditScreen(
                                 maxLines = 1,
                                 softWrap = false
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            val isDarkExpense = LocalIsDarkTheme.current
+                            Spacer(modifier = Modifier.width(12.dp))
                             Box(
                                 modifier = Modifier
-                                    .width(1.dp)
+                                    .width(1.2.dp)
                                     .height(20.dp)
-                                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.8f))
+                                    .background(
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = if (isDarkExpense) 0.34f else 0.28f
+                                        )
+                                    )
                             )
-                            Spacer(modifier = Modifier.width(2.dp))
                             IconButton(
                                 onClick = { onDeletePassingExpense(expense) },
                                 modifier = Modifier
@@ -379,7 +387,7 @@ fun PocketAuditScreen(
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "تم شراء ${vPurchased.size} أغراض" +
+                                        text = "تم شراء ${CurrencyFormatter.formatItemsCount(vPurchased.size)}" +
                                             if (vWaiting.isNotEmpty()) " (بقي ${vWaiting.size} في الانتظار)" else "",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -626,7 +634,7 @@ fun PocketAuditScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "$dateStr • ${round.archivedItemsCount} أغراض مشتراة",
+                                text = "$dateStr • ${CurrencyFormatter.formatPurchasedItemsCount(round.archivedItemsCount)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -639,14 +647,18 @@ fun PocketAuditScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        val isDarkArchive = LocalIsDarkTheme.current
+                        Spacer(modifier = Modifier.width(12.dp))
                         Box(
                             modifier = Modifier
-                                .width(1.dp)
+                                .width(1.2.dp)
                                 .height(24.dp)
-                                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.75f))
+                                .background(
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                        alpha = if (isDarkArchive) 0.34f else 0.28f
+                                    )
+                                )
                         )
-                        Spacer(modifier = Modifier.width(2.dp))
 
                         IconButton(
                             onClick = { onDeleteArchivedRound(round) },
@@ -882,7 +894,7 @@ private fun PocketLedgerSummaryCard(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "اشتريت $purchasedItemsCount أغراض • بقي $waitingItemsCount في القائمة",
+                            text = "اشتريت ${CurrencyFormatter.formatItemsCount(purchasedItemsCount)} • بقي $waitingItemsCount في القائمة",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
@@ -1087,13 +1099,14 @@ private fun PocketLedgerSummaryCard(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Surface(
-                        color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                        color = if (isOverBudget) MaterialTheme.colorScheme.error else heroPrimaryContainerColor(),
+                        border = if (isOverBudget) null else heroPrimaryDarkBorder(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
                             text = CurrencyFormatter.formatPocketDirhams(abs(uiState.netPocketBalanceDirhams)),
                             style = MaterialTheme.typography.titleLarge,
-                            color = if (isOverBudget) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary,
+                            color = if (isOverBudget) MaterialTheme.colorScheme.onError else heroPrimaryContentColor(),
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             softWrap = false,
@@ -1114,9 +1127,10 @@ private fun PocketLedgerSummaryCard(
                     .testTag("open_finish_round_button"),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = heroPrimaryContainerColor(),
+                    contentColor = heroPrimaryContentColor()
                 ),
+                border = heroPrimaryDarkBorder(),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Outlined.Archive, contentDescription = null)
@@ -1204,7 +1218,7 @@ private fun FinishRoundSheet(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "• عدد الأغراض المشتراة: $purchasedItemsCount أغراض",
+                        text = "• عدد الأغراض المشتراة: ${CurrencyFormatter.formatItemsCount(purchasedItemsCount)}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     val spentRialSuffix = if (showRial) {
@@ -1234,7 +1248,7 @@ private fun FinishRoundSheet(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "ترحيل النواقص المتبقية ($waitingItemsCount أغراض)",
+                                text = "ترحيل النواقص المتبقية (${CurrencyFormatter.formatItemsCount(waitingItemsCount)})",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 fontWeight = FontWeight.Bold
@@ -1329,9 +1343,10 @@ private fun FinishRoundSheet(
                     .height(58.dp)
                     .testTag("confirm_finish_round_submit_button"),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = heroPrimaryContainerColor(),
+                    contentColor = heroPrimaryContentColor()
                 ),
+                border = heroPrimaryDarkBorder(),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Filled.CheckCircle, contentDescription = null)

@@ -81,6 +81,42 @@ object CurrencyFormatter {
         return "$rials ريال"
     }
 
+    fun formatItemsCount(count: Int): String {
+        val n = abs(count)
+        return when {
+            n == 0 -> "0 أغراض"
+            n == 1 -> "غرض واحد"
+            n == 2 -> "غرضان"
+            n % 100 in 3..10 -> "$n أغراض"
+            n % 100 == 0 -> "$n غرض"
+            else -> "$n غرضاً"
+        }
+    }
+
+    fun formatRegisteredItemsCount(count: Int): String {
+        val n = abs(count)
+        return when {
+            n == 0 -> "لا توجد أغراض مسجلة"
+            n == 1 -> "غرض واحد مسجل"
+            n == 2 -> "غرضان مسجلان"
+            n % 100 in 3..10 -> "$n أغراض مسجلة"
+            n % 100 == 0 -> "$n غرض مسجل"
+            else -> "$n غرضاً مسجلاً"
+        }
+    }
+
+    fun formatPurchasedItemsCount(count: Int): String {
+        val n = abs(count)
+        return when {
+            n == 0 -> "0 أغراض مشتراة"
+            n == 1 -> "غرض واحد مشترى"
+            n == 2 -> "غرضان مشتريان"
+            n % 100 in 3..10 -> "$n أغراض مشتراة"
+            n % 100 == 0 -> "$n غرض مشترى"
+            else -> "$n غرضاً مشتراً"
+        }
+    }
+
     fun formatMoroccanWeightLabel(kg: Double): String {
         return when {
             abs(kg - 1.0) < 0.001 -> "كيلو (1 كغ)"
@@ -853,7 +889,7 @@ object CurrencyFormatter {
             }
         }
         sb.append("--------------------\n")
-        sb.append("المجموع: ${filteredItems.size} أغراض")
+        sb.append("المجموع: ${formatItemsCount(filteredItems.size)}")
         return sb.toString()
     }
 }

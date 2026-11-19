@@ -64,6 +64,37 @@ fun ambientCardBorder(): BorderStroke {
     }
 }
 
+/**
+ * Calm deep container color for large primary banners & CTA buttons in Dark Mode
+ * (prevents glaring neon fills at night while keeping Light Mode completely unchanged).
+ */
+@Composable
+fun heroPrimaryContainerColor(): Color {
+    return if (LocalIsDarkTheme.current) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+}
+
+@Composable
+fun heroPrimaryContentColor(): Color {
+    return if (LocalIsDarkTheme.current) {
+        MaterialTheme.colorScheme.onBackground
+    } else {
+        MaterialTheme.colorScheme.onPrimary
+    }
+}
+
+@Composable
+fun heroPrimaryDarkBorder(): BorderStroke? {
+    return if (LocalIsDarkTheme.current) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
+    } else {
+        null
+    }
+}
+
 private val TerracottaLightColorScheme = lightColorScheme(
     primary = SlateInkPrimaryLight,
     onPrimary = OnSlateInkPrimaryLight,

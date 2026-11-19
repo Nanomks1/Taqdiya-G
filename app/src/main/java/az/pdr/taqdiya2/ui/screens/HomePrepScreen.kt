@@ -63,6 +63,9 @@ import az.pdr.taqdiya2.ui.components.CleanShoppingItemHeaderRow
 import az.pdr.taqdiya2.ui.components.VendorIconMapper
 import az.pdr.taqdiya2.ui.theme.ambientCardBorder
 import az.pdr.taqdiya2.ui.theme.ambientCardShadow
+import az.pdr.taqdiya2.ui.theme.heroPrimaryContainerColor
+import az.pdr.taqdiya2.ui.theme.heroPrimaryContentColor
+import az.pdr.taqdiya2.ui.theme.heroPrimaryDarkBorder
 import az.pdr.taqdiya2.ui.viewmodel.HomePrepUiState
 import az.pdr.taqdiya2.util.CurrencyFormatter
 
@@ -350,7 +353,7 @@ fun HomePrepScreen(
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
                                         Text(
-                                            text = if (hasItems) "$count أغراض" else "+ أضف",
+                                            text = if (hasItems) CurrencyFormatter.formatItemsCount(count) else "+ أضف",
                                             style = MaterialTheme.typography.labelMedium,
                                             color = if (hasItems) {
                                                 MaterialTheme.colorScheme.onSecondaryContainer
@@ -480,9 +483,10 @@ fun HomePrepScreen(
                         .testTag("open_quick_pad_main_button"),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = heroPrimaryContainerColor(),
+                        contentColor = heroPrimaryContentColor()
                     ),
+                    border = heroPrimaryDarkBorder(),
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Icon(
@@ -570,7 +574,7 @@ private fun OversizedVendorCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${items.size} أغراض مسجلة",
+                            text = CurrencyFormatter.formatRegisteredItemsCount(items.size),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium

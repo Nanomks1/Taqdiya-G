@@ -73,6 +73,9 @@ import az.pdr.taqdiya2.ui.components.VendorItemPricingSheet
 import az.pdr.taqdiya2.ui.components.VendorPendingBalanceSheet
 import az.pdr.taqdiya2.ui.theme.ambientCardBorder
 import az.pdr.taqdiya2.ui.theme.ambientCardShadow
+import az.pdr.taqdiya2.ui.theme.heroPrimaryContainerColor
+import az.pdr.taqdiya2.ui.theme.heroPrimaryContentColor
+import az.pdr.taqdiya2.ui.theme.heroPrimaryDarkBorder
 import az.pdr.taqdiya2.ui.viewmodel.HomePrepUiState
 import az.pdr.taqdiya2.util.CurrencyFormatter
 import az.pdr.taqdiya2.util.PriceEvaluation
@@ -222,9 +225,10 @@ fun AtVendorScreen(
                             .fillMaxWidth()
                             .height(54.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = heroPrimaryContainerColor(),
+                            contentColor = heroPrimaryContentColor()
                         ),
+                        border = heroPrimaryDarkBorder(),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Icon(Icons.Outlined.Add, contentDescription = null)
@@ -304,37 +308,18 @@ fun AtVendorScreen(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Quick "+ مصروف عابر" Button
-                                Surface(
-                                    modifier = Modifier
-                                        .heightIn(min = 34.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable(onClick = onOpenPassingExpenseClick)
-                                        .testTag("market_passing_expense_button"),
-                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f),
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.ReceiptLong,
-                                            contentDescription = "مصروف عابر",
-                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            modifier = Modifier.size(15.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "+ مصروف عابر",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1,
-                                            softWrap = false
-                                        )
-                                    }
-                                }
+                                // Quick "+ مصروف عابر" Button (unified calm outlined style with PocketAuditScreen)
+                                CalmOutlinedActionButton(
+                                    text = "مصروف عابر",
+                                    icon = Icons.Outlined.Add,
+                                    iconContentDescription = "مصروف عابر",
+                                    iconTint = MaterialTheme.colorScheme.primary,
+                                    minHeight = 34.dp,
+                                    horizontalPadding = 10.dp,
+                                    verticalPadding = 5.dp,
+                                    onClick = onOpenPassingExpenseClick,
+                                    modifier = Modifier.testTag("market_passing_expense_button")
+                                )
 
                                 // Keep Screen Awake Toggle
                                 Surface(
@@ -399,6 +384,8 @@ fun AtVendorScreen(
                                 val vTotalCount = vItems.size
                                 val vAllDone = vBought == vTotalCount && vTotalCount > 0
                                 val tabShape = RoundedCornerShape(14.dp)
+                                val selectedTabContainer = heroPrimaryContainerColor()
+                                val selectedTabContent = heroPrimaryContentColor()
 
                                 Surface(
                                     modifier = Modifier
@@ -414,11 +401,11 @@ fun AtVendorScreen(
                                         }
                                         .testTag("market_vendor_tab_${vendor.id}"),
                                     color = when {
-                                        isSelected -> MaterialTheme.colorScheme.primary
+                                        isSelected -> selectedTabContainer
                                         vAllDone -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f)
                                         else -> MaterialTheme.colorScheme.surface
                                     },
-                                    border = if (isSelected) null else ambientCardBorder(),
+                                    border = if (isSelected) heroPrimaryDarkBorder() else ambientCardBorder(),
                                     shape = tabShape
                                 ) {
                                     Row(
@@ -432,7 +419,7 @@ fun AtVendorScreen(
                                                 .clip(RoundedCornerShape(9.dp))
                                                 .background(
                                                     if (isSelected) {
-                                                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)
+                                                        selectedTabContent.copy(alpha = 0.16f)
                                                     } else {
                                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)
                                                     }
@@ -443,7 +430,7 @@ fun AtVendorScreen(
                                                 imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                                                 contentDescription = vendor.name,
                                                 tint = if (isSelected) {
-                                                    MaterialTheme.colorScheme.onPrimary
+                                                    selectedTabContent
                                                 } else {
                                                     MaterialTheme.colorScheme.primary
                                                 },
@@ -455,7 +442,7 @@ fun AtVendorScreen(
                                             text = vendor.name,
                                             style = MaterialTheme.typography.titleSmall,
                                             color = if (isSelected) {
-                                                MaterialTheme.colorScheme.onPrimary
+                                                selectedTabContent
                                             } else {
                                                 MaterialTheme.colorScheme.onSurface
                                             },
@@ -466,7 +453,7 @@ fun AtVendorScreen(
 
                                         Surface(
                                             color = when {
-                                                isSelected -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
+                                                isSelected -> selectedTabContent.copy(alpha = 0.18f)
                                                 vAllDone -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f)
                                                 else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                                             },
@@ -476,7 +463,7 @@ fun AtVendorScreen(
                                                 text = "$vBought من $vTotalCount",
                                                 style = MaterialTheme.typography.labelMedium,
                                                 color = when {
-                                                    isSelected -> MaterialTheme.colorScheme.onPrimary
+                                                    isSelected -> selectedTabContent
                                                     vAllDone -> MaterialTheme.colorScheme.tertiary
                                                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                                                 },
@@ -709,7 +696,7 @@ fun AtVendorScreen(
                         item(key = "vendor_purchased_header") {
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "في القفة عند ${selectedVendor.name} (${purchasedItems.size} أغراض):",
+                                text = "في القفة عند ${selectedVendor.name} (${CurrencyFormatter.formatItemsCount(purchasedItems.size)}):",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.tertiary,
                                 fontWeight = FontWeight.Bold
@@ -856,7 +843,7 @@ fun AtVendorScreen(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text(
-                                            text = "في القفة: ${purchasedItems.size} من ${currentVendorItems.size} أغراض",
+                                            text = "في القفة: ${purchasedItems.size} من ${CurrencyFormatter.formatItemsCount(currentVendorItems.size)}",
                                             style = MaterialTheme.typography.titleSmall,
                                             color = MaterialTheme.colorScheme.onSurface,
                                             fontWeight = FontWeight.Bold,
@@ -875,7 +862,8 @@ fun AtVendorScreen(
                                                     }
                                                 }
                                                 waitingItems.isEmpty() -> "تأكد من أخذ جميع أكياسك (${purchasedItems.size})"
-                                                else -> "بقي ${waitingItems.size} أغراض لم تُوزن بعد"
+                                                waitingItems.size == 1 -> "بقي غرض واحد لم يُوزن بعد"
+                                                else -> "بقي ${CurrencyFormatter.formatItemsCount(waitingItems.size)} لم تُوزن بعد"
                                             },
                                             style = MaterialTheme.typography.bodySmall,
                                             color = if (isConfirmedPaymentOutOfSync) {
@@ -943,14 +931,19 @@ fun AtVendorScreen(
                                         containerColor = when {
                                             isConfirmedPaymentOutOfSync -> MaterialTheme.colorScheme.secondary
                                             currentVendorConfirmedPayment != null -> MaterialTheme.colorScheme.primaryContainer
-                                            else -> MaterialTheme.colorScheme.primary
+                                            else -> heroPrimaryContainerColor()
                                         },
                                         contentColor = when {
                                             isConfirmedPaymentOutOfSync -> MaterialTheme.colorScheme.onSecondary
                                             currentVendorConfirmedPayment != null -> MaterialTheme.colorScheme.onPrimaryContainer
-                                            else -> MaterialTheme.colorScheme.onPrimary
+                                            else -> heroPrimaryContentColor()
                                         }
                                     ),
+                                    border = if (!isConfirmedPaymentOutOfSync && currentVendorConfirmedPayment == null) {
+                                        heroPrimaryDarkBorder()
+                                    } else {
+                                        null
+                                    },
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(

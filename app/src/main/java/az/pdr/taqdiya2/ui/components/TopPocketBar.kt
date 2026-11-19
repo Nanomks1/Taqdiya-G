@@ -38,6 +38,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.ui.theme.ambientCardBorder
 import az.pdr.taqdiya2.ui.theme.ambientCardShadow
+import az.pdr.taqdiya2.ui.theme.heroPrimaryContainerColor
+import az.pdr.taqdiya2.ui.theme.heroPrimaryContentColor
+import az.pdr.taqdiya2.ui.theme.heroPrimaryDarkBorder
 import az.pdr.taqdiya2.util.CurrencyFormatter
 
 @Composable
@@ -91,7 +94,7 @@ fun TopPocketBar(
                         modifier = Modifier.testTag("top_bar_missing_count_badge")
                     ) {
                         Text(
-                            text = "$totalMissingItemsCount أغراض",
+                            text = CurrencyFormatter.formatItemsCount(totalMissingItemsCount),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                             fontWeight = FontWeight.SemiBold,
@@ -202,6 +205,8 @@ fun TopPocketBar(
 
             // Prominent Pocket Hero Card ("الباقي في الجيب الآن") with slim vertical height
             val heroShape = RoundedCornerShape(15.dp)
+            val heroContainer = heroPrimaryContainerColor()
+            val heroContent = heroPrimaryContentColor()
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -209,7 +214,8 @@ fun TopPocketBar(
                     .clip(heroShape)
                     .clickable(onClick = onEditBudgetClick)
                     .testTag("edit_pocket_budget_button"),
-                color = MaterialTheme.colorScheme.primary,
+                color = heroContainer,
+                border = heroPrimaryDarkBorder(),
                 shape = heroShape
             ) {
                 Row(
@@ -228,13 +234,13 @@ fun TopPocketBar(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)),
+                                .background(heroContent.copy(alpha = 0.16f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.AccountBalanceWallet,
                                 contentDescription = "ميزانية الجيب",
-                                tint = MaterialTheme.colorScheme.onPrimary,
+                                tint = heroContent,
                                 modifier = Modifier.size(19.dp)
                             )
                         }
@@ -251,7 +257,7 @@ fun TopPocketBar(
                                     else -> "الباقي في الجيب الآن"
                                 },
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.96f),
+                                color = heroContent.copy(alpha = 0.94f),
                                 fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -265,7 +271,7 @@ fun TopPocketBar(
                                     Text(
                                         text = "0 درهم",
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        color = heroContent,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         softWrap = false
@@ -293,7 +299,7 @@ fun TopPocketBar(
                                     Text(
                                         text = CurrencyFormatter.formatPocketDirhams(remainingPocketDirhams),
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        color = heroContent,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         softWrap = false
@@ -301,13 +307,13 @@ fun TopPocketBar(
 
                                     if (showRial) {
                                         Surface(
-                                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                                            color = heroContent.copy(alpha = 0.18f),
                                             shape = RoundedCornerShape(8.dp)
                                         ) {
                                             Text(
                                                 text = CurrencyFormatter.formatPocketRials(remainingPocketDirhams),
                                                 style = MaterialTheme.typography.labelMedium,
-                                                color = MaterialTheme.colorScheme.onPrimary,
+                                                color = heroContent,
                                                 fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
                                                 softWrap = false,
@@ -335,7 +341,7 @@ fun TopPocketBar(
                                     if (privacyMaskAmounts) {
                                         MaterialTheme.colorScheme.secondary
                                     } else {
-                                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)
+                                        heroContent.copy(alpha = 0.16f)
                                     }
                                 )
                                 .clickable(onClick = onTogglePrivacyMask)
@@ -348,7 +354,7 @@ fun TopPocketBar(
                                 tint = if (privacyMaskAmounts) {
                                     MaterialTheme.colorScheme.onSecondary
                                 } else {
-                                    MaterialTheme.colorScheme.onPrimary
+                                    heroContent
                                 },
                                 modifier = Modifier.size(17.dp)
                             )
@@ -358,13 +364,13 @@ fun TopPocketBar(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)),
+                                .background(heroContent.copy(alpha = 0.16f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Edit,
                                 contentDescription = "تعديل ميزانية الجيب",
-                                tint = MaterialTheme.colorScheme.onPrimary,
+                                tint = heroContent,
                                 modifier = Modifier.size(16.dp)
                             )
                         }

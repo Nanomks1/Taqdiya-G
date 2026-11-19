@@ -34,12 +34,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.ui.theme.LocalIsDarkTheme
 
 /**
  * Calm outlined action pill matching the ultra-clean 8E visual style:
- * neutral surface, thin crisp border, dark neutral label, and optional primary-colored icon (e.g., '+').
+ * subtle neutral tint fill, crisp visible border in both Light & Dark modes,
+ * dark neutral label, and optional primary-colored icon (e.g., '+').
  */
 @Composable
 fun CalmOutlinedActionButton(
@@ -49,20 +51,27 @@ fun CalmOutlinedActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     iconTint: Color = MaterialTheme.colorScheme.primary,
-    textColor: Color = MaterialTheme.colorScheme.onSurface
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
+    minHeight: Dp = 38.dp,
+    horizontalPadding: Dp = 13.dp,
+    verticalPadding: Dp = 7.dp
 ) {
+    val isDark = LocalIsDarkTheme.current
     val pillShape = RoundedCornerShape(12.dp)
     Surface(
         modifier = modifier
-            .heightIn(min = 38.dp)
+            .heightIn(min = minHeight)
             .clip(pillShape)
             .clickable(onClick = onClick),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.85f)),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isDark) 0.44f else 0.42f),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isDark) 0.30f else 0.25f)
+        ),
         shape = pillShape
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 13.dp, vertical = 7.dp),
+            modifier = Modifier.padding(horizontal = horizontalPadding, vertical = verticalPadding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -70,7 +79,7 @@ fun CalmOutlinedActionButton(
                 imageVector = icon,
                 contentDescription = iconContentDescription,
                 tint = iconTint,
-                modifier = Modifier.size(17.dp)
+                modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(5.dp))
             Text(
@@ -201,7 +210,11 @@ fun CleanShoppingItemHeaderRow(
     editTestTag: String? = null,
     deleteTestTag: String? = null
 ) {
+    val isDark = LocalIsDarkTheme.current
     val mutedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+    val verticalDividerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+        alpha = if (isDark) 0.34f else 0.28f
+    )
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -235,7 +248,7 @@ fun CleanShoppingItemHeaderRow(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // End (Left in RTL): Plain note + thin vertical divider + borderless Edit & Delete icons
+        // End (Left in RTL): Plain note + crisp balanced vertical divider + borderless Edit & Delete icons
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -249,14 +262,13 @@ fun CleanShoppingItemHeaderRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.widthIn(max = 120.dp)
                 )
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Box(
                     modifier = Modifier
-                        .width(1.dp)
+                        .width(1.2.dp)
                         .height(20.dp)
-                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.8f))
+                        .background(verticalDividerColor)
                 )
-                Spacer(modifier = Modifier.width(2.dp))
             }
 
             IconButton(
