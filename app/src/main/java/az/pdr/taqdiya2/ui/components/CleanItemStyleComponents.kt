@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import az.pdr.taqdiya2.ui.theme.LocalIsDarkTheme
 
 /**
  * Calm outlined action pill matching the ultra-clean 8E visual style:
@@ -71,7 +72,7 @@ fun CalmOutlinedActionButton(
                 tint = iconTint,
                 modifier = Modifier.size(17.dp)
             )
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(5.dp))
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
@@ -79,6 +80,105 @@ fun CalmOutlinedActionButton(
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 softWrap = false
+            )
+        }
+    }
+}
+
+/**
+ * Soft tinted card action button matching Screenshot 5 primary card CTA
+ * (e.g., quick buy "شراء بـ 20 د.م" or sole "احسب الثمن"):
+ * gentle primary-tinted fill, subtle primary border, primary icon & bold label.
+ */
+@Composable
+fun CalmTintedCardButton(
+    text: String,
+    icon: ImageVector,
+    iconContentDescription: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    accentColor: Color = MaterialTheme.colorScheme.primary
+) {
+    val isDark = LocalIsDarkTheme.current
+    val buttonShape = RoundedCornerShape(14.dp)
+    Surface(
+        modifier = modifier
+            .heightIn(min = 46.dp)
+            .clip(buttonShape)
+            .clickable(onClick = onClick),
+        color = accentColor.copy(alpha = if (isDark) 0.16f else 0.09f),
+        border = BorderStroke(1.dp, accentColor.copy(alpha = if (isDark) 0.42f else 0.30f)),
+        shape = buttonShape
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = iconContentDescription,
+                tint = accentColor,
+                modifier = Modifier.size(19.dp)
+            )
+            Spacer(modifier = Modifier.width(7.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                color = accentColor,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/**
+ * Calm neutral outlined card action button matching Screenshot 5 secondary card CTA
+ * (e.g., secondary "احسب الثمن" alongside quick buy):
+ * subtle off-surface fill, crisp neutral border, muted icon & dark neutral bold label.
+ */
+@Composable
+fun CalmNeutralCardButton(
+    text: String,
+    icon: ImageVector,
+    iconContentDescription: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isDark = LocalIsDarkTheme.current
+    val buttonShape = RoundedCornerShape(14.dp)
+    Surface(
+        modifier = modifier
+            .heightIn(min = 46.dp)
+            .clip(buttonShape)
+            .clickable(onClick = onClick),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isDark) 0.35f else 0.30f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.85f)),
+        shape = buttonShape
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = iconContentDescription,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(7.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

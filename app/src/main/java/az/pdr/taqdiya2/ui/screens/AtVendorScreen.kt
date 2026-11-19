@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -28,13 +27,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.ReceiptLong
-import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Replay
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material.icons.outlined.Storefront
@@ -63,6 +62,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
+import az.pdr.taqdiya2.ui.components.CalmNeutralCardButton
+import az.pdr.taqdiya2.ui.components.CalmOutlinedActionButton
+import az.pdr.taqdiya2.ui.components.CalmTintedCardButton
+import az.pdr.taqdiya2.ui.components.CleanShoppingItemHeaderRow
 import az.pdr.taqdiya2.ui.components.ConfirmVendorPaymentSheet
 import az.pdr.taqdiya2.ui.components.PriceTrendBadge
 import az.pdr.taqdiya2.ui.components.VendorIconMapper
@@ -604,7 +607,7 @@ fun AtVendorScreen(
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
                                 text = if (waitingItems.isNotEmpty()) {
@@ -614,7 +617,7 @@ fun AtVendorScreen(
                                 },
                                 style = MaterialTheme.typography.titleSmall,
                                 color = if (waitingItems.isNotEmpty()) {
-                                    MaterialTheme.colorScheme.onBackground
+                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
                                 } else {
                                     MaterialTheme.colorScheme.tertiary
                                 },
@@ -624,71 +627,28 @@ fun AtVendorScreen(
 
                             Row(
                                 modifier = Modifier.align(Alignment.CenterVertically),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Button to record pending change ("صرف عالق") anytime
-                                Surface(
-                                    modifier = Modifier
-                                        .heightIn(min = 34.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable { showVendorPendingBalanceSheet = true }
-                                        .testTag("market_vendor_pending_balance_button"),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Handshake,
-                                            contentDescription = "الصرف العالق",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(15.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "صرف عالق",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1,
-                                            softWrap = false
-                                        )
-                                    }
-                                }
+                                // Calm outlined "صرف عالق" button
+                                CalmOutlinedActionButton(
+                                    text = "صرف عالق",
+                                    icon = Icons.Outlined.Handshake,
+                                    iconContentDescription = "الصرف العالق",
+                                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    onClick = { showVendorPendingBalanceSheet = true },
+                                    modifier = Modifier.testTag("market_vendor_pending_balance_button")
+                                )
 
-                                Surface(
-                                    modifier = Modifier
-                                        .heightIn(min = 34.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable { onOpenQuickPadForVendor(selectedVendor.id) }
-                                        .testTag("market_add_extra_item_button"),
-                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f),
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Add,
-                                            contentDescription = "إضافة غرض",
-                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            modifier = Modifier.size(15.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "أضف غرضاً",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1,
-                                            softWrap = false
-                                        )
-                                    }
-                                }
+                                // Calm outlined "+ أضف غرضاً" button (only '+' is primary-colored)
+                                CalmOutlinedActionButton(
+                                    text = "أضف غرضاً",
+                                    icon = Icons.Outlined.Add,
+                                    iconContentDescription = "إضافة غرض",
+                                    iconTint = MaterialTheme.colorScheme.primary,
+                                    onClick = { onOpenQuickPadForVendor(selectedVendor.id) },
+                                    modifier = Modifier.testTag("market_add_extra_item_button")
+                                )
                             }
                         }
                     }
@@ -1122,7 +1082,6 @@ fun AtVendorScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WaitingMarketItemCard(
     item: ShoppingItemEntity,
@@ -1136,11 +1095,13 @@ private fun WaitingMarketItemCard(
     onOpenPriceHistory: () -> Unit,
     onDeleteItem: () -> Unit
 ) {
-    val cardShape = RoundedCornerShape(18.dp)
+    val cardShape = RoundedCornerShape(20.dp)
+    val hasQuickBuy = explicitMoneyDirhams != null && explicitMoneyDirhams > 0.0
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .ambientCardShadow(shape = cardShape, elevation = 6.dp)
+            .ambientCardShadow(shape = cardShape, elevation = 5.dp)
             .clip(cardShape)
             .clickable(onClick = onOpenPricing)
             .testTag("market_waiting_item_${item.id}"),
@@ -1154,171 +1115,54 @@ private fun WaitingMarketItemCard(
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Row 1: Full-width Item Name + Note Badge on the right, and compact Edit/Delete icons on the left
+            // Row 1: Ultra-clean item anatomy matching Screenshot 5 (○ Primary Name ... Plain Note | Edit Delete)
+            CleanShoppingItemHeaderRow(
+                itemName = item.name,
+                itemNote = item.note,
+                onEditClick = onEditItem,
+                onDeleteClick = onDeleteItem,
+                editContentDescription = "تعديل ${item.name} أو نقله لبائع آخر",
+                deleteContentDescription = "إزالة ${item.name} من القائمة",
+                editTestTag = "market_edit_waiting_item_${item.id}",
+                deleteTestTag = "market_delete_waiting_item_${item.id}"
+            )
+
+            // Row 2: Calm Soft-Tinted & Outlined Purchase Action Bar matching Screenshot 5
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FlowRow(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                        Text(
-                            text = item.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    if (item.note.isNotBlank()) {
-                        Surface(
-                            modifier = Modifier.align(Alignment.CenterVertically),
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f),
-                            shape = RoundedCornerShape(9.dp)
-                        ) {
-                            Text(
-                                text = item.note,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
-                            .clickable(onClick = onEditItem)
-                            .testTag("market_edit_waiting_item_${item.id}"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Edit,
-                            contentDescription = "تعديل ${item.name} أو نقله لبائع آخر",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
-                            .clickable(onClick = onDeleteItem)
-                            .testTag("market_delete_waiting_item_${item.id}"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.RemoveCircleOutline,
-                            contentDescription = "إزالة ${item.name} من القائمة",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(19.dp)
-                        )
-                    }
-                }
-            }
-
-            // Row 2: Dedicated Market Purchase Action Bar (Never crowds the item name!)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (explicitMoneyDirhams != null && explicitMoneyDirhams > 0.0) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.tertiary,
-                        shape = RoundedCornerShape(12.dp),
+                if (hasQuickBuy && explicitMoneyDirhams != null) {
+                    CalmTintedCardButton(
+                        text = "شراء بـ ${CurrencyFormatter.formatAmountPlain(explicitMoneyDirhams)} د.م",
+                        icon = Icons.Outlined.CheckCircle,
+                        iconContentDescription = "شراء سريع بـ ${CurrencyFormatter.formatDirhams(explicitMoneyDirhams)}",
+                        onClick = { onQuickBuyFixed(explicitMoneyDirhams) },
                         modifier = Modifier
                             .weight(1f)
-                            .heightIn(min = 40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onQuickBuyFixed(explicitMoneyDirhams) }
                             .testTag("market_quick_buy_fixed_${item.id}")
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.CheckCircle,
-                                contentDescription = "شراء سريع بـ ${CurrencyFormatter.formatDirhams(explicitMoneyDirhams)}",
-                                tint = MaterialTheme.colorScheme.onTertiary,
-                                modifier = Modifier.size(17.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "شراء بـ ${CurrencyFormatter.formatAmountPlain(explicitMoneyDirhams)} د.م",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onTertiary,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
-                    }
-                }
+                    )
 
-                Surface(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable(onClick = onOpenPricing)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Calculate,
-                            contentDescription = "احسب الثمن",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(17.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "احسب الثمن",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
+                    CalmNeutralCardButton(
+                        text = "احسب الثمن",
+                        icon = Icons.Outlined.Calculate,
+                        iconContentDescription = "احسب الثمن",
+                        onClick = onOpenPricing,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    CalmTintedCardButton(
+                        text = "احسب الثمن",
+                        icon = Icons.Outlined.Calculate,
+                        iconContentDescription = "احسب الثمن",
+                        onClick = onOpenPricing,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 
-            // Row 3 (Full Card Width): Usual Price + History Link — never truncated!
+            // Row 3 (Full Card Width): Usual Price + History Link — calm subtle strip
             if (showPriceTrendBadge && usualPriceEvaluation.referenceUsualDirhams > 0.0) {
                 val rialUsualSuffix = if (showRial) {
                     " (${CurrencyFormatter.formatRials(usualPriceEvaluation.referenceUsualDirhams)})"
@@ -1328,11 +1172,12 @@ private fun WaitingMarketItemCard(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(11.dp))
                         .clickable(onClick = onOpenPriceHistory)
                         .testTag("open_item_price_history_${item.id}"),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-                    shape = RoundedCornerShape(10.dp)
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f),
+                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(11.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -1485,8 +1330,13 @@ private fun PurchasedMarketItemCard(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.30f),
+                thickness = 0.8.dp
+            )
             Spacer(modifier = Modifier.height(8.dp))
+
+            val calmChipBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.78f))
 
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -1498,24 +1348,25 @@ private fun PurchasedMarketItemCard(
                         .heightIn(min = 34.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .clickable(onClick = onOpenPriceHistory),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = calmChipBorder,
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.History,
                             contentDescription = "سجل الأثمنة",
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "السجل",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             softWrap = false
@@ -1528,24 +1379,25 @@ private fun PurchasedMarketItemCard(
                         .heightIn(min = 34.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .clickable(onClick = onEditItemDetails),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = calmChipBorder,
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Storefront,
                             contentDescription = "تعديل الغرض أو البائع",
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "نقل/تعديل",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             softWrap = false
@@ -1558,11 +1410,12 @@ private fun PurchasedMarketItemCard(
                         .heightIn(min = 34.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .clickable(onClick = onEditPricing),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = calmChipBorder,
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -1575,7 +1428,7 @@ private fun PurchasedMarketItemCard(
                         Text(
                             text = "تعديل الحساب",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             softWrap = false
@@ -1589,11 +1442,12 @@ private fun PurchasedMarketItemCard(
                         .clip(RoundedCornerShape(10.dp))
                         .clickable(onClick = onUnmarkPurchased)
                         .testTag("unmark_purchased_${item.id}"),
-                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.06f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.28f)),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
