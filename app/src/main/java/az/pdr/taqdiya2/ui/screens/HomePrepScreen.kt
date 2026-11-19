@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -27,11 +26,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Clear
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.QueryStats
-import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.Button
@@ -61,6 +58,8 @@ import androidx.compose.ui.unit.dp
 import az.pdr.taqdiya2.data.local.DictionaryItemEntity
 import az.pdr.taqdiya2.data.local.ShoppingItemEntity
 import az.pdr.taqdiya2.data.local.VendorEntity
+import az.pdr.taqdiya2.ui.components.CalmOutlinedActionButton
+import az.pdr.taqdiya2.ui.components.CleanShoppingItemHeaderRow
 import az.pdr.taqdiya2.ui.components.VendorIconMapper
 import az.pdr.taqdiya2.ui.theme.ambientCardBorder
 import az.pdr.taqdiya2.ui.theme.ambientCardShadow
@@ -505,7 +504,6 @@ fun HomePrepScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun OversizedVendorCard(
     vendor: VendorEntity,
@@ -537,7 +535,7 @@ private fun OversizedVendorCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Balanced Vendor Header with subtle identity accent bar and primary-colored vendor title
+            // Calm Vendor Header (neutral store badge + muted title + outlined '+ أضف' with primary '+')
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -551,14 +549,14 @@ private fun OversizedVendorCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(11.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = VendorIconMapper.getIcon(vendor.iconKey, vendor.name),
                             contentDescription = vendor.name,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(21.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
@@ -566,7 +564,7 @@ private fun OversizedVendorCard(
                         Text(
                             text = vendor.name,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.80f),
                             fontWeight = FontWeight.Bold,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
@@ -611,128 +609,43 @@ private fun OversizedVendorCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Direct "+ أضف" button for this vendor
-                Surface(
-                    modifier = Modifier
-                        .heightIn(min = 36.dp)
-                        .clip(RoundedCornerShape(11.dp))
-                        .clickable(onClick = onOpenQuickPadForVendor),
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                    shape = RoundedCornerShape(11.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "إضافة",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text(
-                            text = "أضف",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
-                }
+                // Direct "+ أضف" outlined button (only '+' icon is primary-colored)
+                CalmOutlinedActionButton(
+                    text = "أضف",
+                    icon = Icons.Outlined.Add,
+                    iconContentDescription = "إضافة",
+                    onClick = onOpenQuickPadForVendor,
+                    modifier = Modifier.testTag("vendor_card_add_${vendor.id}")
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                thickness = 0.8.dp
+            )
 
-            // Clean Item Rows (Subtle Halo Dot + High-Contrast Bold Item Name + Soft Medium Note Badge)
+            // Ultra-Clean Item Rows (Hollow Ring Dot + Primary Bold Item Name + Plain Note | Calm Edit & Delete Icons)
             items.forEachIndexed { index, item ->
                 if (index > 0) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                        thickness = 0.8.dp
+                    )
                 }
-                Row(
+                CleanShoppingItemHeaderRow(
+                    itemName = item.name,
+                    itemNote = item.note,
+                    onEditClick = { onEditItem(item) },
+                    onDeleteClick = { onDeleteItem(item) },
+                    editContentDescription = "تعديل الغرض",
+                    deleteContentDescription = "إزالة من القائمة",
+                    editTestTag = "edit_item_${item.id}",
+                    deleteTestTag = "delete_item_${item.id}",
                     modifier = Modifier
-                        .fillMaxWidth()
                         .clickable { onEditItem(item) }
-                        .padding(vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    FlowRow(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.align(Alignment.CenterVertically),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
-
-                            Text(
-                                text = item.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        if (item.note.isNotBlank()) {
-                            Surface(
-                                modifier = Modifier.align(Alignment.CenterVertically),
-                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f),
-                                shape = RoundedCornerShape(9.dp)
-                            ) {
-                                Text(
-                                    text = item.note,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = { onEditItem(item) },
-                            modifier = Modifier
-                                .size(42.dp)
-                                .testTag("edit_item_${item.id}")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Edit,
-                                contentDescription = "تعديل الغرض",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = { onDeleteItem(item) },
-                            modifier = Modifier
-                                .size(42.dp)
-                                .testTag("delete_item_${item.id}")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.RemoveCircleOutline,
-                                contentDescription = "إزالة من القائمة",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(21.dp)
-                            )
-                        }
-                    }
-                }
+                        .padding(vertical = 8.dp)
+                )
             }
         }
     }
